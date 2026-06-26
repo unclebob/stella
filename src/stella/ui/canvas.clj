@@ -8,18 +8,12 @@
     on-mouse-clicked (assoc :on-mouse-clicked on-mouse-clicked)
     children (assoc :children children)))
 
-(defn- stock-anchor
-  [[x y] side]
-  (case side
-    :right [(+ x 80.0) (+ y 25.0)]
-    :left [x (+ y 25.0)]))
-
 (defn- flow-desc
-  [diagram {:keys [name rate from-stock to-stock]}]
-  (when-let [from-pos (model/stock-position diagram from-stock)]
-    (when-let [to-pos (model/stock-position diagram to-stock)]
-      (let [[start-x start-y] (stock-anchor from-pos :right)
-            [end-x end-y] (stock-anchor to-pos :left)
+  [diagram {:keys [name rate from to]}]
+  (when-let [from-pos (model/endpoint-position diagram from)]
+    (when-let [to-pos (model/endpoint-position diagram to)]
+      (let [[start-x start-y] (model/endpoint-anchor from-pos (:kind from) :right)
+            [end-x end-y] (model/endpoint-anchor to-pos (:kind to) :left)
             mid-x (/ (+ start-x end-x) 2.0)
             mid-y (/ (+ start-y end-y) 2.0)]
         {:fx/type :group
@@ -37,8 +31,12 @@
                      :children [{:fx/type :label :text name}
                                 {:fx/type :label :text rate}]}]}))))
 
+(defn- endpoint-click
+  [kind name]
+  {:event events/endpoint-click :endpoint-kind kind :endpoint-name name})
+
 (defn- stock-desc
-  [diagram {:keys [name initial-value x y] :as stock}]
+  [diagram {:keys [name initial-value x y]}]
   (cond-> {:fx/type :group
            :layout-x x
            :layout-y y
@@ -53,17 +51,38 @@
                        :children [{:fx/type :label :text name}
                                   {:fx/type :label :text initial-value}]}]}
     (= :flow (:placement-mode diagram))
-    (assoc :on-mouse-clicked {:event events/stock-click :stock-name name})))
+    (assoc :on-mouse-clicked (endpoint-click :stock name))))
+
+(defn- cloud-desc
+  [diagram kind {:keys [name x y]}]
+  (cond-> {:fx/type :group
+           :layout-x x
+           :layout-y y
+           :children [{:fx/type :ellipse
+                       :center-x 40
+                       :center-y 25
+                       :radius-x 40
+                       :radius-y 25
+                       :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
+                      {:fx/type :label
+                       :layout-x 20
+                       :layout-y 18
+                       :text name}]}
+    (= :flow (:placement-mode diagram))
+    (assoc :on-mouse-clicked (endpoint-click kind name))))
 
 (defn canvas-desc
   [shell]
   (let [diagram (:diagram shell)
         flow-nodes (keep #(flow-desc diagram %) (model/flows diagram))
-        stock-nodes (mapv #(stock-desc diagram %) (model/stocks diagram))]
+        source-nodes (mapv #(cloud-desc diagram :source %) (model/sources diagram))
+        sink-nodes (mapv #(cloud-desc diagram :sink %) (model/sinks diagram))
+        stock-nodes (mapv #(stock-desc diagram %) (model/stocks diagram))
+        children (into (vec flow-nodes) (concat source-nodes sink-nodes stock-nodes))]
     (cond-> {:fx/type canvas-pane
              :style "-fx-background-color: #f5f5f5;"
              :vgrow :always
              :hgrow :always
-             :children (into (vec flow-nodes) stock-nodes)}
-      (= :stock (:placement-mode diagram))
+             :children children}
+      (#{:stock :source :sink} (:placement-mode diagram))
       (assoc :on-mouse-clicked {:event events/canvas-click}))))

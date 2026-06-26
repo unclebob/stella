@@ -11,19 +11,37 @@
   [event]
   (some-> event event-type actions/event->action))
 
+(defn- placement-mode
+  [shell]
+  (get-in shell [:diagram :placement-mode]))
+
+(defn- place-on-canvas
+  [shell [x y]]
+  (case (placement-mode shell)
+    :stock (cmd/place-stock-on-shell! shell x y)
+    :source (cmd/place-source-on-shell! shell x y)
+    :sink (cmd/place-sink-on-shell! shell x y)
+    shell))
+
 (defn- diagram-shell-updaters
   []
   {events/arm-stock (fn [shell _]
                       (cmd/arm-stock-placement-on-shell! shell))
    events/arm-flow (fn [shell _]
                      (cmd/arm-flow-placement-on-shell! shell))
-   events/stock-click (fn [shell event]
-                        (if-let [stock-name (:stock-name event)]
-                          (cmd/select-flow-stock-on-shell! shell stock-name)
-                          shell))
+   events/arm-source (fn [shell _]
+                       (cmd/arm-source-placement-on-shell! shell))
+   events/arm-sink (fn [shell _]
+                     (cmd/arm-sink-placement-on-shell! shell))
+   events/endpoint-click (fn [shell event]
+                           (if (and (:endpoint-kind event) (:endpoint-name event))
+                             (cmd/select-flow-endpoint-on-shell! shell
+                                                                 (:endpoint-kind event)
+                                                                 (:endpoint-name event))
+                             shell))
    events/canvas-click (fn [shell event]
                          (if-let [[x y] (:coordinates event)]
-                           (cmd/place-stock-on-shell! shell x y)
+                           (place-on-canvas shell [x y])
                            shell))})
 
 (defn diagram-event?

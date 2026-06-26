@@ -15,8 +15,8 @@
   (prop/for-all [_ gen/int]
     (let [diagram (-> (diagram-with-stocks)
                       (model/arm-flow-placement)
-                      (model/select-flow-source "Stock1")
-                      (model/connect-flow "Stock2"))]
+                      (model/select-flow-source :stock "Stock1")
+                      (model/connect-flow :stock "Stock2"))]
       (= 1 (model/flow-count diagram)))))
 
 (defspec same-stock-connection-is-rejected
@@ -25,16 +25,16 @@
     (zero? (model/flow-count
             (-> (diagram-with-stocks)
                 (model/arm-flow-placement)
-                (model/select-flow-source "Stock1")
-                (model/connect-flow "Stock1"))))))
+                (model/select-flow-source :stock "Stock1")
+                (model/connect-flow :stock "Stock1"))))))
 
 (defspec successful-connection-disarms-placement
   25
   (prop/for-all [_ gen/int]
     (let [diagram (-> (diagram-with-stocks)
                       (model/arm-flow-placement)
-                      (model/select-flow-source "Stock1")
-                      (model/connect-flow "Stock2"))]
+                      (model/select-flow-source :stock "Stock1")
+                      (model/connect-flow :stock "Stock2"))]
       (model/flow-placement-disarmed? diagram))))
 
 (defspec flow-endpoints-match-selection
@@ -44,8 +44,8 @@
        (model/flow-endpoints
         (-> (diagram-with-stocks)
             (model/arm-flow-placement)
-            (model/select-flow-source "Stock1")
-            (model/connect-flow "Stock2"))
+            (model/select-flow-source :stock "Stock1")
+            (model/connect-flow :stock "Stock2"))
         "Flow1"))))
 
 (deftest arm-flow-clears-draft

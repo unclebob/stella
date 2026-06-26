@@ -55,9 +55,15 @@
     (= :flow (:placement-mode (:diagram (dispatch/apply-event (model/default-shell)
                                                               {:event events/arm-flow}))))))
 
-(defspec stock-click-without-name-is-noop
+(defspec endpoint-click-without-target-is-noop
   25
   (prop/for-all [_ gen/int]
     (= (model/default-shell)
        (dispatch/apply-event (model/default-shell)
-                             {:event events/stock-click}))))
+                             {:event events/endpoint-click}))))
+
+(defspec armed-source-placement-mode
+  25
+  (prop/for-all [_ gen/int]
+    (= :source (:placement-mode (:diagram (dispatch/apply-event (model/default-shell)
+                                                                {:event events/arm-source}))))))
