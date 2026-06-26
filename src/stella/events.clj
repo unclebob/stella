@@ -12,6 +12,10 @@
 
 (def arm-sink ::arm-sink)
 
+(def arm-converter ::arm-converter)
+
+(def arm-connector ::arm-connector)
+
 (def canvas-click ::canvas-click)
 
 (def endpoint-click ::endpoint-click)

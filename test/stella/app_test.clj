@@ -29,6 +29,8 @@
   (is (true? (app/diagram-event? events/arm-stock)))
   (is (true? (app/diagram-event? events/arm-flow)))
   (is (true? (app/diagram-event? events/arm-source)))
+  (is (true? (app/diagram-event? events/arm-converter)))
+  (is (true? (app/diagram-event? events/arm-connector)))
   (is (true? (app/diagram-event? events/endpoint-click)))
   (is (false? (app/diagram-event? events/quit))))
 
@@ -54,24 +56,26 @@
   (let [stock-shell (cmd/arm-stock-placement-on-shell! (model/default-shell))
         source-shell (cmd/arm-source-placement-on-shell! (model/default-shell))
         sink-shell (cmd/arm-sink-placement-on-shell! (model/default-shell))
+        converter-shell (cmd/arm-converter-placement-on-shell! (model/default-shell))
         idle-shell (model/default-shell)]
     (is (model/stock-exists? (:diagram (app/place-on-canvas stock-shell 10 20)) "Stock1"))
     (is (model/source-exists? (:diagram (app/place-on-canvas source-shell 50 150)) "Source1"))
     (is (model/sink-exists? (:diagram (app/place-on-canvas sink-shell 400 150)) "Sink1"))
+    (is (model/converter-exists? (:diagram (app/place-on-canvas converter-shell 100 250)) "Converter1"))
     (is (= idle-shell (app/place-on-canvas idle-shell 1 2)))))
 
-(deftest select-flow-endpoint-from-event-test
+(deftest select-endpoint-from-event-test
   (let [shell (-> (model/default-shell)
                   (update :diagram #(-> %
                                         (cmd/fixture-stock! "Stock1" 100 100)
                                         (cmd/fixture-stock! "Stock2" 300 200)
                                         (cmd/arm-flow-placement!))))
-        drafted (app/select-flow-endpoint-from-event
+        drafted (app/select-endpoint-from-event
                   shell
                   {:event events/endpoint-click
                    :endpoint-kind :stock
                    :endpoint-name "Stock1"})
-        connected (app/select-flow-endpoint-from-event
+        connected (app/select-endpoint-from-event
                     drafted
                     {:event events/endpoint-click
                      :endpoint-kind :stock

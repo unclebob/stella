@@ -17,4 +17,10 @@
                :on-action {:event events/arm-source}}
               {:fx/type :button
                :text "Sink"
-               :on-action {:event events/arm-sink}}]})
+               :on-action {:event events/arm-sink}}
+              {:fx/type :button
+               :text "Converter"
+               :on-action {:event events/arm-converter}}
+              {:fx/type :button
+               :text "Connector"
+               :on-action {:event events/arm-connector}}]})

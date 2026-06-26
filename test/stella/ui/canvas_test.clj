@@ -40,3 +40,20 @@
                              (= :line (:fx/type (first (:children node))))))
                       (:children desc))]
     (is (= 1 (count lines)))))
+
+(deftest canvas-renders-connectors-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-stock! "Stock1" 200 150)
+                    (cmd/fixture-stock! "Stock2" 350 150)
+                    (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                    (cmd/fixture-converter! "Converter1" 100 250)
+                    (cmd/arm-connector-placement!)
+                    (cmd/select-connector-origin! :converter "Converter1")
+                    (cmd/connect-connector! :flow "Flow1"))
+        shell (assoc (cmd/default-shell! nil) :diagram diagram)
+        desc (canvas/canvas-desc shell)
+        connectors (filter (fn [node]
+                             (and (= :group (:fx/type node))
+                                  (= "#666" (:stroke (first (:children node))))))
+                           (:children desc))]
+    (is (= 1 (count connectors)))))
