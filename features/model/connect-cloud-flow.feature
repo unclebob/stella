@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=c37132b5b79b0a5a08e6cd9051365163b541922ca59458e0e4176df92015e0a9
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-06-26T20:31:45.976895Z","feature_name":"Connect cloud flow","feature_path":"features/model/connect-cloud-flow.feature","background_hash":"4cb483c07ad44ac6174b8afd517c0d0d4141bb3062259e93675934cfb8ccdcc6","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Connect source to stock with flow","scenario_hash":"b0ca02dde4f60cfd56a1e277a33563affce158a20037f039d115e28a74ae0873","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-06-26T20:31:45.976895Z"},{"index":1,"name":"Connect stock to sink with flow","scenario_hash":"53db6cf427e7613f19f197f8d423457325ab3f5092bdd8407b2dca6f7d5d8b02","mutation_count":4,"result":{"Total":4,"Killed":4,"Survived":0,"Errors":0},"tested_at":"2026-06-26T20:31:45.976895Z"},{"index":4,"name":"Completing cloud flow disarms the flow tool","scenario_hash":"0fc9b4acef1730d6c86a095b96876afe88586622ab4c7d44b60e18222108fcaf","mutation_count":2,"result":{"Total":2,"Killed":2,"Survived":0,"Errors":0},"tested_at":"2026-06-26T20:31:45.976895Z"}]}
+# acceptance-mutation-manifest-end
+
 Feature: Connect cloud flow
 
 Background:

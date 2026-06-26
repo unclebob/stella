@@ -240,13 +240,21 @@
   [diagram]
   (vals (:sinks diagram)))
 
+(defn- cloud-fixture
+  [diagram prefix collection-key next-key name x y]
+  (let [num (num-from-name prefix name)
+        id (keyword (str (clojure.string/lower-case prefix) "-" num))]
+    (-> diagram
+        (assoc-in [collection-key id] {:name name :x x :y y})
+        (update next-key #(max % (inc num))))))
+
 (defn fixture-source
   [diagram name x y]
-  (fixture-item diagram :sources :next-source-num "source-" "Source" name x y {}))
+  (cloud-fixture diagram "Source" :sources :next-source-num name x y))
 
 (defn fixture-sink
   [diagram name x y]
-  (fixture-item diagram :sinks :next-sink-num "sink-" "Sink" name x y {}))
+  (cloud-fixture diagram "Sink" :sinks :next-sink-num name x y))
 
 (defn arm-source-placement
   [diagram]
@@ -256,25 +264,25 @@
   [diagram]
   (assoc diagram :placement-mode :sink))
 
-(defn- place-cloud
-  [diagram mode collection next-key id-prefix label-prefix x y]
+(defn- cloud-place
+  [diagram mode prefix collection-key next-key x y]
   (if (= mode (:placement-mode diagram))
     (let [num (get diagram next-key)
-          name (str label-prefix num)
-          id (keyword (str id-prefix num))]
+          name (str prefix num)
+          id (keyword (str (clojure.string/lower-case prefix) "-" num))]
       (-> diagram
-          (assoc-in [collection id] {:name name :x x :y y})
+          (assoc-in [collection-key id] {:name name :x x :y y})
           (assoc :placement-mode :idle)
           (update next-key inc)))
     diagram))
 
 (defn place-source
   [diagram x y]
-  (place-cloud diagram :source :sources :next-source-num "source-" "Source" x y))
+  (cloud-place diagram :source "Source" :sources :next-source-num x y))
 
 (defn place-sink
   [diagram x y]
-  (place-cloud diagram :sink :sinks :next-sink-num "sink-" "Sink" x y))
+  (cloud-place diagram :sink "Sink" :sinks :next-sink-num x y))
 
 (defn source-placement-disarmed?
   [diagram]

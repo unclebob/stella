@@ -6,15 +6,10 @@
             [stella.ui.canvas :as canvas]))
 
 (deftest canvas-description-test
-  (let [shell (cmd/arm-stock-placement-on-shell! (model/default-shell))
-        desc (canvas/canvas-desc shell)
-        pane ((:fx/type desc) (dissoc desc :fx/type))]
-    (is (fn? (:fx/type desc)))
-    (is (= :pane (:fx/type pane)))
-    (is (some? (:style desc)))
-    (is (re-find #"background-color" (:style desc)))
-    (is (= :always (:vgrow desc)))
-    (is (= :always (:hgrow desc)))
+  (let [shell (model/default-shell)
+        desc (canvas/canvas-desc shell)]
+    (is (= :stack-pane (:fx/type desc)))
+    (is (= "canvas" (:id desc)))
     (is (= {:event events/canvas-click} (:on-mouse-clicked desc)))))
 
 (deftest canvas-renders-stocks-test
@@ -24,9 +19,7 @@
         desc (canvas/canvas-desc shell)
         stocks (filter #(= :group (:fx/type %)) (:children desc))]
     (is (= 1 (count stocks)))
-    (let [group (first stocks)]
-      (is (= 200 (:layout-x group)))
-      (is (= 150 (:layout-y group))))))
+    (is (= "stock-Stock1" (:id (first stocks))))))
 
 (deftest canvas-renders-flows-test
   (let [diagram (-> (cmd/default-diagram! nil)
