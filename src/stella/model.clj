@@ -36,10 +36,14 @@
 
 (defn default-diagram []
   {:stocks {}
+   :sources {}
+   :sinks {}
    :flows {}
    :placement-mode :idle
    :flow-draft nil
    :next-stock-num 1
+   :next-source-num 1
+   :next-sink-num 1
    :next-flow-num 1})
 
 (defn default-shell []
@@ -150,6 +154,108 @@
         (assoc-in [:stocks id] {:name name :initial-value "0" :x x :y y})
         (update :next-stock-num #(max % (inc num))))))
 
+(defn- endpoint-ref
+  [kind id]
+  {:kind kind :id id})
+
+(defn- source-entry-by-name
+  [diagram name]
+  (first (filter #(= name (:name (val %))) (:sources diagram))))
+
+(defn- sink-entry-by-name
+  [diagram name]
+  (first (filter #(= name (:name (val %))) (:sinks diagram))))
+
+(defn source-exists?
+  [diagram name]
+  (some? (source-entry-by-name diagram name)))
+
+(defn sink-exists?
+  [diagram name]
+  (some? (sink-entry-by-name diagram name)))
+
+(defn source-position
+  [diagram name]
+  (when-let [[_ source] (source-entry-by-name diagram name)]
+    [(:x source) (:y source)]))
+
+(defn sink-position
+  [diagram name]
+  (when-let [[_ sink] (sink-entry-by-name diagram name)]
+    [(:x sink) (:y sink)]))
+
+(defn source-count
+  [diagram]
+  (count (:sources diagram)))
+
+(defn sink-count
+  [diagram]
+  (count (:sinks diagram)))
+
+(defn sources
+  [diagram]
+  (vals (:sources diagram)))
+
+(defn sinks
+  [diagram]
+  (vals (:sinks diagram)))
+
+(defn fixture-source
+  [diagram name x y]
+  (let [num (num-from-name "Source" name)
+        id (keyword (str "source-" num))]
+    (-> diagram
+        (assoc-in [:sources id] {:name name :x x :y y})
+        (update :next-source-num #(max % (inc num))))))
+
+(defn fixture-sink
+  [diagram name x y]
+  (let [num (num-from-name "Sink" name)
+        id (keyword (str "sink-" num))]
+    (-> diagram
+        (assoc-in [:sinks id] {:name name :x x :y y})
+        (update :next-sink-num #(max % (inc num))))))
+
+(defn arm-source-placement
+  [diagram]
+  (assoc diagram :placement-mode :source))
+
+(defn arm-sink-placement
+  [diagram]
+  (assoc diagram :placement-mode :sink))
+
+(defn place-source
+  [diagram x y]
+  (if (= :source (:placement-mode diagram))
+    (let [num (:next-source-num diagram)
+          name (str "Source" num)
+          id (keyword (str "source-" num))]
+      (-> diagram
+          (assoc-in [:sources id] {:name name :x x :y y})
+          (assoc :placement-mode :idle)
+          (update :next-source-num inc)))
+    diagram))
+
+(defn place-sink
+  [diagram x y]
+  (if (= :sink (:placement-mode diagram))
+    (let [num (:next-sink-num diagram)
+          name (str "Sink" num)
+          id (keyword (str "sink-" num))]
+      (-> diagram
+          (assoc-in [:sinks id] {:name name :x x :y y})
+          (assoc :placement-mode :idle)
+          (update :next-sink-num inc)))
+    diagram))
+
+(defn source-placement-disarmed?
+  [diagram]
+  (placement-disarmed? diagram))
+
+(defn sink-placement-disarmed?
+  [diagram]
+  (placement-disarmed? diagram))
+
 (defn- flow-entry-by-name
   [diagram name]
   (first (filter #(= name (:name (val %))) (:flows diagram))))
@@ -158,10 +264,20 @@
   [diagram name]
   (some? (flow-entry-by-name diagram name)))
 
+(defn flow-from
+  [diagram name]
+  (when-let [[_ flow] (flow-entry-by-name diagram name)]
+    (:from flow)))
+
+(defn flow-to
+  [diagram name]
+  (when-let [[_ flow] (flow-entry-by-name diagram name)]
+    (:to flow)))
+
 (defn flow-endpoints
   [diagram name]
   (when-let [[_ flow] (flow-entry-by-name diagram name)]
-    [(:from-stock flow) (:to-stock flow)]))
+    [(:id (:from flow)) (:id (:to flow))]))
 
 (defn flow-rate
   [diagram name]
@@ -182,10 +298,28 @@
         id (keyword (str "flow-" num))]
     (-> diagram
         (assoc-in [:flows id] {:name flow-name
-                               :from-stock from-stock
-                               :to-stock to-stock
+                               :from (endpoint-ref :stock from-stock)
+                               :to (endpoint-ref :stock to-stock)
                                :rate "0"})
         (update :next-flow-num #(max % (inc num))))))
+
+(defn- valid-flow-pair?
+  [from to]
+  (case [(:kind from) (:kind to)]
+    [:source :stock] true
+    [:stock :stock] (not= (:id from) (:id to))
+    [:stock :sink] true
+    false))
+
+(defn- create-flow!
+  [diagram from to]
+  (let [num (:next-flow-num diagram)
+        name (str "Flow" num)
+        id (keyword (str "flow-" num))]
+    (-> diagram
+        (assoc-in [:flows id] {:name name :from from :to to :rate "0"})
+        (assoc :placement-mode :idle :flow-draft nil)
+        (update :next-flow-num inc))))
 
 (defn arm-flow-placement
   [diagram]
@@ -193,33 +327,45 @@
       (assoc :placement-mode :flow)
       (assoc :flow-draft nil)))
 
+(defn flow-placement-armed?
+  [diagram]
+  (= :flow (:placement-mode diagram)))
+
 (defn select-flow-source
-  [diagram stock-name]
+  [diagram kind name]
   (if (and (= :flow (:placement-mode diagram))
            (nil? (:flow-draft diagram))
-           (stock-exists? diagram stock-name))
-    (assoc diagram :flow-draft {:from stock-name})
+           (not= kind :sink))
+    (cond
+      (and (= kind :source) (source-exists? diagram name))
+      (assoc diagram :flow-draft {:from (endpoint-ref :source name)})
+
+      (and (= kind :stock) (stock-exists? diagram name))
+      (assoc diagram :flow-draft {:from (endpoint-ref :stock name)})
+
+      :else diagram)
     diagram))
 
 (defn connect-flow
-  [diagram to-stock]
+  [diagram kind name]
   (if (and (= :flow (:placement-mode diagram))
-           (:flow-draft diagram)
-           (stock-exists? diagram to-stock))
-    (let [{:keys [from]} (:flow-draft diagram)]
-      (if (= from to-stock)
-        diagram
-        (let [num (:next-flow-num diagram)
-              name (str "Flow" num)
-              id (keyword (str "flow-" num))]
-          (-> diagram
-              (assoc-in [:flows id] {:name name
-                                     :from-stock from
-                                     :to-stock to-stock
-                                     :rate "0"})
-              (assoc :placement-mode :idle
-                     :flow-draft nil)
-              (update :next-flow-num inc)))))
+           (:flow-draft diagram))
+    (let [from (:from (:flow-draft diagram))
+          to (endpoint-ref kind name)]
+      (cond
+        (= kind :source)
+        (assoc diagram :flow-draft nil)
+
+        (and (= kind :stock) (stock-exists? diagram name)
+             (valid-flow-pair? from to))
+        (create-flow! diagram from to)
+
+        (and (= kind :sink) (sink-exists? diagram name)
+             (valid-flow-pair? from to))
+        (create-flow! diagram from to)
+
+        :else
+        (assoc diagram :flow-draft nil)))
     diagram))
 
 (defn flow-placement-disarmed?

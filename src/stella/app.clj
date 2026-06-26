@@ -17,6 +17,14 @@
     :show-about (swap! *state cmd/show-about!)
     nil))
 
+(defn- place-on-canvas!
+  [shell x y]
+  (case (get-in shell [:diagram :placement-mode])
+    :stock (cmd/place-stock-on-shell! shell x y)
+    :source (cmd/place-source-on-shell! shell x y)
+    :sink (cmd/place-sink-on-shell! shell x y)
+    shell))
+
 (defn- handle-map-event
   [event]
   (let [event-type (or (:event event) (:event/type event))]
@@ -27,13 +35,20 @@
       (= event-type events/arm-flow)
       (swap! *state cmd/arm-flow-placement-on-shell!)
 
-      (= event-type events/stock-click)
-      (when-let [stock-name (:stock-name event)]
-        (swap! *state #(cmd/select-flow-stock-on-shell! % stock-name)))
+      (= event-type events/arm-source)
+      (swap! *state cmd/arm-source-placement-on-shell!)
+
+      (= event-type events/arm-sink)
+      (swap! *state cmd/arm-sink-placement-on-shell!)
+
+      (= event-type events/endpoint-click)
+      (when-let [kind (:endpoint-kind event)]
+        (when-let [name (:endpoint-name event)]
+          (swap! *state #(cmd/select-flow-endpoint-on-shell! % kind name))))
 
       (= event-type events/canvas-click)
       (when-let [mouse ^MouseEvent (:fx/event event)]
-        (swap! *state #(cmd/place-stock-on-shell! % (int (.getX mouse)) (int (.getY mouse)))))
+        (swap! *state #(place-on-canvas! % (int (.getX mouse)) (int (.getY mouse)))))
 
       :else
       (when-let [action (actions/event->action event-type)]
