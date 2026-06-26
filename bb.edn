@@ -1,3 +1,6 @@
 {:tasks
- {run  (shell "clojure -M:run")
-  test (shell "clojure -M:test")}}
+ {run    (shell "clojure -M:run")
+  test   (shell "clojure -M:test")
+  crap   (shell "clojure -M:crap")
+  dry    (shell "clojure -M:dry src")
+  mutate (shell "clojure -M:mutate {{file}} --scan")}}

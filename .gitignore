@@ -9,3 +9,4 @@ swarmforge/scripts/
 .calva/
 .lsp/
 tmp/
+target/
