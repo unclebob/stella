@@ -71,6 +71,30 @@
   [diagram flow-name from-stock to-stock]
   (model/fixture-flow diagram flow-name from-stock to-stock))
 
+(defn arm-converter-placement!
+  [diagram]
+  (model/arm-converter-placement diagram))
+
+(defn place-converter!
+  [diagram x y]
+  (model/place-converter diagram x y))
+
+(defn fixture-converter!
+  [diagram name x y]
+  (model/fixture-converter diagram name x y))
+
+(defn arm-connector-placement!
+  [diagram]
+  (model/arm-connector-placement diagram))
+
+(defn select-connector-origin!
+  [diagram kind name]
+  (model/select-connector-origin diagram kind name))
+
+(defn connect-connector!
+  [diagram kind name]
+  (model/connect-connector diagram kind name))
+
 (defn arm-stock-placement-on-shell!
   [shell]
   (update shell :diagram arm-stock-placement!))
@@ -99,10 +123,27 @@
   [shell]
   (update shell :diagram arm-flow-placement!))
 
-(defn select-flow-endpoint-on-shell!
+(defn arm-converter-placement-on-shell!
+  [shell]
+  (update shell :diagram arm-converter-placement!))
+
+(defn place-converter-on-shell!
+  [shell x y]
+  (update shell :diagram #(place-converter! % x y)))
+
+(defn arm-connector-placement-on-shell!
+  [shell]
+  (update shell :diagram arm-connector-placement!))
+
+(defn select-endpoint-on-shell!
   [shell kind name]
   (update shell :diagram
           (fn [diagram]
-            (if (:flow-draft diagram)
-              (connect-flow! diagram kind name)
-              (select-flow-source! diagram kind name)))))
+            (case (:placement-mode diagram)
+              :flow (if (:flow-draft diagram)
+                      (connect-flow! diagram kind name)
+                      (select-flow-source! diagram kind name))
+              :connector (if (:connector-draft diagram)
+                           (connect-connector! diagram kind name)
+                           (select-connector-origin! diagram kind name))
+              diagram))))

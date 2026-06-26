@@ -39,12 +39,17 @@
    :sources {}
    :sinks {}
    :flows {}
+   :converters {}
+   :connectors {}
    :placement-mode :idle
    :flow-draft nil
+   :connector-draft nil
    :next-stock-num 1
    :next-source-num 1
    :next-sink-num 1
-   :next-flow-num 1})
+   :next-flow-num 1
+   :next-converter-num 1
+   :next-connector-num 1})
 
 (defn default-shell []
   {:showing true
@@ -369,5 +374,189 @@
     diagram))
 
 (defn flow-placement-disarmed?
+  [diagram]
+  (placement-disarmed? diagram))
+
+(defn- converter-entry-by-name
+  [diagram name]
+  (first (filter #(= name (:name (val %))) (:converters diagram))))
+
+(defn converter-exists?
+  [diagram name]
+  (some? (converter-entry-by-name diagram name)))
+
+(defn converter-position
+  [diagram name]
+  (when-let [[_ converter] (converter-entry-by-name diagram name)]
+    [(:x converter) (:y converter)]))
+
+(defn converter-value
+  [diagram name]
+  (when-let [[_ converter] (converter-entry-by-name diagram name)]
+    (:value converter)))
+
+(defn converter-count
+  [diagram]
+  (count (:converters diagram)))
+
+(defn converters
+  [diagram]
+  (vals (:converters diagram)))
+
+(defn fixture-converter
+  [diagram name x y]
+  (let [num (num-from-name "Converter" name)
+        id (keyword (str "converter-" num))]
+    (-> diagram
+        (assoc-in [:converters id] {:name name :value "0" :x x :y y})
+        (update :next-converter-num #(max % (inc num))))))
+
+(defn arm-converter-placement
+  [diagram]
+  (assoc diagram :placement-mode :converter))
+
+(defn place-converter
+  [diagram x y]
+  (if (= :converter (:placement-mode diagram))
+    (let [num (:next-converter-num diagram)
+          name (str "Converter" num)
+          id (keyword (str "converter-" num))]
+      (-> diagram
+          (assoc-in [:converters id] {:name name :value "0" :x x :y y})
+          (assoc :placement-mode :idle)
+          (update :next-converter-num inc)))
+    diagram))
+
+(defn converter-placement-disarmed?
+  [diagram]
+  (placement-disarmed? diagram))
+
+(declare flow-midpoint)
+
+(defn- endpoint-anchor
+  [pos kind side]
+  (let [[x y] pos]
+    (case [kind side]
+      [:stock :right] [(+ x 80.0) (+ y 25.0)]
+      [:stock :left] [x (+ y 25.0)]
+      [:source :right] [(+ x 80.0) (+ y 25.0)]
+      [:sink :left] [x (+ y 25.0)]
+      [:converter :right] [(+ x 50.0) (+ y 25.0)]
+      [:converter :left] [x (+ y 25.0)]
+      [:flow :right] [(+ x 10.0) y]
+      [:flow :left] [(- x 10.0) y]
+      [x y])))
+
+(defn- endpoint-position
+  [diagram {:keys [kind id]}]
+  (case kind
+    :stock (stock-position diagram id)
+    :source (source-position diagram id)
+    :sink (sink-position diagram id)
+    :converter (converter-position diagram id)
+    :flow (flow-midpoint diagram id)
+    nil))
+
+(defn flow-midpoint
+  [diagram name]
+  (when-let [[_ flow] (flow-entry-by-name diagram name)]
+    (when-let [from-pos (endpoint-position diagram (:from flow))]
+      (when-let [to-pos (endpoint-position diagram (:to flow))]
+        (let [[fx fy] (endpoint-anchor from-pos (:kind (:from flow)) :right)
+              [tx ty] (endpoint-anchor to-pos (:kind (:to flow)) :left)]
+          [(/ (+ fx tx) 2.0) (/ (+ fy ty) 2.0)])))))
+
+(defn- connector-entry-by-name
+  [diagram name]
+  (first (filter #(= name (:name (val %))) (:connectors diagram))))
+
+(defn connector-exists?
+  [diagram name]
+  (some? (connector-entry-by-name diagram name)))
+
+(defn connector-from
+  [diagram name]
+  (when-let [[_ connector] (connector-entry-by-name diagram name)]
+    (:from connector)))
+
+(defn connector-to
+  [diagram name]
+  (when-let [[_ connector] (connector-entry-by-name diagram name)]
+    (:to connector)))
+
+(defn connector-count
+  [diagram]
+  (count (:connectors diagram)))
+
+(defn connectors
+  [diagram]
+  (vals (:connectors diagram)))
+
+(defn- endpoint-exists?
+  [diagram kind name]
+  (case kind
+    :stock (stock-exists? diagram name)
+    :converter (converter-exists? diagram name)
+    :flow (flow-exists? diagram name)
+    :source (source-exists? diagram name)
+    :sink (sink-exists? diagram name)
+    false))
+
+(defn- valid-connector-pair?
+  [from to]
+  (case [(:kind from) (:kind to)]
+    [:converter :flow] true
+    [:stock :converter] true
+    false))
+
+(defn- create-connector!
+  [diagram from to]
+  (let [num (:next-connector-num diagram)
+        name (str "Connector" num)
+        id (keyword (str "connector-" num))]
+    (-> diagram
+        (assoc-in [:connectors id] {:name name :from from :to to})
+        (assoc :placement-mode :idle :connector-draft nil)
+        (update :next-connector-num inc))))
+
+(defn arm-connector-placement
+  [diagram]
+  (-> diagram
+      (assoc :placement-mode :connector)
+      (assoc :connector-draft nil)))
+
+(defn connector-placement-armed?
+  [diagram]
+  (= :connector (:placement-mode diagram)))
+
+(defn select-connector-origin
+  [diagram kind name]
+  (if (and (= :connector (:placement-mode diagram))
+           (nil? (:connector-draft diagram))
+           (not= kind :flow)
+           (not (contains? #{:source :sink} kind))
+           (endpoint-exists? diagram kind name))
+    (assoc diagram :connector-draft {:from (endpoint-ref kind name)})
+    diagram))
+
+(defn connect-connector
+  [diagram kind name]
+  (if (and (= :connector (:placement-mode diagram))
+           (:connector-draft diagram))
+    (let [from (:from (:connector-draft diagram))
+          to (endpoint-ref kind name)]
+      (cond
+        (contains? #{:source :sink :stock} kind)
+        (assoc diagram :connector-draft nil)
+
+        (and (endpoint-exists? diagram kind name)
+             (valid-connector-pair? from to))
+        (create-connector! diagram from to)
+
+        :else
+        (assoc diagram :connector-draft nil)))
+    diagram))
+
+(defn connector-placement-disarmed?
   [diagram]
   (placement-disarmed? diagram))

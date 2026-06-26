@@ -23,6 +23,7 @@
     :stock (cmd/place-stock-on-shell! shell x y)
     :source (cmd/place-source-on-shell! shell x y)
     :sink (cmd/place-sink-on-shell! shell x y)
+    :converter (cmd/place-converter-on-shell! shell x y)
     shell))
 
 (defn- handle-map-event
@@ -41,10 +42,16 @@
       (= event-type events/arm-sink)
       (swap! *state cmd/arm-sink-placement-on-shell!)
 
+      (= event-type events/arm-converter)
+      (swap! *state cmd/arm-converter-placement-on-shell!)
+
+      (= event-type events/arm-connector)
+      (swap! *state cmd/arm-connector-placement-on-shell!)
+
       (= event-type events/endpoint-click)
       (when-let [kind (:endpoint-kind event)]
         (when-let [name (:endpoint-name event)]
-          (swap! *state #(cmd/select-flow-endpoint-on-shell! % kind name))))
+          (swap! *state #(cmd/select-endpoint-on-shell! % kind name))))
 
       (= event-type events/canvas-click)
       (when-let [mouse ^MouseEvent (:fx/event event)]

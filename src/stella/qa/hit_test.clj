@@ -39,3 +39,28 @@
                 mid-x (/ (+ fx tx 80) 2.0)
                 mid-y (/ (+ fy ty 50) 2.0)]
             [[:flow name] {:x mid-x :y mid-y :w 60 :h 30}])))
+
+(defn converter-targets
+  "Returns semantic hit-test targets for converters on the diagram."
+  [diagram]
+  (into {}
+        (for [{:keys [name x y]} (model/converters diagram)]
+          [[:converter name] {:x x :y :y :w 50 :h 50}])))
+
+(defn connector-targets
+  "Returns semantic hit-test targets for connectors on the diagram."
+  [diagram]
+  (into {}
+        (for [{:keys [name from to]} (model/connectors diagram)
+              :let [from-pos (case (:kind from)
+                               :stock (model/stock-position diagram (:id from))
+                               :converter (model/converter-position diagram (:id from)))
+                    to-pos (case (:kind to)
+                             :flow (model/flow-midpoint diagram (:id to))
+                             :converter (model/converter-position diagram (:id to)))]
+              :when (and from-pos to-pos)]
+          (let [[fx fy] from-pos
+                [tx ty] to-pos
+                mid-x (/ (+ fx tx) 2.0)
+                mid-y (/ (+ fy ty) 2.0)]
+            [[:connector name] {:x mid-x :y mid-y :w 60 :h 20}])))
