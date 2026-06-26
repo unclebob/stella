@@ -1,7 +1,7 @@
 # Implementation Plan: Connectors
 
 **Task:** `connectors`  
-**Status:** Specified (pending handoff approval)  
+**Status:** Approved  
 **Depends on:** `place-stock`, `connect-flow`
 
 ## User story
