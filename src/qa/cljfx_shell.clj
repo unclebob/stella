@@ -137,12 +137,109 @@
       (pass! "shell-quit" "File → Quit closes the window")
       (System/exit 0))))
 
+(defn- run-place-stock! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (when-not (ui/region-bounds stage :canvas)
+        (fail! "Canvas region :canvas is not visible"))
+      (pass! "place-stock" "Canvas region is visible")
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas :center)
+      (when-not (ui/wait-for-element! stage :stock "Stock1")
+        (fail! "Stock1 did not appear"))
+      (when-not (ui/element-shows? stage :stock "Stock1" "Stock1")
+        (fail! "Stock1 name not visible"))
+      (when-not (ui/element-shows? stage :stock "Stock1" "0")
+        (fail! "Stock1 initial value not visible"))
+      (pass! "place-stock" "Stock1 placed with name and value 0")
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas [100 50])
+      (when-not (ui/wait-for-element! stage :stock "Stock2")
+        (fail! "Stock2 did not appear"))
+      (when-not (ui/element-shows? stage :stock "Stock2" "Stock2")
+        (fail! "Stock2 name not visible"))
+      (when-not (ui/element-shows? stage :stock "Stock2" "0")
+        (fail! "Stock2 initial value not visible"))
+      (pass! "place-stock" "Stock2 placed with name and value 0")
+      (ui/quit-app! stage)
+      (pass! "place-stock" "Quit requested"))))
+
+(defn- place-two-stocks! [^Stage stage]
+  (ui/click-palette! stage "Stock")
+  (ui/click-in-region! stage :canvas :center)
+  (when-not (ui/wait-for-element! stage :stock "Stock1")
+    (fail! "Stock1 not placed"))
+  (ui/click-palette! stage "Stock")
+  (ui/click-in-region! stage :canvas [150 50])
+  (when-not (ui/wait-for-element! stage :stock "Stock2")
+    (fail! "Stock2 not placed")))
+
+(defn- assert-flow! [^Stage stage flow-name from-name to-name & {:keys [suite show-name?]
+                                                                 :or {show-name? true}}]
+  (when-not (ui/wait-for-element! stage :flow flow-name)
+    (fail! (str flow-name " did not appear")))
+  (when show-name?
+    (when-not (ui/element-shows? stage :flow flow-name flow-name)
+      (fail! (str flow-name " name not visible"))))
+  (when-not (ui/element-shows? stage :flow flow-name "0")
+    (fail! (str flow-name " rate not visible")))
+  (when-not (ui/flow-directed? stage from-name to-name)
+    (fail! (str flow-name " direction from " from-name " to " to-name " not visible")))
+  (when suite
+    (pass! suite (str flow-name " connects " from-name " to " to-name
+                      (when show-name? " with rate 0")))))
+
+(defn- run-connect-flow! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (place-two-stocks! stage)
+      (ui/click-palette! stage "Flow")
+      (ui/click-element! stage :stock "Stock1")
+      (ui/click-element! stage :stock "Stock2")
+      (assert-flow! stage "Flow1" "Stock1" "Stock2" :suite "connect-flow")
+      (ui/quit-app! stage)
+      (pass! "connect-flow" "Quit requested"))))
+
+(defn- run-cloud-endpoints! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (ui/click-palette! stage "Source")
+      (ui/click-in-region! stage :canvas [-150 0])
+      (when-not (ui/wait-for-element! stage :source "Source1")
+        (fail! "Source1 did not appear"))
+      (pass! "cloud-endpoints" "Source1 placed")
+      (ui/click-palette! stage "Sink")
+      (ui/click-in-region! stage :canvas [150 0])
+      (when-not (ui/wait-for-element! stage :sink "Sink1")
+        (fail! "Sink1 did not appear"))
+      (pass! "cloud-endpoints" "Sink1 placed")
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas :center)
+      (when-not (ui/wait-for-element! stage :stock "Stock1")
+        (fail! "Stock1 did not appear"))
+      (pass! "cloud-endpoints" "Stock1 placed")
+      (ui/click-palette! stage "Flow")
+      (ui/click-element! stage :source "Source1")
+      (ui/click-element! stage :stock "Stock1")
+      (assert-flow! stage "Flow1" "Source1" "Stock1"
+                    :suite "cloud-endpoints" :show-name? false)
+      (ui/click-palette! stage "Flow")
+      (ui/click-element! stage :stock "Stock1")
+      (ui/click-element! stage :sink "Sink1")
+      (assert-flow! stage "Flow2" "Stock1" "Sink1"
+                    :suite "cloud-endpoints" :show-name? false)
+      (ui/quit-app! stage)
+      (pass! "cloud-endpoints" "Quit requested"))))
+
 (def ^:private suites
   {"shell-launch" run-shell-launch!
    "shell-menus" run-shell-menus!
    "shell-about" run-shell-about!
    "shell-resize" run-shell-resize!
-   "shell-quit" run-shell-quit!})
+   "shell-quit" run-shell-quit!
+   "place-stock" run-place-stock!
+   "connect-flow" run-connect-flow!
+   "cloud-endpoints" run-cloud-endpoints!})
 
 (defn -main [& args]
   (when-not (first args)
