@@ -114,23 +114,24 @@
     (model/endpoint-clickable? diagram kind)
     (assoc :on-mouse-clicked (endpoint-click kind name))))
 
+(defn- overlay-segment
+  [items]
+  (when (seq items) (str/join " | " items)))
+
 (defn diagram-overlay-text
   [diagram]
-  (let [stocks (for [{:keys [name initial-value]} (model/stocks diagram)]
-                (str name " " initial-value))
-        flows (for [{:keys [name rate]} (model/flows diagram)]
-                (str name " " rate))
-        sources (for [{:keys [name]} (model/sources diagram)] name)
-        sinks (for [{:keys [name]} (model/sinks diagram)] name)
-        converters (for [{:keys [name value]} (model/converters diagram)]
-                     (str name " " value))
-        connectors (for [{:keys [name]} (model/connectors diagram)] name)]
-    (str (str/join " | " stocks)
-         (when (seq flows) (str " || " (str/join " | " flows)))
-         (when (seq sources) (str " || " (str/join " | " sources)))
-         (when (seq sinks) (str " || " (str/join " | " sinks)))
-         (when (seq converters) (str " || " (str/join " | " converters)))
-         (when (seq connectors) (str " || " (str/join " | " connectors))))))
+  (->> [(overlay-segment (map (fn [{:keys [name initial-value]}]
+                                 (str name " " initial-value))
+                               (model/stocks diagram)))
+        (overlay-segment (map (fn [{:keys [name rate]}] (str name " " rate))
+                                (model/flows diagram)))
+        (overlay-segment (map :name (model/sources diagram)))
+        (overlay-segment (map :name (model/sinks diagram)))
+        (overlay-segment (map (fn [{:keys [name value]}] (str name " " value))
+                              (model/converters diagram)))
+        (overlay-segment (map :name (model/connectors diagram)))]
+       (remove nil?)
+       (str/join " || ")))
 
 (defn- canvas-background []
   {:fx/type :rectangle

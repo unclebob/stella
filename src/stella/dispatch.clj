@@ -15,14 +15,16 @@
   [shell]
   (get-in shell [:diagram :placement-mode]))
 
+(def ^:private canvas-place-commands
+  {:stock cmd/place-stock-on-shell!
+   :source cmd/place-source-on-shell!
+   :sink cmd/place-sink-on-shell!
+   :converter cmd/place-converter-on-shell!})
+
 (defn- place-on-canvas
   [shell [x y]]
-  (case (placement-mode shell)
-    :stock (cmd/place-stock-on-shell! shell x y)
-    :source (cmd/place-source-on-shell! shell x y)
-    :sink (cmd/place-sink-on-shell! shell x y)
-    :converter (cmd/place-converter-on-shell! shell x y)
-    :idle shell
+  (if-let [place! (get canvas-place-commands (placement-mode shell))]
+    (place! shell x y)
     shell))
 
 (defn- diagram-shell-updaters
