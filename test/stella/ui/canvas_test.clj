@@ -17,9 +17,11 @@
                   (cmd/arm-stock-placement-on-shell!)
                   (cmd/place-stock-on-shell! 200 150))
         desc (canvas/canvas-desc shell)
-        stocks (filter #(= :group (:fx/type %)) (:children desc))]
+        stocks (filter #(= :group (:fx/type %)) (:children desc))
+        stock (first stocks)]
     (is (= 1 (count stocks)))
-    (is (= "stock-Stock1" (:id (first stocks))))))
+    (is (= "stock-Stock1" (:id stock)))
+    (is (= :v-box (:fx/type (second (:children stock)))))))
 
 (deftest canvas-renders-flows-test
   (let [diagram (-> (cmd/default-diagram! nil)
