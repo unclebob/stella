@@ -59,10 +59,27 @@
 (deftest endpoint-geometry-test
   (let [diagram (-> (model/default-diagram)
                     (model/fixture-stock "Stock1" 100 100)
-                    (model/fixture-source "Source1" 50 150))]
+                    (model/fixture-stock "Stock2" 300 200)
+                    (model/fixture-flow "Flow1" "Stock1" "Stock2")
+                    (model/fixture-source "Source1" 50 150)
+                    (model/fixture-sink "Sink1" 400 150)
+                    (model/fixture-converter "Converter1" 25 75))]
     (is (= [100 100] (model/endpoint-position diagram {:kind :stock :id "Stock1"})))
     (is (= [50 150] (model/endpoint-position diagram {:kind :source :id "Source1"})))
+    (is (= [400 150] (model/endpoint-position diagram {:kind :sink :id "Sink1"})))
+    (is (= [25 75] (model/endpoint-position diagram {:kind :converter :id "Converter1"})))
+    (is (= [240.0 175.0] (model/endpoint-position diagram {:kind :flow :id "Flow1"})))
+    (is (= [240.0 175.0] (model/flow-midpoint diagram "Flow1")))
+    (is (nil? (model/endpoint-position diagram {:kind :unknown :id "X"})))
     (is (= [180.0 125.0] (model/endpoint-anchor [100 100] :stock :right)))
     (is (= [100.0 125.0] (model/endpoint-anchor [100 100] :stock :left)))
     (is (= [130.0 175.0] (model/endpoint-anchor [50 150] :source :right)))
     (is (= [400.0 175.0] (model/endpoint-anchor [400 150] :sink :left)))))
+
+(deftest endpoint-clickable-test
+  (let [diagram (model/default-diagram)]
+    (is (model/endpoint-clickable? (model/arm-flow-placement diagram) :stock))
+    (is (model/endpoint-clickable? (model/arm-flow-placement diagram) :source))
+    (is (not (model/endpoint-clickable? (model/arm-flow-placement diagram) :flow)))
+    (is (model/endpoint-clickable? (model/arm-connector-placement diagram) :converter))
+    (is (not (model/endpoint-clickable? diagram :stock)))))
