@@ -114,23 +114,24 @@
     (model/endpoint-clickable? diagram kind)
     (assoc :on-mouse-clicked (endpoint-click kind name))))
 
+(defn- overlay-segment
+  [items]
+  (when (seq items) (str/join " | " items)))
+
 (defn diagram-overlay-text
   [diagram]
-  (let [stocks (for [{:keys [name initial-value]} (model/stocks diagram)]
-                (str name " " initial-value))
-        flows (for [{:keys [name rate]} (model/flows diagram)]
-                (str name " " rate))
-        sources (for [{:keys [name]} (model/sources diagram)] name)
-        sinks (for [{:keys [name]} (model/sinks diagram)] name)
-        converters (for [{:keys [name value]} (model/converters diagram)]
-                     (str name " " value))
-        connectors (for [{:keys [name]} (model/connectors diagram)] name)]
-    (str (str/join " | " stocks)
-         (when (seq flows) (str " || " (str/join " | " flows)))
-         (when (seq sources) (str " || " (str/join " | " sources)))
-         (when (seq sinks) (str " || " (str/join " | " sinks)))
-         (when (seq converters) (str " || " (str/join " | " converters)))
-         (when (seq connectors) (str " || " (str/join " | " connectors))))))
+  (->> [(overlay-segment (map (fn [{:keys [name initial-value]}]
+                                 (str name " " initial-value))
+                               (model/stocks diagram)))
+        (overlay-segment (map (fn [{:keys [name rate]}] (str name " " rate))
+                              (model/flows diagram)))
+        (overlay-segment (map :name (model/sources diagram)))
+        (overlay-segment (map :name (model/sinks diagram)))
+        (overlay-segment (map (fn [{:keys [name value]}] (str name " " value))
+                              (model/converters diagram)))
+        (overlay-segment (map :name (model/connectors diagram)))]
+       (remove nil?)
+       (str/join " || ")))
 
 (defn- canvas-background []
   {:fx/type :rectangle
@@ -160,3 +161,7 @@
 (defn canvas-desc
   [shell]
   (canvas-stack shell))
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-26T18:02:22.398105-05:00", :module-hash "236193478", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "477415667"} {:id "defn-/endpoint-click", :kind "defn-", :line 6, :end-line 8, :hash "-1042549141"} {:id "defn-/flow-desc", :kind "defn-", :line 10, :end-line 34, :hash "-1620991121"} {:id "defn-/connector-desc", :kind "defn-", :line 36, :end-line 57, :hash "1129973901"} {:id "defn-/stock-desc", :kind "defn-", :line 59, :end-line 76, :hash "-839302979"} {:id "defn-/converter-desc", :kind "defn-", :line 78, :end-line 96, :hash "111892878"} {:id "defn-/cloud-desc", :kind "defn-", :line 98, :end-line 115, :hash "274228855"} {:id "defn-/overlay-segment", :kind "defn-", :line 117, :end-line 119, :hash "-1910896273"} {:id "defn/diagram-overlay-text", :kind "defn", :line 121, :end-line 134, :hash "1103884749"} {:id "defn-/canvas-background", :kind "defn-", :line 136, :end-line 141, :hash "538381286"} {:id "defn/canvas-stack", :kind "defn", :line 143, :end-line 159, :hash "1465581755"} {:id "defn/canvas-desc", :kind "defn", :line 161, :end-line 163, :hash "-772167057"}]}
+;; clj-mutate-manifest-end

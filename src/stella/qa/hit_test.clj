@@ -4,8 +4,8 @@
   (:import [javafx.geometry Bounds]
            [javafx.scene Node Parent]
            [javafx.scene.control Label]
-            [javafx.scene Group]
-            [javafx.scene.layout BorderPane Pane StackPane]
+           [javafx.scene Group]
+           [javafx.scene.layout BorderPane Pane StackPane]
            [javafx.stage Stage]))
 
 (defn- canvas-node [^Stage stage]
