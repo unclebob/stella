@@ -231,6 +231,45 @@
       (ui/quit-app! stage)
       (pass! "cloud-endpoints" "Quit requested"))))
 
+(defn- run-connectors! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas [-100 0])
+      (when-not (ui/wait-for-element! stage :stock "Stock1")
+        (fail! "Stock1 not placed"))
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas [100 0])
+      (when-not (ui/wait-for-element! stage :stock "Stock2")
+        (fail! "Stock2 not placed"))
+      (ui/click-palette! stage "Flow")
+      (ui/click-element! stage :stock "Stock1")
+      (ui/click-element! stage :stock "Stock2")
+      (assert-flow! stage "Flow1" "Stock1" "Stock2" :suite "connectors")
+      (ui/click-palette! stage "Converter")
+      (ui/click-in-region! stage :canvas [0 100])
+      (when-not (ui/wait-for-element! stage :converter "Converter1")
+        (fail! "Converter1 did not appear"))
+      (when-not (ui/element-shows? stage :converter "Converter1" "0")
+        (fail! "Converter1 value not visible"))
+      (pass! "connectors" "Converter1 placed with value 0")
+      (ui/click-palette! stage "Connector")
+      (ui/click-element! stage :converter "Converter1")
+      (ui/click-element! stage :flow "Flow1")
+      (when-not (ui/wait-for-element! stage :connector "Connector1")
+        (fail! "Connector1 did not appear"))
+      (pass! "connectors" "Connector1 connects Converter1 to Flow1")
+      (ui/click-palette! stage "Connector")
+      (ui/click-element! stage :stock "Stock1")
+      (ui/click-element! stage :converter "Converter1")
+      (when-not (ui/wait-for-element! stage :connector "Connector2")
+        (fail! "Connector2 did not appear"))
+      (when-not (ui/connector-directed? stage :stock "Stock1" :converter "Converter1")
+        (fail! "Connector2 direction from Stock1 to Converter1 not visible"))
+      (pass! "connectors" "Connector2 connects Stock1 to Converter1")
+      (ui/quit-app! stage)
+      (pass! "connectors" "Quit requested"))))
+
 (def ^:private suites
   {"shell-launch" run-shell-launch!
    "shell-menus" run-shell-menus!
@@ -239,7 +278,8 @@
    "shell-quit" run-shell-quit!
    "place-stock" run-place-stock!
    "connect-flow" run-connect-flow!
-   "cloud-endpoints" run-cloud-endpoints!})
+   "cloud-endpoints" run-cloud-endpoints!
+   "connectors" run-connectors!})
 
 (defn -main [& args]
   (when-not (first args)

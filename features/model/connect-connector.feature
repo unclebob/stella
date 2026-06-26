@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=742034f7bb2a7f90ac3e1a368d698e875344cc4afdac6ef8c649ff3133e3a041
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-06-26T22:13:33.862210Z","feature_name":"Connect connector","feature_path":"features/model/connect-connector.feature","background_hash":"5808bfcb3b07c6dd5e284554e16457b05d031f3bbe7d173d432565da245bef4d","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Connect converter to flow with connector","scenario_hash":"71fd154a589dc1e7b26722a118de122aeffe1395d670172779ef8dccadb3981d","mutation_count":3,"result":{"Total":3,"Killed":3,"Survived":0,"Errors":0},"tested_at":"2026-06-26T22:13:33.862210Z"},{"index":1,"name":"Connect stock to converter with connector","scenario_hash":"2b0c839f802a6b39a363f342362798da1610ae37e7fc02995f5af93189585a11","mutation_count":3,"result":{"Total":3,"Killed":3,"Survived":0,"Errors":0},"tested_at":"2026-06-26T22:13:33.862210Z"},{"index":5,"name":"Completing connector disarms the tool","scenario_hash":"8bc3c4390518b4427ab238444f5ebf913a1dade93d8f245ea604557148a3950e","mutation_count":2,"result":{"Total":2,"Killed":2,"Survived":0,"Errors":0},"tested_at":"2026-06-26T22:13:33.862210Z"}]}
+# acceptance-mutation-manifest-end
+
 Feature: Connect connector
 
 Background:

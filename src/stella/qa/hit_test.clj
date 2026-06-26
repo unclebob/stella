@@ -129,12 +129,8 @@
         (for [{:keys [name from to]} (model/flows diagram)
               :let [from-pos (model/endpoint-position diagram from)
                     to-pos (model/endpoint-position diagram to)]
-              :when (and from-pos to-pos)
-              :let [[fx fy] from-pos
-                    [tx ty] to-pos
-                    mid-x (/ (+ fx tx 80) 2.0)
-                    mid-y (/ (+ fy ty 50) 2.0)]]
-          [[:flow name] {:x mid-x :y mid-y :w 60 :h 30}]))
+              :when (and from-pos to-pos)]
+          [[:flow name] (link-target from-pos to-pos 60 30)])))
 
 (defn connector-targets
   "Returns semantic hit-test targets for connectors on the diagram."
