@@ -1,26 +1,23 @@
 (ns stella.ui.palette
   (:require [stella.events :as events]))
 
+(def ^:private button-spacing 36)
+
+(defn- palette-button [index label event]
+  {:fx/type :button
+   :layout-y (* index button-spacing)
+   :text label
+   :on-action {:event event}})
+
 (defn palette-desc
   []
-  {:fx/type :vbox
-   :style "-fx-padding: 8; -fx-spacing: 8; -fx-background-color: #e8e8e8;"
+  {:fx/type :pane
+   :style "-fx-background-color: #e8e8e8;"
    :pref-width 80
-   :children [{:fx/type :button
-               :text "Stock"
-               :on-action {:event events/arm-stock}}
-              {:fx/type :button
-               :text "Flow"
-               :on-action {:event events/arm-flow}}
-              {:fx/type :button
-               :text "Source"
-               :on-action {:event events/arm-source}}
-              {:fx/type :button
-               :text "Sink"
-               :on-action {:event events/arm-sink}}
-              {:fx/type :button
-               :text "Converter"
-               :on-action {:event events/arm-converter}}
-              {:fx/type :button
-               :text "Connector"
-               :on-action {:event events/arm-connector}}]})
+   :min-width 80
+   :children [(palette-button 0 "Stock" events/arm-stock)
+              (palette-button 1 "Flow" events/arm-flow)
+              (palette-button 2 "Source" events/arm-source)
+              (palette-button 3 "Sink" events/arm-sink)
+              (palette-button 4 "Converter" events/arm-converter)
+              (palette-button 5 "Connector" events/arm-connector)]})

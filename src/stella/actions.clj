@@ -18,5 +18,5 @@
     :else nil))
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-26T14:50:15.902143-05:00", :module-hash "-211100532", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 2, :hash "-2002190841"} {:id "defn/event->action", :kind "defn", :line 4, :end-line 10, :hash "1106798315"} {:id "defn/action->effect", :kind "defn", :line 12, :end-line 18, :hash "772225751"}]}
+;; {:version 1, :tested-at "2026-06-26T15:39:41.700918-05:00", :module-hash "-211100532", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 2, :hash "-2002190841"} {:id "defn/event->action", :kind "defn", :line 4, :end-line 10, :hash "1106798315"} {:id "defn/action->effect", :kind "defn", :line 12, :end-line 18, :hash "772225751"}]}
 ;; clj-mutate-manifest-end

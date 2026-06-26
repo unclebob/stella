@@ -8,13 +8,18 @@
            :extra-deps {io.github.cognitect-labs/test-runner
                         {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
            :main-opts ["-m" "cognitect.test-runner"
-                        "-d" "acceptance/generated"]}
+                       "-d" "acceptance/generated"]}
   :test {:extra-paths ["test" "acceptance/generated"]
          :extra-deps {io.github.cognitect-labs/test-runner
                       {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
          :main-opts ["-m" "cognitect.test-runner"
-                      "-d" "test"
-                      "-d" "acceptance/generated"]}
+                     "-d" "test"
+                     "-d" "acceptance/generated"]}
+  :unit {:extra-paths ["test"]
+         :extra-deps {io.github.cognitect-labs/test-runner
+                      {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
+         :main-opts ["-m" "cognitect.test-runner" "-d" "test"]}
+  :acceptance-mutation-runner {:main-opts ["-m" "stella.acceptance.mutation-runner"]}
   :property {:extra-paths ["test" "test-property"]
              :extra-deps {io.github.cognitect-labs/test-runner
                           {:git/tag "v0.5.1" :git/sha "dfb30dd"}

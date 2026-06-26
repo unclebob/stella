@@ -32,17 +32,26 @@
 
 (def rules
   [{:label "UI and core modules must not depend on CljFX or JavaFX"
-    :ns-pattern #"^stella\.(events|actions|ui)"
+    :ns-pattern #"^stella\.(events|actions|model|commands|dispatch|ui)"
     :forbidden #"^(cljfx|javafx)"}
    {:label "UI modules must not depend on application or FX adapters"
     :ns-pattern #"^stella\.ui"
     :forbidden #"^stella\.(app|fx)"}
-   {:label "Core policy must not depend on UI, app shell, or FX adapters"
-    :ns-pattern #"^stella\.actions$"
+   {:label "Domain model must not depend on UI, app shell, or FX adapters"
+    :ns-pattern #"^stella\.model$"
     :forbidden #"^stella\.(ui|app|fx|cljfx)"}
-   {:label "FX effects must not depend on UI descriptions or CljFX"
+   {:label "Commands must depend only on the domain model"
+    :ns-pattern #"^stella\.commands$"
+    :forbidden #"^stella\.(ui|app|fx|actions|dispatch|cljfx)"}
+   {:label "Core policy must not depend on UI, app shell, or FX adapters"
+    :ns-pattern #"^stella\.(actions|dispatch)$"
+    :forbidden #"^stella\.(ui|app|fx|cljfx)"}
+   {:label "Acceptance steps must not depend on live UI or FX adapters"
+    :ns-pattern #"^stella\.acceptance"
+    :forbidden #"^stella\.(ui|app|fx|cljfx)"}
+   {:label "FX adapters must not depend on UI descriptions or CljFX"
     :ns-pattern #"^stella\.fx"
-    :forbidden #"^(stella\.ui|cljfx)"}])
+    :forbidden #"^(stella\.ui|cljfx|stella\.app)"}])
 
 (defn- violations []
   (mapcat

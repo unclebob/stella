@@ -55,3 +55,14 @@
                     (model/select-flow-source :stock "Stock1")
                     (model/connect-flow :source "Source1"))]
     (is (zero? (model/flow-count diagram)))))
+
+(deftest endpoint-geometry-test
+  (let [diagram (-> (model/default-diagram)
+                    (model/fixture-stock "Stock1" 100 100)
+                    (model/fixture-source "Source1" 50 150))]
+    (is (= [100 100] (model/endpoint-position diagram {:kind :stock :id "Stock1"})))
+    (is (= [50 150] (model/endpoint-position diagram {:kind :source :id "Source1"})))
+    (is (= [180.0 125.0] (model/endpoint-anchor [100 100] :stock :right)))
+    (is (= [100.0 125.0] (model/endpoint-anchor [100 100] :stock :left)))
+    (is (= [130.0 175.0] (model/endpoint-anchor [50 150] :source :right)))
+    (is (= [400.0 175.0] (model/endpoint-anchor [400 150] :sink :left)))))

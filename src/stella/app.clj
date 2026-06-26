@@ -1,73 +1,31 @@
 (ns stella.app
   (:require [cljfx.api :as fx]
-            [stella.actions :as actions]
             [stella.commands :as cmd]
-            [stella.events :as events]
+            [stella.dispatch :as dispatch]
             [stella.fx.effects :as fx-effects]
-            [stella.ui.root :as root])
-  (:import [javafx.scene.input MouseEvent]))
+            [stella.fx.input :as fx-input]
+            [stella.fx.overlay :as fx-overlay]
+            [stella.ui.root :as root]))
 
 (defonce *state
   (atom (cmd/default-shell! nil)))
 
-(defn- apply-shell-action!
-  [action]
-  (case action
-    :quit (swap! *state cmd/quit!)
-    :show-about (swap! *state cmd/show-about!)
-    nil))
-
-(defn- place-on-canvas!
-  [shell x y]
-  (case (get-in shell [:diagram :placement-mode])
-    :stock (cmd/place-stock-on-shell! shell x y)
-    :source (cmd/place-source-on-shell! shell x y)
-    :sink (cmd/place-sink-on-shell! shell x y)
-    :converter (cmd/place-converter-on-shell! shell x y)
-    shell))
-
-(defn- handle-map-event
-  [event]
-  (let [event-type (or (:event event) (:event/type event))]
-    (cond
-      (= event-type events/arm-stock)
-      (swap! *state cmd/arm-stock-placement-on-shell!)
-
-      (= event-type events/arm-flow)
-      (swap! *state cmd/arm-flow-placement-on-shell!)
-
-      (= event-type events/arm-source)
-      (swap! *state cmd/arm-source-placement-on-shell!)
-
-      (= event-type events/arm-sink)
-      (swap! *state cmd/arm-sink-placement-on-shell!)
-
-      (= event-type events/arm-converter)
-      (swap! *state cmd/arm-converter-placement-on-shell!)
-
-      (= event-type events/arm-connector)
-      (swap! *state cmd/arm-connector-placement-on-shell!)
-
-      (= event-type events/endpoint-click)
-      (when-let [kind (:endpoint-kind event)]
-        (when-let [name (:endpoint-name event)]
-          (swap! *state #(cmd/select-endpoint-on-shell! % kind name))))
-
-      (= event-type events/canvas-click)
-      (when-let [mouse ^MouseEvent (:fx/event event)]
-        (swap! *state #(place-on-canvas! % (int (.getX mouse)) (int (.getY mouse)))))
-
-      :else
-      (when-let [action (actions/event->action event-type)]
-        (apply-shell-action! action)
-        (when-let [effect (actions/action->effect action)]
-          (fx-effects/run-effect effect))))))
+(defn dispatch-map-event!
+  ([event] (dispatch-map-event! event *state))
+  ([event state-atom]
+   (let [event (fx-input/enrich-event event)
+         effect (dispatch/event-effect event)]
+     (let [shell (swap! state-atom dispatch/apply-event event)]
+       (when (dispatch/diagram-event? (dispatch/event-type event))
+         (fx-overlay/sync-diagram-overlay! (:diagram shell)))
+       (when effect (fx-effects/run-effect effect))))))
 
 (defonce ^:private renderer
   (fx/create-renderer
    :middleware (fx/wrap-map-desc (fn [shell] (root/root-desc shell)))
-   :opts {:fx.opt/map-event-handler handle-map-event}))
+   :opts {:fx.opt/map-event-handler dispatch-map-event!}))
 
 (defn start!
   []
+  (reset! *state (cmd/default-shell! nil))
   (fx/mount-renderer *state renderer))

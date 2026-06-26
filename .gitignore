@@ -9,6 +9,6 @@ swarmforge/scripts/
 .calva/
 .lsp/
 tmp/
+target/
 build/
 acceptance/generated/
-target/

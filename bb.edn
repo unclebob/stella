@@ -33,12 +33,12 @@
               :task (shell "bb scripts/arch_check.bb")}
   verify {:doc "Architecture check, unit, and property tests"
           :depends [arch-check test property]}
-  qa {:doc "Headed UI QA suites for cljfx-shell"
+  qa {:doc "Headed UI QA suites"
       :depends [test]
       :task (shell "bash scripts/run_qa_suites.sh")}
   crap {:doc "CRAP analysis"
         :task (shell "clojure -M:crap")}
   dry {:doc "DRY analysis"
        :task (shell "clojure -M:dry src")}
-  mutate {:doc "Mutation testing for a source file"
+  mutate {:doc "Mutation scan for a source file"
           :task (shell "clojure -M:mutate {{file}} --scan")}}}
