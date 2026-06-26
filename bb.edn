@@ -33,7 +33,7 @@
               :task (shell "bb scripts/arch_check.bb")}
   verify {:doc "Architecture check, unit, and property tests"
           :depends [arch-check test property]}
-  qa {:doc "Headed UI QA suites"
+  qa {:doc "Headed UI QA suites aligned to qa/procedures"
       :depends [test]
       :task (shell "bash scripts/run_qa_suites.sh")}
   crap {:doc "CRAP analysis"
