@@ -21,6 +21,7 @@
     :stock (cmd/place-stock-on-shell! shell x y)
     :source (cmd/place-source-on-shell! shell x y)
     :sink (cmd/place-sink-on-shell! shell x y)
+    :converter (cmd/place-converter-on-shell! shell x y)
     shell))
 
 (defn- diagram-shell-updaters
@@ -33,11 +34,15 @@
                        (cmd/arm-source-placement-on-shell! shell))
    events/arm-sink (fn [shell _]
                      (cmd/arm-sink-placement-on-shell! shell))
+   events/arm-converter (fn [shell _]
+                          (cmd/arm-converter-placement-on-shell! shell))
+   events/arm-connector (fn [shell _]
+                          (cmd/arm-connector-placement-on-shell! shell))
    events/endpoint-click (fn [shell event]
                            (if (and (:endpoint-kind event) (:endpoint-name event))
-                             (cmd/select-flow-endpoint-on-shell! shell
-                                                                 (:endpoint-kind event)
-                                                                 (:endpoint-name event))
+                             (cmd/select-endpoint-on-shell! shell
+                                                            (:endpoint-kind event)
+                                                            (:endpoint-name event))
                              shell))
    events/canvas-click (fn [shell event]
                          (if-let [[x y] (:coordinates event)]

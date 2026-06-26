@@ -22,6 +22,21 @@
         (for [{:keys [name x y]} (model/sinks diagram)]
           [[:sink name] {:x x :y :y :w 80 :h 50}])))
 
+(defn converter-targets
+  "Returns semantic hit-test targets for converters on the diagram."
+  [diagram]
+  (into {}
+        (for [{:keys [name x y]} (model/converters diagram)]
+          [[:converter name] {:x x :y :y :w 50 :h 50}])))
+
+(defn- link-target
+  [from-pos to-pos width height]
+  (let [[fx fy] from-pos
+        [tx ty] to-pos
+        mid-x (/ (+ fx tx) 2.0)
+        mid-y (/ (+ fy ty) 2.0)]
+    {:x mid-x :y mid-y :w width :h height}))
+
 (defn flow-targets
   "Returns semantic hit-test targets for flows on the diagram."
   [diagram]
@@ -29,9 +44,15 @@
         (for [{:keys [name from to]} (model/flows diagram)
               :let [from-pos (model/endpoint-position diagram from)
                     to-pos (model/endpoint-position diagram to)]
-              :when (and from-pos to-pos)
-              :let [[fx fy] from-pos
-                    [tx ty] to-pos
-                    mid-x (/ (+ fx tx 80) 2.0)
-                    mid-y (/ (+ fy ty 50) 2.0)]]
-          [[:flow name] {:x mid-x :y mid-y :w 60 :h 30}])))
+              :when (and from-pos to-pos)]
+          [[:flow name] (link-target from-pos to-pos 60 30)])))
+
+(defn connector-targets
+  "Returns semantic hit-test targets for connectors on the diagram."
+  [diagram]
+  (into {}
+        (for [{:keys [name from to]} (model/connectors diagram)
+              :let [from-pos (model/endpoint-position diagram from)
+                    to-pos (model/endpoint-position diagram to)]
+              :when (and from-pos to-pos)]
+          [[:connector name] (link-target from-pos to-pos 60 20)])))
