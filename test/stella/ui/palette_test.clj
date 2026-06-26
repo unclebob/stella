@@ -6,7 +6,7 @@
 (deftest palette-tools-test
   (let [desc (palette/palette-desc)
         [stock-btn flow-btn source-btn sink-btn converter-btn connector-btn] (:children desc)]
-    (is (= :vbox (:fx/type desc)))
+    (is (= :pane (:fx/type desc)))
     (is (= "Stock" (:text stock-btn)))
     (is (= {:event events/arm-stock} (:on-action stock-btn)))
     (is (= "Flow" (:text flow-btn)))

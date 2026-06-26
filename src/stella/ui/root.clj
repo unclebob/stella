@@ -24,8 +24,9 @@
            :root {:fx/type :border-pane
                   :top (menu/menu-bar-desc shell)
                   :left (palette/palette-desc)
-                  :center (canvas/canvas-desc shell)}}})
-
-;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-26T17:11:42.532455-05:00", :module-hash "351993905", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "1522927926"} {:id "defn-/qa-dimension", :kind "defn-", :line 7, :end-line 11, :hash "1169114183"} {:id "defn/root-desc", :kind "defn", :line 13, :end-line 27, :hash "44152511"}]}
-;; clj-mutate-manifest-end
+                  :center (canvas/canvas-stack shell)
+                  :bottom {:fx/type :label
+                           :id "diagram-overlay"
+                           :managed false
+                           :visible false
+                           :text (canvas/diagram-overlay-text (:diagram shell))}}}})

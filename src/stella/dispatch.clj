@@ -22,6 +22,7 @@
     :source (cmd/place-source-on-shell! shell x y)
     :sink (cmd/place-sink-on-shell! shell x y)
     :converter (cmd/place-converter-on-shell! shell x y)
+    :idle shell
     shell))
 
 (defn- diagram-shell-updaters
