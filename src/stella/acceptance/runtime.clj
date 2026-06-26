@@ -48,3 +48,7 @@
 (defn all-passed?
   [results]
   (every? :pass results))
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-26T15:27:23.512745-05:00", :module-hash "1881254806", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 3, :hash "-1245636593"} {:id "defn/run-steps", :kind "defn", :line 5, :end-line 10, :hash "-7113136"} {:id "defn/scenario-rows", :kind "defn", :line 12, :end-line 16, :hash "-1202994938"} {:id "defn/scenario-execution", :kind "defn", :line 18, :end-line 23, :hash "430028343"} {:id "defn/plan-scenario-executions", :kind "defn", :line 25, :end-line 29, :hash "304061189"} {:id "defn/run-feature", :kind "defn", :line 31, :end-line 42, :hash "-304848862"} {:id "defn/run-feature-file", :kind "defn", :line 44, :end-line 46, :hash "-1369621380"} {:id "defn/all-passed?", :kind "defn", :line 48, :end-line 50, :hash "-656521916"}]}
+;; clj-mutate-manifest-end

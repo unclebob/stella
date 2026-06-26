@@ -76,9 +76,9 @@
 
 (defn menu-item-disabled?
   [shell item-label]
-  (some #(when (and (= (:label %) item-label) (not (:separator %)))
-           (:disabled %))
-        (menu-items shell)))
+  (when-let [item (first (filter #(and (= (:label %) item-label) (not (:separator %)))
+                                 (menu-items shell)))]
+    (:disabled item)))
 
 (defn window-title
   [shell]
