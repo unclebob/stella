@@ -39,3 +39,7 @@
   []
   {:fx/type :menu-bar
    :menus (mapv menu-desc menu-specs)})
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-26T14:51:13.98314-05:00", :module-hash "1542794657", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 2, :hash "-504056843"} {:id "def/menu-specs", :kind "def", :line 4, :end-line 15, :hash "655411168"} {:id "defn-/separator", :kind "defn-", :line 17, :end-line 18, :hash "-417437172"} {:id "defn-/menu-item-desc", :kind "defn-", :line 20, :end-line 25, :hash "1594704375"} {:id "defn-/item-desc", :kind "defn-", :line 27, :end-line 31, :hash "-401100150"} {:id "defn-/menu-desc", :kind "defn-", :line 33, :end-line 36, :hash "1395052324"} {:id "defn/menu-bar-desc", :kind "defn", :line 38, :end-line 41, :hash "-175047454"}]}
+;; clj-mutate-manifest-end
