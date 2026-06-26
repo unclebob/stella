@@ -49,9 +49,9 @@
    {:label "Acceptance steps must not depend on live UI or FX adapters"
     :ns-pattern #"^stella\.acceptance"
     :forbidden #"^stella\.(ui|app|fx|cljfx)"}
-   {:label "FX effects must not depend on UI descriptions or CljFX"
+   {:label "FX adapters must not depend on UI descriptions or CljFX"
     :ns-pattern #"^stella\.fx"
-    :forbidden #"^(stella\.ui|cljfx)"}])
+    :forbidden #"^(stella\.ui|cljfx|stella\.app)"}])
 
 (defn- violations []
   (mapcat

@@ -19,7 +19,7 @@
                  (:items menu))))
 
 (def ^:private stub-labels
-  {"File" ["New" "Open..." "Save" "Save As..."]
+  {"File" ["New" "Open…" "Save" "Save As…"]
    "Edit" ["Undo" "Redo" "Cut" "Copy" "Paste"]
    "View" ["Zoom In" "Zoom Out" "Reset Zoom"]})
 

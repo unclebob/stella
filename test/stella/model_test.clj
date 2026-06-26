@@ -7,7 +7,7 @@
     (is (:showing shell))
     (is (= "Stella" (:window-title shell)))
     (is (false? (:about-visible shell)))
-    (is (empty? (:diagram-elements shell)))
+    (is (model/diagram-empty? shell))
     (is (= ["File" "Edit" "View" "Help"] (model/top-level-menus shell)))))
 
 (deftest menu-item-queries-test

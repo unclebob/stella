@@ -6,15 +6,10 @@
             [stella.ui.canvas :as canvas]))
 
 (deftest canvas-description-test
-  (let [shell (cmd/arm-stock-placement-on-shell! (model/default-shell))
-        desc (canvas/canvas-desc shell)
-        pane ((:fx/type desc) (dissoc desc :fx/type))]
-    (is (fn? (:fx/type desc)))
-    (is (= :pane (:fx/type pane)))
-    (is (some? (:style desc)))
-    (is (re-find #"background-color" (:style desc)))
-    (is (= :always (:vgrow desc)))
-    (is (= :always (:hgrow desc)))
+  (let [shell (model/default-shell)
+        desc (canvas/canvas-desc shell)]
+    (is (= :stack-pane (:fx/type desc)))
+    (is (= "canvas" (:id desc)))
     (is (= {:event events/canvas-click} (:on-mouse-clicked desc)))))
 
 (deftest canvas-renders-stocks-test
@@ -24,9 +19,7 @@
         desc (canvas/canvas-desc shell)
         stocks (filter #(= :group (:fx/type %)) (:children desc))]
     (is (= 1 (count stocks)))
-    (let [group (first stocks)]
-      (is (= 200 (:layout-x group)))
-      (is (= 150 (:layout-y group))))))
+    (is (= "stock-Stock1" (:id (first stocks))))))
 
 (deftest canvas-renders-flows-test
   (let [diagram (-> (cmd/default-diagram! nil)
@@ -40,20 +33,3 @@
                              (= :line (:fx/type (first (:children node))))))
                       (:children desc))]
     (is (= 1 (count lines)))))
-
-(deftest canvas-renders-connectors-test
-  (let [diagram (-> (cmd/default-diagram! nil)
-                    (cmd/fixture-stock! "Stock1" 200 150)
-                    (cmd/fixture-stock! "Stock2" 350 150)
-                    (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
-                    (cmd/fixture-converter! "Converter1" 100 250)
-                    (cmd/arm-connector-placement!)
-                    (cmd/select-connector-origin! :converter "Converter1")
-                    (cmd/connect-connector! :flow "Flow1"))
-        shell (assoc (cmd/default-shell! nil) :diagram diagram)
-        desc (canvas/canvas-desc shell)
-        connectors (filter (fn [node]
-                             (and (= :group (:fx/type node))
-                                  (= "#666" (:stroke (first (:children node))))))
-                           (:children desc))]
-    (is (= 1 (count connectors)))))

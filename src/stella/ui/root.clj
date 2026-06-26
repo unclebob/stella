@@ -24,4 +24,9 @@
            :root {:fx/type :border-pane
                   :top (menu/menu-bar-desc shell)
                   :left (palette/palette-desc)
-                  :center (canvas/canvas-desc shell)}}})
+                  :center (canvas/canvas-stack shell)
+                  :bottom {:fx/type :label
+                           :id "diagram-overlay"
+                           :managed false
+                           :visible false
+                           :text (canvas/diagram-overlay-text (:diagram shell))}}}})

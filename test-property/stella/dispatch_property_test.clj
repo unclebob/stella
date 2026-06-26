@@ -35,3 +35,35 @@
 (deftest unknown-action-preserves-shell
   (is (= (model/default-shell)
          (dispatch/apply-action (model/default-shell) :stella.test/unknown))))
+
+(defspec canvas-click-without-coordinates-is-noop
+  25
+  (prop/for-all [_ gen/int]
+    (= (model/default-shell)
+       (dispatch/apply-event (model/default-shell)
+                             {:event events/canvas-click}))))
+
+(defspec armed-stock-placement-mode
+  25
+  (prop/for-all [_ gen/int]
+    (= :stock (:placement-mode (:diagram (dispatch/apply-event (model/default-shell)
+                                                               {:event events/arm-stock}))))))
+
+(defspec armed-flow-placement-mode
+  25
+  (prop/for-all [_ gen/int]
+    (= :flow (:placement-mode (:diagram (dispatch/apply-event (model/default-shell)
+                                                              {:event events/arm-flow}))))))
+
+(defspec endpoint-click-without-target-is-noop
+  25
+  (prop/for-all [_ gen/int]
+    (= (model/default-shell)
+       (dispatch/apply-event (model/default-shell)
+                             {:event events/endpoint-click}))))
+
+(defspec armed-source-placement-mode
+  25
+  (prop/for-all [_ gen/int]
+    (= :source (:placement-mode (:diagram (dispatch/apply-event (model/default-shell)
+                                                                {:event events/arm-source}))))))
