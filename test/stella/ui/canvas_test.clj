@@ -34,6 +34,17 @@
                       (:children desc))]
     (is (= 1 (count lines)))))
 
+(deftest diagram-overlay-text-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-stock! "Stock1" 100 100)
+                    (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                    (cmd/fixture-converter! "Converter1" 25 75)
+                    (cmd/arm-connector-placement!)
+                    (cmd/select-connector-origin! :converter "Converter1")
+                    (cmd/connect-connector! :flow "Flow1"))]
+    (is (= "Stock1 0 || Flow1 0 || Converter1 0 || Connector1"
+           (canvas/diagram-overlay-text diagram)))))
+
 (deftest canvas-renders-connectors-test
   (let [diagram (-> (cmd/default-diagram! nil)
                     (cmd/fixture-stock! "Stock1" 200 150)
