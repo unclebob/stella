@@ -3,13 +3,19 @@
             [stella.ui.canvas :as canvas]
             [stella.ui.menu :as menu]))
 
+(defn- qa-dimension [property default]
+  (if-let [value (System/getProperty property)]
+    (try (Integer/parseInt value)
+         (catch Exception _ default))
+    default))
+
 (defn root-desc
   [shell]
   {:fx/type :stage
    :title (:window-title shell)
    :showing (:showing shell)
-   :width 1024
-   :height 768
+   :width (qa-dimension "stella.qa.width" 1024)
+   :height (qa-dimension "stella.qa.height" 768)
    :min-width 640
    :min-height 480
    :on-close-request {:event events/quit}

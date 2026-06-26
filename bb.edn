@@ -28,7 +28,7 @@
   arch-check (shell "bb scripts/arch_check.bb")
   verify {:depends [arch-check test property]}
   qa {:depends [test]
-      :task (shell "clojure -M:qa")}
+      :task (shell "bash scripts/run_qa_suites.sh")}
   crap (shell "clojure -M:crap")
   dry (shell "clojure -M:dry src")
   mutate (shell "clojure -M:mutate {{file}} --scan")}}

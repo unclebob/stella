@@ -1,7 +1,8 @@
 (ns stella.ui.canvas)
 
-(defn- canvas-pane [{:keys [style]}]
+(defn- canvas-pane [{:keys [style id]}]
   {:fx/type :pane
+   :id (or id "canvas")
    :style style})
 
 (defn canvas-desc
