@@ -33,9 +33,9 @@
               :task (shell "bb scripts/arch_check.bb")}
   verify {:doc "Architecture check, unit, and property tests"
           :depends [arch-check test property]}
-  qa {:doc "Headed UI QA suite for cljfx-shell"
+  qa {:doc "Headed UI QA suites aligned to qa/procedures"
       :depends [test]
-      :task (shell "clojure -M:qa")}
+      :task (shell "bash scripts/run_qa_suites.sh")}
   crap {:doc "CRAP analysis"
         :task (shell "clojure -M:crap")}
   dry {:doc "DRY analysis"

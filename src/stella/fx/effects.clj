@@ -9,8 +9,13 @@
     (.setContentText "A system dynamics diagram editor.")
     .show))
 
+(defn- platform-exit! []
+  (if (= "true" (System/getProperty "stella.qa.soft-exit"))
+    (System/exit 0)
+    (Platform/exit)))
+
 (def ^:private effect-runners
-  {:platform-exit #(Platform/exit)
+  {:platform-exit platform-exit!
    :about-dialog about-dialog})
 
 (defn run-effect

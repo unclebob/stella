@@ -2,8 +2,9 @@
   (:require [stella.events :as events]
             [stella.model :as model]))
 
-(defn- canvas-pane [{:keys [style on-mouse-clicked children]}]
+(defn- canvas-pane [{:keys [style id on-mouse-clicked children]}]
   (cond-> {:fx/type :pane
+           :id (or id "canvas")
            :style style}
     on-mouse-clicked (assoc :on-mouse-clicked on-mouse-clicked)
     children (assoc :children children)))
@@ -80,6 +81,7 @@
         stock-nodes (mapv #(stock-desc diagram %) (model/stocks diagram))
         children (into (vec flow-nodes) (concat source-nodes sink-nodes stock-nodes))]
     (cond-> {:fx/type canvas-pane
+             :id "canvas"
              :style "-fx-background-color: #f5f5f5;"
              :vgrow :always
              :hgrow :always
