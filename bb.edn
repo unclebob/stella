@@ -1,0 +1,3 @@
+{:tasks
+ {run  (shell "clojure -M:run")
+  test (shell "clojure -M:test")}}

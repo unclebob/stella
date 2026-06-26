@@ -4,3 +4,8 @@
 .swarmforge/
 .worktrees/
 swarmforge/scripts/
+.cpcache/
+.nrepl-port
+.calva/
+.lsp/
+tmp/
