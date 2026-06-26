@@ -48,3 +48,16 @@
   (prop/for-all [_ gen/int]
     (= :stock (:placement-mode (:diagram (dispatch/apply-event (model/default-shell)
                                                                {:event events/arm-stock}))))))
+
+(defspec armed-flow-placement-mode
+  25
+  (prop/for-all [_ gen/int]
+    (= :flow (:placement-mode (:diagram (dispatch/apply-event (model/default-shell)
+                                                              {:event events/arm-flow}))))))
+
+(defspec stock-click-without-name-is-noop
+  25
+  (prop/for-all [_ gen/int]
+    (= (model/default-shell)
+       (dispatch/apply-event (model/default-shell)
+                             {:event events/stock-click}))))

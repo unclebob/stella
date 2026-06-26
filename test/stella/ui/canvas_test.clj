@@ -6,7 +6,7 @@
             [stella.ui.canvas :as canvas]))
 
 (deftest canvas-description-test
-  (let [shell (model/default-shell)
+  (let [shell (cmd/arm-stock-placement-on-shell! (model/default-shell))
         desc (canvas/canvas-desc shell)
         pane ((:fx/type desc) (dissoc desc :fx/type))]
     (is (fn? (:fx/type desc)))
@@ -22,9 +22,21 @@
                   (cmd/arm-stock-placement-on-shell!)
                   (cmd/place-stock-on-shell! 200 150))
         desc (canvas/canvas-desc shell)
-        stocks (:children desc)]
+        stocks (filter #(= :group (:fx/type %)) (:children desc))]
     (is (= 1 (count stocks)))
     (let [group (first stocks)]
-      (is (= :group (:fx/type group)))
       (is (= 200 (:layout-x group)))
       (is (= 150 (:layout-y group))))))
+
+(deftest canvas-renders-flows-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-stock! "Stock1" 100 100)
+                    (cmd/fixture-stock! "Stock2" 300 200)
+                    (cmd/fixture-flow! "Flow1" "Stock1" "Stock2"))
+        shell (assoc (cmd/default-shell! nil) :diagram diagram)
+        desc (canvas/canvas-desc shell)
+        lines (filter (fn [node]
+                        (and (= :group (:fx/type node))
+                             (= :line (:fx/type (first (:children node))))))
+                      (:children desc))]
+    (is (= 1 (count lines)))))
