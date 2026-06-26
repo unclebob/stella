@@ -15,7 +15,7 @@
              :on-action {:event events/show-about}}]}])
 
 (defn- separator []
-  {:fx/type :separator})
+  {:fx/type :separator-menu-item})
 
 (defn- menu-item-desc
   [{:keys [text enabled on-action]

@@ -7,7 +7,7 @@
     (.setTitle "About Stella")
     (.setHeaderText "Stella")
     (.setContentText "A system dynamics diagram editor.")
-    .showAndWait))
+    .show))
 
 (def ^:private effect-runners
   {:platform-exit #(Platform/exit)

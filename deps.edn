@@ -29,4 +29,5 @@
            :extra-deps {io.github.unclebob/clj-mutate
                         {:git/url "https://github.com/unclebob/clj-mutate.git"
                          :git/sha "e27dd5df63c4efdd66438587d1c5f49e73661b69"}
-                        org.clojure/tools.reader {:mvn/version "1.4.2"}}}}}
+                        org.clojure/tools.reader {:mvn/version "1.4.2"}}}
+  :qa {:main-opts ["-m" "qa.cljfx-shell"]}}}

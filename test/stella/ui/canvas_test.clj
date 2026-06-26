@@ -3,8 +3,10 @@
             [stella.ui.canvas :as canvas]))
 
 (deftest canvas-description-test
-  (let [desc (canvas/canvas-desc)]
-    (is (= :pane (:fx/type desc)))
+  (let [desc (canvas/canvas-desc)
+        pane ((:fx/type desc) (dissoc desc :fx/type))]
+    (is (fn? (:fx/type desc)))
+    (is (= :pane (:fx/type pane)))
     (is (some? (:style desc)))
     (is (re-find #"background-color" (:style desc)))
     (is (= :always (:vgrow desc)))

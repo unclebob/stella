@@ -4,14 +4,23 @@
             [stella.fx.effects :as fx-effects]
             [stella.ui.root :as root]))
 
-(defn- handle-app-event [event]
-  (some-> event :fx/event-type
-          actions/event->action
-          actions/action->effect
-          fx-effects/run-effect))
+(def ^:private initial-state
+  {:showing true})
+
+(defonce *state
+  (atom initial-state))
+
+(defn- handle-map-event [event]
+  (when-let [event-type (or (:event event) (:event/type event))]
+    (when-let [action (actions/event->action event-type)]
+      (when-let [effect (actions/action->effect action)]
+        (fx-effects/run-effect effect)))))
+
+(defonce ^:private renderer
+  (fx/create-renderer
+   :middleware (fx/wrap-map-desc (fn [_] (root/root-desc)))
+   :opts {:fx.opt/map-event-handler handle-map-event}))
 
 (defn start!
   []
-  (fx/create-app
-   {:desc-fn (fn [_] (root/root-desc))
-    :event-handler handle-app-event}))
+  (fx/mount-renderer *state renderer))
