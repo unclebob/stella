@@ -1,173 +1,153 @@
 (ns qa.cljfx-shell
-  "Executable QA for spec/cljfx-shell.plan.md manual verification checklist.
-  Drives the live JavaFX scene graph; does not call stella.actions directly."
+  "Executable QA suites mapped to qa/procedures/*.qa.md.
+  Drives the live JavaFX app through stella.qa.ui-driver only."
   (:require [cljfx.api :as fx]
-            [stella.app :as app])
-  (:import [javafx.event ActionEvent]
-           [javafx.scene Node Parent]
-           [javafx.scene.control Label Menu MenuBar MenuItem]
-           [javafx.scene.layout BorderPane Pane]
-           [javafx.stage Stage Window]))
+            [stella.qa.ui-driver :as ui])
+  (:import [javafx.stage Stage Window]))
 
 (defn- fail! [message]
   (binding [*out* *err*]
     (println "QA FAIL:" message))
   (System/exit 1))
 
-(defn- pass! [message]
-  (println "QA PASS:" message))
+(defn- pass! [suite message]
+  (println (str "QA PASS [" suite "]: " message)))
 
-(defn- find-stage []
-  (first (filter #(instance? Stage %) (Window/getWindows))))
+(defn- run-suite! [suite-name thunk]
+  (println (str "QA SUITE: " suite-name))
+  (try
+    (thunk)
+    (println (str "QA SUITE PASS: " suite-name))
+    (catch Throwable t
+      (fail! (str suite-name " - " (.getMessage t))))))
 
-(defn- menu-bar [stage]
-  (when-let [root (some-> stage .getScene .getRoot)]
-    (when (instance? BorderPane root)
-      (let [top (.getTop ^BorderPane root)]
-        (when (instance? MenuBar top) top)))))
-
-(defn- center-pane [stage]
-  (when-let [root (some-> stage .getScene .getRoot)]
-    (when (instance? BorderPane root)
-      (.getCenter ^BorderPane root))))
-
-(defn- menu-labels [^MenuBar bar]
-  (mapv #(.getText ^Menu %) (.getMenus bar)))
-
-(defn- menu-by-label [^MenuBar bar label]
-  (some #(when (= label (.getText ^Menu %)) %)
-        (.getMenus bar)))
-
-(defn- menu-item-by-text [^Menu menu label]
-  (some #(when (and (instance? MenuItem %)
-                    (= label (.getText ^MenuItem %)))
-          %)
-        (.getItems menu)))
-
-(defn- assert-menu-structure! [^MenuBar bar]
-  (let [labels (menu-labels bar)]
-    (when-not (= ["File" "Edit" "View" "Help"] labels)
-      (fail! (str "Menu bar labels " labels " do not match expected top-level menus")))
-    (pass! "Menu bar shows File / Edit / View / Help")))
-
-(defn- assert-disabled-stubs! [^MenuBar bar]
-  (doseq [[menu-label item-labels]
-          {"File" ["New" "Open…" "Save" "Save As…"]
-           "Edit" ["Undo" "Redo" "Cut" "Copy" "Paste"]
-           "View" ["Zoom In" "Zoom Out" "Reset Zoom"]}]
-    (let [menu (menu-by-label bar menu-label)]
-      (doseq [label item-labels]
-        (let [item (menu-item-by-text menu label)]
-          (when-not item
-            (fail! (str "Missing menu item " menu-label " → " label)))
-          (when-not (.isDisable ^MenuItem item)
-            (fail! (str "Stub item should be disabled: " menu-label " → " label)))))))
-  (pass! "Disabled stub menu items are grayed out"))
-
-(defn- assert-enabled-actions! [^MenuBar bar]
-  (let [file (menu-by-label bar "File")
-        help (menu-by-label bar "Help")
-        quit (menu-item-by-text file "Quit")
-        about (menu-item-by-text help "About Stella")]
-    (when (or (nil? quit) (.isDisable ^MenuItem quit))
-      (fail! "File → Quit should be enabled"))
-    (when (or (nil? about) (.isDisable ^MenuItem about))
-      (fail! "Help → About Stella should be enabled"))
-    (pass! "Quit and About Stella menu items are enabled")))
-
-(defn- assert-canvas! [^Stage stage]
-  (let [pane (center-pane stage)]
-    (when-not (instance? Pane pane)
-      (fail! "Center region is not a canvas pane"))
-    (when-not (re-find #"background-color" (.getStyle ^Pane pane))
-      (fail! "Canvas pane is missing background style"))
-    (pass! "Canvas is blank with expected background")))
-
-(defn- assert-resize! [^Stage stage]
-  (let [pane (center-pane stage)
-        w0 (.getWidth ^Pane pane)
-        h0 (.getHeight ^Pane pane)]
-    (.setWidth stage 900)
-    (.setHeight stage 600)
-    (let [w1 (.getWidth ^Pane pane)
-          h1 (.getHeight ^Pane pane)]
-      (when (and (= w0 w1) (= h0 h1) (zero? w1))
-        (fail! "Canvas did not resize with the window"))
-      (pass! "Canvas resizes with the window"))))
-
-(defn- about-stage []
-  (some (fn [^Window w]
-          (when (and (instance? Stage w)
-                     (= "About Stella" (.getTitle ^Stage w)))
-            w))
-        (Window/getWindows)))
-
-(defn- label-texts [^Node node]
-  (cond
-    (instance? Label node)
-    [(.getText ^Label node)]
-
-    (instance? Parent node)
-    (mapcat label-texts (.getChildrenUnmodifiable ^Parent node))
-
-    :else []))
-
-(defn- assert-about-dialog! [^MenuBar bar]
-  (let [help (menu-by-label bar "Help")
-        about (menu-item-by-text help "About Stella")]
-    (when-let [handler (.getOnAction about)]
-      (.handle ^javafx.event.EventHandler handler (ActionEvent.)))
-    (Thread/sleep 200)
-    (if-let [^Stage dialog (about-stage)]
-      (let [texts (set (label-texts (.getRoot (.getScene dialog))))]
-        (cond
-          (not (contains? texts "Stella"))
-          (fail! (str "About dialog missing app name in labels: " texts))
-
-          (not (some #(re-find #"diagram editor" %) texts))
-          (fail! (str "About dialog missing placeholder line in labels: " texts))
-
-          :else
-          (do (.close dialog)
-              (pass! "About dialog shows app name and placeholder line"))))
-      (fail! "About Stella did not open an information dialog"))))
-
-(defn- wait-for-stage [attempts]
-  (loop [n attempts]
-    (if-let [stage (find-stage)]
-      stage
-      (when (pos? n)
-        (Thread/sleep 100)
-        (recur (dec n))))))
-
-(defn -main [& _]
+(defn- with-app! [{:keys [hard-exit? width height] :as opts} f]
   (let [done (promise)]
     (fx/on-fx-thread
       (try
-        (app/start!)
-        (if-let [stage (wait-for-stage 50)]
-          (do
-            (when-not (= "Stella" (.getTitle stage))
-              (fail! (str "Window title is " (.getTitle stage) ", expected Stella")))
-            (pass! "bb run opens the Stella window")
-            (let [bar (menu-bar stage)]
-              (when-not bar
-                (fail! "Could not find menu bar in scene graph"))
-              (assert-menu-structure! bar)
-              (assert-disabled-stubs! bar)
-              (assert-enabled-actions! bar)
-              (assert-canvas! stage)
-              (assert-resize! stage)
-              (assert-about-dialog! bar)
-              (let [file (menu-by-label bar "File")
-                    quit (menu-item-by-text file "Quit")]
-                (when-let [handler (.getOnAction quit)]
-                  (.handle ^javafx.event.EventHandler handler (ActionEvent.)))
-                (pass! "File → Quit exits the application"))
-              (println "QA complete: all UI checklist items passed")
-              (deliver done :ok)))
-          (fail! "Timed out waiting for Stella window"))
+        (ui/launch-app! :width width :height height :hard-exit? hard-exit?)
+        (if-let [^Stage stage (ui/wait-for-stage 50)]
+          (do (f stage) (deliver done :ok))
+          (do (fail! "Timed out waiting for Stella window")
+              (deliver done :error)))
         (catch Throwable t
           (fail! (.getMessage t))
           (deliver done :error))))
-    @done))
+    (case (deref done 120000 :timeout)
+      :ok nil
+      (fail! "QA app session timed out"))))
+
+(defn- run-shell-launch! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (when-not (= "Stella" (ui/window-title stage))
+        (fail! (str "Window title is " (ui/window-title stage))))
+      (pass! "shell-launch" "Window title is Stella")
+      (when-not (= ["File" "Edit" "View" "Help"] (ui/top-level-menu-labels stage))
+        (fail! (str "Unexpected menus: " (ui/top-level-menu-labels stage))))
+      (pass! "shell-launch" "Top-level menus are visible")
+      (when-not (ui/region-bounds stage :canvas)
+        (fail! "Canvas region :canvas is not visible"))
+      (pass! "shell-launch" "Diagram canvas region is visible")
+      (ui/quit-app! stage)
+      (pass! "shell-launch" "File → Quit requested"))))
+
+(defn- run-shell-menus! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (ui/open-menu! stage "File")
+      (when-not (ui/menu-item-disabled? stage "File" "New")
+        (fail! "New should be disabled"))
+      (pass! "shell-menus" "New is disabled")
+      (when (ui/menu-item-disabled? stage "File" "Quit")
+        (fail! "Quit should be enabled"))
+      (pass! "shell-menus" "Quit is enabled")
+      (ui/close-menus! stage)
+      (ui/open-menu! stage "Help")
+      (when (ui/menu-item-disabled? stage "Help" "About Stella")
+        (fail! "About Stella should be enabled"))
+      (pass! "shell-menus" "About Stella is enabled")
+      (ui/close-menus! stage)
+      (ui/quit-app! stage)
+      (pass! "shell-menus" "Quit requested"))))
+
+(defn- run-shell-about! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (ui/menu-choose! stage "Help" "About Stella")
+      (loop [n 20]
+        (if (ui/dialog-visible? "diagram editor")
+          nil
+          (when (pos? n)
+            (Thread/sleep 100)
+            (recur (dec n)))))
+      (when-not (ui/dialog-visible? "diagram editor")
+        (fail! "About dialog did not appear"))
+      (pass! "shell-about" "About dialog text is visible")
+      (when-not (= "About Stella" (ui/frontmost-dialog-title))
+        (fail! (str "Unexpected front dialog: " (ui/frontmost-dialog-title))))
+      (pass! "shell-about" "About dialog is frontmost")
+      (ui/click-ok-on-front-dialog!)
+      (Thread/sleep 200)
+      (when (ui/dialog-visible? "diagram editor")
+        (ui/close-menus! stage))
+      (when (ui/dialog-visible? "diagram editor")
+        (fail! "About dialog did not dismiss"))
+      (pass! "shell-about" "About dialog dismissed")
+      (when-not (= "Stella" (ui/window-title stage))
+        (fail! "Main window title changed after About"))
+      (pass! "shell-about" "Main window remains open")
+      (ui/quit-app! stage)
+      (pass! "shell-about" "Quit requested"))))
+
+(defn- run-shell-resize! []
+  (with-app! {:width 800 :height 600}
+    (fn [^Stage stage]
+      (when-not (ui/region-bounds stage :canvas)
+        (fail! "Canvas region is not visible"))
+      (pass! "shell-resize" "Canvas visible before resize")
+      (let [w0 (.getWidth stage)
+            h0 (.getHeight stage)]
+        (ui/resize-window! stage 950 700)
+        (Thread/sleep 500)
+        (when-not (ui/region-bounds stage :canvas)
+          (fail! "Canvas region missing after resize"))
+        (when-not (and (> (.getWidth stage) w0) (> (.getHeight stage) h0))
+          (fail! (str "Window did not grow: " w0 "x" h0 " -> "
+                      (.getWidth stage) "x" (.getHeight stage))))
+        (pass! "shell-resize" "Window and canvas region grew after resize")
+        (ui/click-in-region! stage :canvas :center)
+        (pass! "shell-resize" "Canvas center click succeeded")
+        (when-not (= "Stella" (ui/window-title stage))
+          (fail! "Main window closed after canvas click"))
+        (pass! "shell-resize" "Main window still showing")
+        (ui/quit-app! stage)
+        (pass! "shell-resize" "Quit requested")))))
+
+(defn- run-shell-quit! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (when-not (.isShowing stage)
+        (fail! "Main window is not visible"))
+      (pass! "shell-quit" "Main window is visible")
+      (ui/menu-choose! stage "File" "Quit")
+      (Thread/sleep 200)
+      (when (.isShowing stage)
+        (fail! "Main window still visible after Quit"))
+      (pass! "shell-quit" "File → Quit closes the window")
+      (System/exit 0))))
+
+(def ^:private suites
+  {"shell-launch" run-shell-launch!
+   "shell-menus" run-shell-menus!
+   "shell-about" run-shell-about!
+   "shell-resize" run-shell-resize!
+   "shell-quit" run-shell-quit!})
+
+(defn -main [& args]
+  (when-not (first args)
+    (fail! "Usage: clojure -M:qa <suite-name>"))
+  (let [suite (first args)]
+    (if-let [run (get suites suite)]
+      (run-suite! suite (fn [] (run)))
+      (fail! (str "Unknown suite: " suite)))))

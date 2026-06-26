@@ -1,5 +1,6 @@
 (ns stella.acceptance.steps
-  (:require [stella.commands :as cmd]
+  (:require [clojure.string :as str]
+            [stella.commands :as cmd]
             [stella.model :as model]))
 
 (defn- fail!
@@ -24,8 +25,17 @@
 
 (defn- assert-menu-item-enabled
   [shell item]
-  (when (model/menu-item-disabled? shell item)
-    (fail! (str "expected menu item enabled: " item))))
+  (let [disabled? (model/menu-item-disabled? shell item)]
+    (cond
+      (nil? disabled?) (fail! (str "unknown menu item: " item))
+      disabled? (fail! (str "expected menu item enabled: " item)))))
+
+(defn- assert-about-includes
+  [shell app-name]
+  (let [text (model/about-text shell)
+        first-line (first (str/split-lines (or text "")))]
+    (when-not (= app-name first-line)
+      (fail! (str "about text expected first line " app-name)))))
 
 (defn- parse-int
   [value label]
@@ -80,10 +90,7 @@
           world)}
    {:pattern #"^the about dialog text should include <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ param-name] example]
-          (let [app-name (require-value example param-name)
-                text (model/about-text (:shell world))]
-            (when-not (re-find (re-pattern (str "(?i)" (java.util.regex.Pattern/quote app-name))) text)
-              (fail! (str "about text missing " app-name))))
+          (assert-about-includes (:shell world) (require-value example param-name))
           world)}
    {:pattern #"^I quit the shell application$"
     :fn (fn [world _ _]
@@ -493,3 +500,7 @@
     (if-let [handler (first (filter #(re-matches (:pattern %) text) step-handlers))]
       ((:fn handler) world (re-matches (:pattern handler) text) example)
       (fail! (str "unsupported step: " text)))))
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-26T15:25:25.398815-05:00", :module-hash "1328737819", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "-113792008"} {:id "defn-/fail!", :kind "defn-", :line 6, :end-line 8, :hash "425420929"} {:id "defn-/require-value", :kind "defn-", :line 10, :end-line 14, :hash "369839950"} {:id "defn-/assert-menu-includes", :kind "defn-", :line 16, :end-line 19, :hash "-1322422941"} {:id "defn-/assert-menu-item-disabled", :kind "defn-", :line 21, :end-line 24, :hash "580418853"} {:id "defn-/assert-menu-item-enabled", :kind "defn-", :line 26, :end-line 31, :hash "-1393044992"} {:id "defn-/assert-about-includes", :kind "defn-", :line 33, :end-line 38, :hash "1963673308"} {:id "def/step-handlers", :kind "def", :line 40, :end-line 91, :hash "-2003396814"} {:id "defn/dispatch-step", :kind "defn", :line 93, :end-line 98, :hash "-3582111"}]}
+;; clj-mutate-manifest-end
