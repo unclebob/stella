@@ -424,6 +424,11 @@
             (when-not (model/converter-exists? (diagram-from world) name)
               (fail! (str "diagram missing converter " name)))
             world))}
+   {:pattern #"^the diagram should contain converter ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name] _]
+          (when-not (model/converter-exists? (diagram-from world) name)
+            (fail! (str "diagram missing converter " name)))
+          world)}
    {:pattern #"^converter <([A-Za-z0-9_]+)> should be at position <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param x-param y-param] example]
           (let [name (require-value example name-param)
@@ -433,11 +438,25 @@
             (when-not (= [x y] pos)
               (fail! (str "converter " name " at " pos " expected [" x " " y "]")))
             world))}
+   {:pattern #"^converter ([A-Za-z0-9]+) should be at position (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (let [x (parse-int x-str "x")
+                y (parse-int y-str "y")
+                pos (model/converter-position (diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (fail! (str "converter " name " at " pos " expected [" x " " y "]")))
+            world))}
    {:pattern #"^converter <([A-Za-z0-9_]+)> value should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param value-param] example]
           (let [name (require-value example name-param)
                 value (require-value example value-param)
                 actual (model/converter-value (diagram-from world) name)]
+            (when-not (= value actual)
+              (fail! (str "converter " name " value " actual " expected " value)))
+            world))}
+   {:pattern #"^converter ([A-Za-z0-9]+) value should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name value] _]
+          (let [actual (model/converter-value (diagram-from world) name)]
             (when-not (= value actual)
               (fail! (str "converter " name " value " actual " expected " value)))
             world))}
@@ -552,5 +571,5 @@
       (fail! (str "unsupported step: " text)))))
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-26T15:52:17.88516-05:00", :module-hash "1576103521", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "-113792008"} {:id "defn-/fail!", :kind "defn-", :line 6, :end-line 8, :hash "425420929"} {:id "defn-/require-value", :kind "defn-", :line 10, :end-line 14, :hash "369839950"} {:id "defn-/assert-menu-includes", :kind "defn-", :line 16, :end-line 19, :hash "-1322422941"} {:id "defn-/assert-menu-item-disabled", :kind "defn-", :line 21, :end-line 24, :hash "580418853"} {:id "defn-/assert-menu-item-enabled", :kind "defn-", :line 26, :end-line 31, :hash "-1393044992"} {:id "defn-/assert-about-includes", :kind "defn-", :line 33, :end-line 38, :hash "1963673308"} {:id "defn-/parse-int", :kind "defn-", :line 40, :end-line 45, :hash "60081232"} {:id "defn-/diagram-from", :kind "defn-", :line 47, :end-line 49, :hash "1678108818"} {:id "def/step-handlers", :kind "def", :line 51, :end-line 412, :hash "1278671244"} {:id "defn/dispatch-step", :kind "defn", :line 414, :end-line 419, :hash "1985889733"}]}
+;; {:version 1, :tested-at "2026-06-26T17:14:23.075047-05:00", :module-hash "454439326", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "-113792008"} {:id "defn-/fail!", :kind "defn-", :line 6, :end-line 8, :hash "425420929"} {:id "defn-/require-value", :kind "defn-", :line 10, :end-line 14, :hash "369839950"} {:id "defn-/assert-menu-includes", :kind "defn-", :line 16, :end-line 19, :hash "-1322422941"} {:id "defn-/assert-menu-item-disabled", :kind "defn-", :line 21, :end-line 24, :hash "580418853"} {:id "defn-/assert-menu-item-enabled", :kind "defn-", :line 26, :end-line 31, :hash "-1393044992"} {:id "defn-/assert-about-includes", :kind "defn-", :line 33, :end-line 38, :hash "1963673308"} {:id "defn-/parse-int", :kind "defn-", :line 40, :end-line 45, :hash "60081232"} {:id "defn-/diagram-from", :kind "defn-", :line 47, :end-line 49, :hash "1678108818"} {:id "def/step-handlers", :kind "def", :line 51, :end-line 564, :hash "-1558652395"} {:id "defn/dispatch-step", :kind "defn", :line 566, :end-line 571, :hash "602476927"}]}
 ;; clj-mutate-manifest-end

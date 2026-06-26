@@ -132,3 +132,7 @@
       (#{:stock :source :sink :converter} (:placement-mode diagram))
       (assoc :on-mouse-clicked {:event events/canvas-click})
       true (assoc :vgrow :always :hgrow :always))))
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-26T17:11:21.583692-05:00", :module-hash "816607009", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 3, :hash "-465839271"} {:id "defn-/canvas-pane", :kind "defn-", :line 5, :end-line 10, :hash "-731199666"} {:id "defn-/endpoint-click", :kind "defn-", :line 12, :end-line 14, :hash "-1042549141"} {:id "defn-/flow-desc", :kind "defn-", :line 16, :end-line 39, :hash "-644359831"} {:id "defn-/connector-desc", :kind "defn-", :line 41, :end-line 61, :hash "366913679"} {:id "defn-/stock-desc", :kind "defn-", :line 63, :end-line 79, :hash "1971088292"} {:id "defn-/converter-desc", :kind "defn-", :line 81, :end-line 98, :hash "-23692744"} {:id "defn-/cloud-desc", :kind "defn-", :line 100, :end-line 116, :hash "735845704"} {:id "defn/canvas-desc", :kind "defn", :line 118, :end-line 134, :hash "-1822371234"}]}
+;; clj-mutate-manifest-end

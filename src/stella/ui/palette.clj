@@ -24,3 +24,7 @@
               {:fx/type :button
                :text "Connector"
                :on-action {:event events/arm-connector}}]})
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-26T17:11:32.40237-05:00", :module-hash "290696503", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 2, :hash "1659448743"} {:id "defn/palette-desc", :kind "defn", :line 4, :end-line 26, :hash "-109303517"}]}
+;; clj-mutate-manifest-end

@@ -7,10 +7,9 @@
 
 (deftest canvas-description-test
   (let [shell (cmd/arm-stock-placement-on-shell! (model/default-shell))
-        desc (canvas/canvas-desc shell)
-        pane ((:fx/type desc) (dissoc desc :fx/type))]
-    (is (fn? (:fx/type desc)))
-    (is (= :pane (:fx/type pane)))
+        desc (canvas/canvas-desc shell)]
+    (is (= :pane (:fx/type desc)))
+    (is (= "canvas" (:id desc)))
     (is (some? (:style desc)))
     (is (re-find #"background-color" (:style desc)))
     (is (= :always (:vgrow desc)))
