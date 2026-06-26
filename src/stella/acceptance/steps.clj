@@ -409,7 +409,159 @@
    {:pattern #"^sink ([A-Za-z0-9]+) at (\d+) (\d+)$"
     :fn (fn [world [_ name x-str y-str] _]
           (let [diagram (diagram-from world)]
-            (assoc world :diagram (cmd/fixture-sink! diagram name (parse-int x-str "x") (parse-int y-str "y")))))}])
+            (assoc world :diagram (cmd/fixture-sink! diagram name (parse-int x-str "x") (parse-int y-str "y")))))}
+   {:pattern #"^I arm the converter placement tool$"
+    :fn (fn [world _ _]
+          (update world :diagram cmd/arm-converter-placement!))}
+   {:pattern #"^I place a converter at <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ x-param y-param] example]
+          (let [x (parse-int (require-value example x-param) x-param)
+                y (parse-int (require-value example y-param) y-param)]
+            (update world :diagram #(cmd/place-converter! % x y))))}
+   {:pattern #"^the diagram should contain converter <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (when-not (model/converter-exists? (diagram-from world) name)
+              (fail! (str "diagram missing converter " name)))
+            world))}
+   {:pattern #"^the diagram should contain converter ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name] _]
+          (when-not (model/converter-exists? (diagram-from world) name)
+            (fail! (str "diagram missing converter " name)))
+          world)}
+   {:pattern #"^converter <([A-Za-z0-9_]+)> should be at position <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (require-value example name-param)
+                x (parse-int (require-value example x-param) x-param)
+                y (parse-int (require-value example y-param) y-param)
+                pos (model/converter-position (diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (fail! (str "converter " name " at " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^converter ([A-Za-z0-9]+) should be at position (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (let [x (parse-int x-str "x")
+                y (parse-int y-str "y")
+                pos (model/converter-position (diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (fail! (str "converter " name " at " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^converter <([A-Za-z0-9_]+)> value should be <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param value-param] example]
+          (let [name (require-value example name-param)
+                value (require-value example value-param)
+                actual (model/converter-value (diagram-from world) name)]
+            (when-not (= value actual)
+              (fail! (str "converter " name " value " actual " expected " value)))
+            world))}
+   {:pattern #"^converter ([A-Za-z0-9]+) value should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name value] _]
+          (let [actual (model/converter-value (diagram-from world) name)]
+            (when-not (= value actual)
+              (fail! (str "converter " name " value " actual " expected " value)))
+            world))}
+   {:pattern #"^the diagram converter count should be 0$"
+    :fn (fn [world _ _]
+          (when-not (zero? (model/converter-count (diagram-from world)))
+            (fail! "expected diagram converter count 0"))
+          world)}
+   {:pattern #"^the converter placement tool should be disarmed$"
+    :fn (fn [world _ _]
+          (when-not (model/converter-placement-disarmed? (diagram-from world))
+            (fail! "expected converter placement tool disarmed"))
+          world)}
+   {:pattern #"^converter ([A-Za-z0-9]+) at (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (let [diagram (diagram-from world)]
+            (assoc world :diagram (cmd/fixture-converter! diagram name (parse-int x-str "x") (parse-int y-str "y")))))}
+   {:pattern #"^I arm the connector placement tool$"
+    :fn (fn [world _ _]
+          (update world :diagram cmd/arm-connector-placement!))}
+   {:pattern #"^I select converter <([A-Za-z0-9_]+)> as the connector origin$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (update world :diagram #(cmd/select-connector-origin! % :converter name))))}
+   {:pattern #"^I select converter ([A-Za-z0-9]+) as the connector origin$"
+    :fn (fn [world [_ name] _]
+          (update world :diagram #(cmd/select-connector-origin! % :converter name)))}
+   {:pattern #"^I select stock <([A-Za-z0-9_]+)> as the connector origin$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (update world :diagram #(cmd/select-connector-origin! % :stock name))))}
+   {:pattern #"^I select stock ([A-Za-z0-9]+) as the connector origin$"
+    :fn (fn [world [_ name] _]
+          (update world :diagram #(cmd/select-connector-origin! % :stock name)))}
+   {:pattern #"^I select flow <([A-Za-z0-9_]+)> as the connector origin$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (update world :diagram #(cmd/select-connector-origin! % :flow name))))}
+   {:pattern #"^I select flow ([A-Za-z0-9]+) as the connector origin$"
+    :fn (fn [world [_ name] _]
+          (update world :diagram #(cmd/select-connector-origin! % :flow name)))}
+   {:pattern #"^I select flow <([A-Za-z0-9_]+)> as the connector destination$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (update world :diagram #(cmd/connect-connector! % :flow name))))}
+   {:pattern #"^I select flow ([A-Za-z0-9]+) as the connector destination$"
+    :fn (fn [world [_ name] _]
+          (update world :diagram #(cmd/connect-connector! % :flow name)))}
+   {:pattern #"^I select converter <([A-Za-z0-9_]+)> as the connector destination$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (update world :diagram #(cmd/connect-connector! % :converter name))))}
+   {:pattern #"^I select converter ([A-Za-z0-9]+) as the connector destination$"
+    :fn (fn [world [_ name] _]
+          (update world :diagram #(cmd/connect-connector! % :converter name)))}
+   {:pattern #"^I select source <([A-Za-z0-9_]+)> as the connector destination$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (update world :diagram #(cmd/connect-connector! % :source name))))}
+   {:pattern #"^I select source ([A-Za-z0-9]+) as the connector destination$"
+    :fn (fn [world [_ name] _]
+          (update world :diagram #(cmd/connect-connector! % :source name)))}
+   {:pattern #"^the diagram should contain connector <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (when-not (model/connector-exists? (diagram-from world) name)
+              (fail! (str "diagram missing connector " name)))
+            world))}
+   {:pattern #"^connector <([A-Za-z0-9_]+)> should run from converter <([A-Za-z0-9_]+)> to flow <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ connector-param from-param to-param] example]
+          (let [connector (require-value example connector-param)
+                from (require-value example from-param)
+                to (require-value example to-param)
+                diagram (diagram-from world)]
+            (when-not (= {:kind :converter :id from} (model/connector-from diagram connector))
+              (fail! (str "connector " connector " from mismatch")))
+            (when-not (= {:kind :flow :id to} (model/connector-to diagram connector))
+              (fail! (str "connector " connector " to mismatch")))
+            world))}
+   {:pattern #"^connector <([A-Za-z0-9_]+)> should run from stock <([A-Za-z0-9_]+)> to converter <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ connector-param from-param to-param] example]
+          (let [connector (require-value example connector-param)
+                from (require-value example from-param)
+                to (require-value example to-param)
+                diagram (diagram-from world)]
+            (when-not (= {:kind :stock :id from} (model/connector-from diagram connector))
+              (fail! (str "connector " connector " from mismatch")))
+            (when-not (= {:kind :converter :id to} (model/connector-to diagram connector))
+              (fail! (str "connector " connector " to mismatch")))
+            world))}
+   {:pattern #"^the diagram connector count should be 0$"
+    :fn (fn [world _ _]
+          (when-not (zero? (model/connector-count (diagram-from world)))
+            (fail! "expected diagram connector count 0"))
+          world)}
+   {:pattern #"^the connector placement tool should be armed$"
+    :fn (fn [world _ _]
+          (when-not (model/connector-placement-armed? (diagram-from world))
+            (fail! "expected connector placement tool armed"))
+          world)}
+   {:pattern #"^the connector placement tool should be disarmed$"
+    :fn (fn [world _ _]
+          (when-not (model/connector-placement-disarmed? (diagram-from world))
+            (fail! "expected connector placement tool disarmed"))
+          world)}])
 
 (defn dispatch-step
   [world step example]
@@ -419,5 +571,5 @@
       (fail! (str "unsupported step: " text)))))
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-26T15:52:17.88516-05:00", :module-hash "1576103521", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "-113792008"} {:id "defn-/fail!", :kind "defn-", :line 6, :end-line 8, :hash "425420929"} {:id "defn-/require-value", :kind "defn-", :line 10, :end-line 14, :hash "369839950"} {:id "defn-/assert-menu-includes", :kind "defn-", :line 16, :end-line 19, :hash "-1322422941"} {:id "defn-/assert-menu-item-disabled", :kind "defn-", :line 21, :end-line 24, :hash "580418853"} {:id "defn-/assert-menu-item-enabled", :kind "defn-", :line 26, :end-line 31, :hash "-1393044992"} {:id "defn-/assert-about-includes", :kind "defn-", :line 33, :end-line 38, :hash "1963673308"} {:id "defn-/parse-int", :kind "defn-", :line 40, :end-line 45, :hash "60081232"} {:id "defn-/diagram-from", :kind "defn-", :line 47, :end-line 49, :hash "1678108818"} {:id "def/step-handlers", :kind "def", :line 51, :end-line 412, :hash "1278671244"} {:id "defn/dispatch-step", :kind "defn", :line 414, :end-line 419, :hash "1985889733"}]}
+;; {:version 1, :tested-at "2026-06-26T17:14:23.075047-05:00", :module-hash "454439326", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "-113792008"} {:id "defn-/fail!", :kind "defn-", :line 6, :end-line 8, :hash "425420929"} {:id "defn-/require-value", :kind "defn-", :line 10, :end-line 14, :hash "369839950"} {:id "defn-/assert-menu-includes", :kind "defn-", :line 16, :end-line 19, :hash "-1322422941"} {:id "defn-/assert-menu-item-disabled", :kind "defn-", :line 21, :end-line 24, :hash "580418853"} {:id "defn-/assert-menu-item-enabled", :kind "defn-", :line 26, :end-line 31, :hash "-1393044992"} {:id "defn-/assert-about-includes", :kind "defn-", :line 33, :end-line 38, :hash "1963673308"} {:id "defn-/parse-int", :kind "defn-", :line 40, :end-line 45, :hash "60081232"} {:id "defn-/diagram-from", :kind "defn-", :line 47, :end-line 49, :hash "1678108818"} {:id "def/step-handlers", :kind "def", :line 51, :end-line 564, :hash "-1558652395"} {:id "defn/dispatch-step", :kind "defn", :line 566, :end-line 571, :hash "602476927"}]}
 ;; clj-mutate-manifest-end

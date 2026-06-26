@@ -67,3 +67,9 @@
   (prop/for-all [_ gen/int]
     (= :source (:placement-mode (:diagram (dispatch/apply-event (model/default-shell)
                                                                 {:event events/arm-source}))))))
+
+(defspec armed-connector-placement-mode
+  25
+  (prop/for-all [_ gen/int]
+    (= :connector (:placement-mode (:diagram (dispatch/apply-event (model/default-shell)
+                                                                   {:event events/arm-connector}))))))

@@ -18,4 +18,6 @@
    :children [(palette-button 0 "Stock" events/arm-stock)
               (palette-button 1 "Flow" events/arm-flow)
               (palette-button 2 "Source" events/arm-source)
-              (palette-button 3 "Sink" events/arm-sink)]})
+              (palette-button 3 "Sink" events/arm-sink)
+              (palette-button 4 "Converter" events/arm-converter)
+              (palette-button 5 "Connector" events/arm-connector)]})

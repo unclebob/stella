@@ -157,7 +157,7 @@
 
 (defn click-element!
   [^Stage stage kind name]
-  (if (= :flow (get-in @app/*state [:diagram :placement-mode]))
+  (if (#{:flow :connector} (get-in @app/*state [:diagram :placement-mode]))
     (do (app/dispatch-map-event! {:event events/endpoint-click
                                   :endpoint-kind kind
                                   :endpoint-name name})
@@ -236,10 +236,25 @@
   (let [diagram (:diagram @app/*state)]
     (or (hit-test/element-bounds stage diagram :stock name)
         (hit-test/element-bounds stage diagram :source name)
-        (hit-test/element-bounds stage diagram :sink name))))
+        (hit-test/element-bounds stage diagram :sink name)
+        (hit-test/element-bounds stage diagram :converter name))))
+
+(defn- link-bounds
+  [stage kind name]
+  (hit-test/element-bounds stage (:diagram @app/*state) kind name))
+
+(defn directed-between?
+  [^Stage stage from-kind from-name to-kind to-name]
+  (when-let [from (or (link-bounds stage from-kind from-name)
+                      (endpoint-bounds stage from-name))]
+    (when-let [to (or (link-bounds stage to-kind to-name)
+                      (endpoint-bounds stage to-name))]
+      (< (:x from) (:x to)))))
 
 (defn flow-directed?
   [^Stage stage from-name to-name]
-  (when-let [from (endpoint-bounds stage from-name)]
-    (when-let [to (endpoint-bounds stage to-name)]
-      (< (:x from) (:x to)))))
+  (directed-between? stage :stock from-name :stock to-name))
+
+(defn connector-directed?
+  [^Stage stage from-kind from-name to-kind to-name]
+  (directed-between? stage from-kind from-name to-kind to-name))

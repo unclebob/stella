@@ -21,6 +21,7 @@
     :stock (cmd/place-stock-on-shell! shell x y)
     :source (cmd/place-source-on-shell! shell x y)
     :sink (cmd/place-sink-on-shell! shell x y)
+    :converter (cmd/place-converter-on-shell! shell x y)
     :idle shell
     shell))
 
@@ -34,11 +35,15 @@
                        (cmd/arm-source-placement-on-shell! shell))
    events/arm-sink (fn [shell _]
                      (cmd/arm-sink-placement-on-shell! shell))
+   events/arm-converter (fn [shell _]
+                          (cmd/arm-converter-placement-on-shell! shell))
+   events/arm-connector (fn [shell _]
+                          (cmd/arm-connector-placement-on-shell! shell))
    events/endpoint-click (fn [shell event]
                            (if (and (:endpoint-kind event) (:endpoint-name event))
-                             (cmd/select-flow-endpoint-on-shell! shell
-                                                                 (:endpoint-kind event)
-                                                                 (:endpoint-name event))
+                             (cmd/select-endpoint-on-shell! shell
+                                                            (:endpoint-kind event)
+                                                            (:endpoint-name event))
                              shell))
    events/canvas-click (fn [shell event]
                          (if-let [[x y] (:coordinates event)]
@@ -76,5 +81,5 @@
      :effect (actions/action->effect action)}))
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-26T15:43:26.892963-05:00", :module-hash "637684051", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "-800377786"} {:id "defn/event-type", :kind "defn", :line 6, :end-line 8, :hash "-694825432"} {:id "defn/event->action", :kind "defn", :line 10, :end-line 12, :hash "-823897444"} {:id "defn-/placement-mode", :kind "defn-", :line 14, :end-line 16, :hash "1856580076"} {:id "defn-/place-on-canvas", :kind "defn-", :line 18, :end-line 24, :hash "-1648991308"} {:id "defn-/diagram-shell-updaters", :kind "defn-", :line 26, :end-line 45, :hash "-639996458"} {:id "defn/diagram-event?", :kind "defn", :line 47, :end-line 49, :hash "-1235679639"} {:id "defn/apply-action", :kind "defn", :line 51, :end-line 56, :hash "-632712785"} {:id "defn/apply-event", :kind "defn", :line 58, :end-line 65, :hash "1926107168"} {:id "defn/event-effect", :kind "defn", :line 67, :end-line 69, :hash "-850104102"} {:id "defn/process-event", :kind "defn", :line 71, :end-line 75, :hash "1193286310"}]}
+;; {:version 1, :tested-at "2026-06-26T17:10:31.717064-05:00", :module-hash "544249670", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "-800377786"} {:id "defn/event-type", :kind "defn", :line 6, :end-line 8, :hash "-694825432"} {:id "defn/event->action", :kind "defn", :line 10, :end-line 12, :hash "-823897444"} {:id "defn-/placement-mode", :kind "defn-", :line 14, :end-line 16, :hash "1856580076"} {:id "defn-/place-on-canvas", :kind "defn-", :line 18, :end-line 25, :hash "-1153076678"} {:id "defn-/diagram-shell-updaters", :kind "defn-", :line 27, :end-line 50, :hash "-1766390950"} {:id "defn/diagram-event?", :kind "defn", :line 52, :end-line 54, :hash "-1235679639"} {:id "defn/apply-action", :kind "defn", :line 56, :end-line 61, :hash "-632712785"} {:id "defn/apply-event", :kind "defn", :line 63, :end-line 70, :hash "1926107168"} {:id "defn/event-effect", :kind "defn", :line 72, :end-line 74, :hash "-850104102"} {:id "defn/process-event", :kind "defn", :line 76, :end-line 80, :hash "1193286310"}]}
 ;; clj-mutate-manifest-end
