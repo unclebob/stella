@@ -1,6 +1,9 @@
 {:tasks
- {run    (shell "clojure -M:run")
-  test   (shell "clojure -M:test")
-  crap   (shell "clojure -M:crap")
-  dry    (shell "clojure -M:dry src")
-  mutate (shell "clojure -M:mutate {{file}} --scan")}}
+ {run        (shell "clojure -M:run")
+  test       (shell "clojure -M:test")
+  property   (shell "clojure -X:property")
+  arch-check (shell "bb scripts/arch_check.bb")
+  verify     {:depends [arch-check test property]}
+  crap       (shell "clojure -M:crap")
+  dry        (shell "clojure -M:dry src")
+  mutate     (shell "clojure -M:mutate {{file}} --scan")}}

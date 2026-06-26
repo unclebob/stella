@@ -1,5 +1,6 @@
 (ns stella.ui.menu-test
   (:require [clojure.test :refer [deftest is testing]]
+            [stella.events :as events]
             [stella.ui.menu :as menu]))
 
 (defn- menu-texts [menu-bar-desc]
@@ -54,4 +55,4 @@
   (let [desc (menu/menu-bar-desc)
         file (menu-by-text desc "File")
         quit (menu-item-by-text file "Quit")]
-    (is (= {:event :stella.app/quit} (:on-action quit)))))
+    (is (= {:event events/quit} (:on-action quit)))))

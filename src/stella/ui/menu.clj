@@ -1,9 +1,10 @@
-(ns stella.ui.menu)
+(ns stella.ui.menu
+  (:require [stella.events :as events]))
 
 (def ^:private menu-specs
   [{:label "File"
     :items ["New" "Open…" "Save" "Save As…" :separator
-            {:text "Quit" :enabled true :on-action {:event :stella.app/quit}}]}
+            {:text "Quit" :enabled true :on-action {:event events/quit}}]}
    {:label "Edit"
     :items ["Undo" "Redo" :separator "Cut" "Copy" "Paste"]}
    {:label "View"
@@ -11,7 +12,7 @@
    {:label "Help"
     :items [{:text "About Stella"
              :enabled true
-             :on-action {:event :stella.app/show-about}}]}])
+             :on-action {:event events/show-about}}]}])
 
 (defn- separator []
   {:fx/type :separator})
