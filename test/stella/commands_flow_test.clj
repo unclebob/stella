@@ -11,8 +11,8 @@
 (deftest flow-commands-test
   (let [diagram (-> (diagram-with-stocks)
                     (cmd/arm-flow-placement!)
-                    (cmd/select-flow-source! "Stock1")
-                    (cmd/connect-flow! "Stock2"))]
+                    (cmd/select-flow-source! :stock "Stock1")
+                    (cmd/connect-flow! :stock "Stock2"))]
     (is (model/flow-exists? diagram "Flow1"))))
 
 (deftest fixture-flow-command-test
@@ -24,7 +24,7 @@
   (let [diagram (-> (diagram-with-stocks)
                     (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
                     (cmd/arm-flow-placement!)
-                    (cmd/select-flow-source! "Stock2")
-                    (cmd/connect-flow! "Stock1"))]
+                    (cmd/select-flow-source! :stock "Stock2")
+                    (cmd/connect-flow! :stock "Stock1"))]
     (is (model/flow-exists? diagram "Flow2"))
     (is (= ["Stock2" "Stock1"] (model/flow-endpoints diagram "Flow2")))))

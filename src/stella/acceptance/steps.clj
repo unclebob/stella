@@ -190,11 +190,45 @@
    {:pattern #"^I select stock <([A-Za-z0-9_]+)> as the flow source$"
     :fn (fn [world [_ name-param] example]
           (let [name (require-value example name-param)]
-            (update world :diagram #(cmd/select-flow-source! % name))))}
+            (update world :diagram #(cmd/select-flow-source! % :stock name))))}
+   {:pattern #"^I select stock ([A-Za-z0-9]+) as the flow source$"
+    :fn (fn [world [_ name] _]
+          (update world :diagram #(cmd/select-flow-source! % :stock name)))}
    {:pattern #"^I select stock <([A-Za-z0-9_]+)> as the flow destination$"
     :fn (fn [world [_ name-param] example]
           (let [name (require-value example name-param)]
-            (update world :diagram #(cmd/connect-flow! % name))))}
+            (update world :diagram #(cmd/connect-flow! % :stock name))))}
+   {:pattern #"^I select stock ([A-Za-z0-9]+) as the flow destination$"
+    :fn (fn [world [_ name] _]
+          (update world :diagram #(cmd/connect-flow! % :stock name)))}
+   {:pattern #"^I select source <([A-Za-z0-9_]+)> as the flow source$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (update world :diagram #(cmd/select-flow-source! % :source name))))}
+   {:pattern #"^I select source ([A-Za-z0-9]+) as the flow source$"
+    :fn (fn [world [_ name] _]
+          (update world :diagram #(cmd/select-flow-source! % :source name)))}
+   {:pattern #"^I select sink <([A-Za-z0-9_]+)> as the flow source$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (update world :diagram #(cmd/select-flow-source! % :sink name))))}
+   {:pattern #"^I select sink ([A-Za-z0-9]+) as the flow source$"
+    :fn (fn [world [_ name] _]
+          (update world :diagram #(cmd/select-flow-source! % :sink name)))}
+   {:pattern #"^I select sink <([A-Za-z0-9_]+)> as the flow destination$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (update world :diagram #(cmd/connect-flow! % :sink name))))}
+   {:pattern #"^I select sink ([A-Za-z0-9]+) as the flow destination$"
+    :fn (fn [world [_ name] _]
+          (update world :diagram #(cmd/connect-flow! % :sink name)))}
+   {:pattern #"^I select source <([A-Za-z0-9_]+)> as the flow destination$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (update world :diagram #(cmd/connect-flow! % :source name))))}
+   {:pattern #"^I select source ([A-Za-z0-9]+) as the flow destination$"
+    :fn (fn [world [_ name] _]
+          (update world :diagram #(cmd/connect-flow! % :source name)))}
    {:pattern #"^the diagram should contain flow <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ flow-param] example]
           (let [flow (require-value example flow-param)]
@@ -227,7 +261,98 @@
     :fn (fn [world _ _]
           (when-not (model/flow-placement-disarmed? (diagram-from world))
             (fail! "expected flow placement tool disarmed"))
-          world)}])
+          world)}
+   {:pattern #"^the flow placement tool should be armed$"
+    :fn (fn [world _ _]
+          (when-not (model/flow-placement-armed? (diagram-from world))
+            (fail! "expected flow placement tool armed"))
+          world)}
+   {:pattern #"^flow <([A-Za-z0-9_]+)> should run from source <([A-Za-z0-9_]+)> to stock <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ flow-param from-param to-param] example]
+          (let [flow (require-value example flow-param)
+                from (require-value example from-param)
+                to (require-value example to-param)
+                diagram (diagram-from world)]
+            (when-not (= {:kind :source :id from} (model/flow-from diagram flow))
+              (fail! (str "flow " flow " from mismatch")))
+            (when-not (= {:kind :stock :id to} (model/flow-to diagram flow))
+              (fail! (str "flow " flow " to mismatch")))
+            world))}
+   {:pattern #"^flow <([A-Za-z0-9_]+)> should run from stock <([A-Za-z0-9_]+)> to sink <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ flow-param from-param to-param] example]
+          (let [flow (require-value example flow-param)
+                from (require-value example from-param)
+                to (require-value example to-param)
+                diagram (diagram-from world)]
+            (when-not (= {:kind :stock :id from} (model/flow-from diagram flow))
+              (fail! (str "flow " flow " from mismatch")))
+            (when-not (= {:kind :sink :id to} (model/flow-to diagram flow))
+              (fail! (str "flow " flow " to mismatch")))
+            world))}
+   {:pattern #"^I arm the source placement tool$"
+    :fn (fn [world _ _]
+          (update world :diagram cmd/arm-source-placement!))}
+   {:pattern #"^I arm the sink placement tool$"
+    :fn (fn [world _ _]
+          (update world :diagram cmd/arm-sink-placement!))}
+   {:pattern #"^I place a source at <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ x-param y-param] example]
+          (let [x (parse-int (require-value example x-param) x-param)
+                y (parse-int (require-value example y-param) y-param)]
+            (update world :diagram #(cmd/place-source! % x y))))}
+   {:pattern #"^I place a sink at <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ x-param y-param] example]
+          (let [x (parse-int (require-value example x-param) x-param)
+                y (parse-int (require-value example y-param) y-param)]
+            (update world :diagram #(cmd/place-sink! % x y))))}
+   {:pattern #"^the diagram should contain source <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (when-not (model/source-exists? (diagram-from world) name)
+              (fail! (str "diagram missing source " name)))
+            world))}
+   {:pattern #"^the diagram should contain sink <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (when-not (model/sink-exists? (diagram-from world) name)
+              (fail! (str "diagram missing sink " name)))
+            world))}
+   {:pattern #"^source <([A-Za-z0-9_]+)> should be at position <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (require-value example name-param)
+                x (parse-int (require-value example x-param) x-param)
+                y (parse-int (require-value example y-param) y-param)
+                pos (model/source-position (diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (fail! (str "source " name " at " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^sink <([A-Za-z0-9_]+)> should be at position <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (require-value example name-param)
+                x (parse-int (require-value example x-param) x-param)
+                y (parse-int (require-value example y-param) y-param)
+                pos (model/sink-position (diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (fail! (str "sink " name " at " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^the diagram source count should be 0$"
+    :fn (fn [world _ _]
+          (when-not (zero? (model/source-count (diagram-from world)))
+            (fail! "expected diagram source count 0"))
+          world)}
+   {:pattern #"^the source placement tool should be disarmed$"
+    :fn (fn [world _ _]
+          (when-not (model/source-placement-disarmed? (diagram-from world))
+            (fail! "expected source placement tool disarmed"))
+          world)}
+   {:pattern #"^source ([A-Za-z0-9]+) at (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (let [diagram (diagram-from world)]
+            (assoc world :diagram (cmd/fixture-source! diagram name (parse-int x-str "x") (parse-int y-str "y")))))}
+   {:pattern #"^sink ([A-Za-z0-9]+) at (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (let [diagram (diagram-from world)]
+            (assoc world :diagram (cmd/fixture-sink! diagram name (parse-int x-str "x") (parse-int y-str "y")))))}])
 
 (defn dispatch-step
   [world step example]

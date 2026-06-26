@@ -31,17 +31,41 @@
   [diagram name x y]
   (model/fixture-stock diagram name x y))
 
+(defn arm-source-placement!
+  [diagram]
+  (model/arm-source-placement diagram))
+
+(defn place-source!
+  [diagram x y]
+  (model/place-source diagram x y))
+
+(defn arm-sink-placement!
+  [diagram]
+  (model/arm-sink-placement diagram))
+
+(defn place-sink!
+  [diagram x y]
+  (model/place-sink diagram x y))
+
+(defn fixture-source!
+  [diagram name x y]
+  (model/fixture-source diagram name x y))
+
+(defn fixture-sink!
+  [diagram name x y]
+  (model/fixture-sink diagram name x y))
+
 (defn arm-flow-placement!
   [diagram]
   (model/arm-flow-placement diagram))
 
 (defn select-flow-source!
-  [diagram stock-name]
-  (model/select-flow-source diagram stock-name))
+  [diagram kind name]
+  (model/select-flow-source diagram kind name))
 
 (defn connect-flow!
-  [diagram to-stock]
-  (model/connect-flow diagram to-stock))
+  [diagram kind name]
+  (model/connect-flow diagram kind name))
 
 (defn fixture-flow!
   [diagram flow-name from-stock to-stock]
@@ -55,14 +79,30 @@
   [shell x y]
   (update shell :diagram #(place-stock! % x y)))
 
+(defn arm-source-placement-on-shell!
+  [shell]
+  (update shell :diagram arm-source-placement!))
+
+(defn place-source-on-shell!
+  [shell x y]
+  (update shell :diagram #(place-source! % x y)))
+
+(defn arm-sink-placement-on-shell!
+  [shell]
+  (update shell :diagram arm-sink-placement!))
+
+(defn place-sink-on-shell!
+  [shell x y]
+  (update shell :diagram #(place-sink! % x y)))
+
 (defn arm-flow-placement-on-shell!
   [shell]
   (update shell :diagram arm-flow-placement!))
 
-(defn select-flow-stock-on-shell!
-  [shell stock-name]
+(defn select-flow-endpoint-on-shell!
+  [shell kind name]
   (update shell :diagram
           (fn [diagram]
             (if (:flow-draft diagram)
-              (connect-flow! diagram stock-name)
-              (select-flow-source! diagram stock-name)))))
+              (connect-flow! diagram kind name)
+              (select-flow-source! diagram kind name)))))

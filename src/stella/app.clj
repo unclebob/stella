@@ -11,7 +11,8 @@
   (atom (cmd/default-shell! nil)))
 
 (def ^:private diagram-events
-  #{events/arm-stock events/arm-flow events/canvas-click events/stock-click})
+  #{events/arm-stock events/arm-flow events/arm-source events/arm-sink
+    events/canvas-click events/endpoint-click})
 
 (defn event-type
   [event]
@@ -37,32 +38,43 @@
   (when-let [^MouseEvent mouse (:fx/event event)]
     [(int (.getX mouse)) (int (.getY mouse))]))
 
+(defn place-on-canvas
+  [shell x y]
+  (case (get-in shell [:diagram :placement-mode])
+    :stock (cmd/place-stock-on-shell! shell x y)
+    :source (cmd/place-source-on-shell! shell x y)
+    :sink (cmd/place-sink-on-shell! shell x y)
+    shell))
+
 (defn place-stock-at-coordinates
   [shell [x y]]
   (cmd/place-stock-on-shell! shell x y))
 
-(defn place-stock-from-click
+(defn place-from-canvas-click
   [shell event]
-  (if-let [coords (click-coordinates event)]
-    (place-stock-at-coordinates shell coords)
+  (if-let [[x y] (click-coordinates event)]
+    (place-on-canvas shell x y)
     shell))
 
-(defn stock-name-from-event
+(defn endpoint-from-event
   [event]
-  (:stock-name event))
+  (when (and (:endpoint-kind event) (:endpoint-name event))
+    {:kind (:endpoint-kind event) :name (:endpoint-name event)}))
 
-(defn select-flow-stock-from-event
+(defn select-flow-endpoint-from-event
   [shell event]
-  (if-let [stock-name (stock-name-from-event event)]
-    (cmd/select-flow-stock-on-shell! shell stock-name)
+  (if-let [{:keys [kind name]} (endpoint-from-event event)]
+    (cmd/select-flow-endpoint-on-shell! shell kind name)
     shell))
 
 (defn- diagram-shell-updaters
   []
   {events/arm-stock (fn [shell _] (cmd/arm-stock-placement-on-shell! shell))
    events/arm-flow (fn [shell _] (cmd/arm-flow-placement-on-shell! shell))
-   events/stock-click select-flow-stock-from-event
-   events/canvas-click place-stock-from-click})
+   events/arm-source (fn [shell _] (cmd/arm-source-placement-on-shell! shell))
+   events/arm-sink (fn [shell _] (cmd/arm-sink-placement-on-shell! shell))
+   events/endpoint-click select-flow-endpoint-from-event
+   events/canvas-click place-from-canvas-click})
 
 (defn update-shell-for-diagram-event
   [shell event]

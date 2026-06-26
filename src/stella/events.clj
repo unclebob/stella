@@ -8,6 +8,10 @@
 
 (def arm-flow ::arm-flow)
 
+(def arm-source ::arm-source)
+
+(def arm-sink ::arm-sink)
+
 (def canvas-click ::canvas-click)
 
-(def stock-click ::stock-click)
+(def endpoint-click ::endpoint-click)

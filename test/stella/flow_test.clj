@@ -10,8 +10,8 @@
 (deftest connect-flow-test
   (let [diagram (-> (diagram-with-stocks)
                     (model/arm-flow-placement)
-                    (model/select-flow-source "Stock1")
-                    (model/connect-flow "Stock2"))]
+                    (model/select-flow-source :stock "Stock1")
+                    (model/connect-flow :stock "Stock2"))]
     (is (model/flow-exists? diagram "Flow1"))
     (is (= ["Stock1" "Stock2"] (model/flow-endpoints diagram "Flow1")))
     (is (= "0" (model/flow-rate diagram "Flow1")))
@@ -20,8 +20,8 @@
 (deftest same-stock-rejected-test
   (let [diagram (-> (diagram-with-stocks)
                     (model/arm-flow-placement)
-                    (model/select-flow-source "Stock1")
-                    (model/connect-flow "Stock1"))]
+                    (model/select-flow-source :stock "Stock1")
+                    (model/connect-flow :stock "Stock1"))]
     (is (zero? (model/flow-count diagram)))))
 
 (deftest arm-without-select-test
