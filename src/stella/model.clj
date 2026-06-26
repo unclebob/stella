@@ -151,13 +151,18 @@
   [prefix name]
   (Integer/parseInt (subs name (count prefix))))
 
+(defn- fixture-item
+  [diagram collection next-key id-prefix name-prefix name x y entry]
+  (let [num (num-from-name name-prefix name)
+        id (keyword (str id-prefix num))]
+    (-> diagram
+        (assoc-in [collection id] (assoc entry :name name :x x :y y))
+        (update next-key #(max % (inc num))))))
+
 (defn fixture-stock
   [diagram name x y]
-  (let [num (num-from-name "Stock" name)
-        id (keyword (str "stock-" num))]
-    (-> diagram
-        (assoc-in [:stocks id] {:name name :initial-value "0" :x x :y y})
-        (update :next-stock-num #(max % (inc num))))))
+  (fixture-item diagram :stocks :next-stock-num "stock-" "Stock" name x y
+                {:initial-value "0"}))
 
 (defn- endpoint-ref
   [kind id]
@@ -189,17 +194,20 @@
   (when-let [[_ sink] (sink-entry-by-name diagram name)]
     [(:x sink) (:y sink)]))
 
-(declare converter-position flow-midpoint)
+(declare flow-midpoint converter-position)
+
+(defn- endpoint-position-resolvers
+  []
+  {:stock stock-position
+   :source source-position
+   :sink sink-position
+   :converter converter-position
+   :flow flow-midpoint})
 
 (defn endpoint-position
   [diagram {:keys [kind id]}]
-  (case kind
-    :stock (stock-position diagram id)
-    :source (source-position diagram id)
-    :sink (sink-position diagram id)
-    :converter (converter-position diagram id)
-    :flow (flow-midpoint diagram id)
-    nil))
+  (when-let [resolve (get (endpoint-position-resolvers) kind)]
+    (resolve diagram id)))
 
 (def ^:private endpoint-anchor-offsets
   {[:stock :right] [80.0 25.0]
@@ -232,21 +240,13 @@
   [diagram]
   (vals (:sinks diagram)))
 
-(defn- cloud-fixture
-  [diagram prefix collection-key next-key name x y]
-  (let [num (num-from-name prefix name)
-        id (keyword (str (clojure.string/lower-case prefix) "-" num))]
-    (-> diagram
-        (assoc-in [collection-key id] {:name name :x x :y y})
-        (update next-key #(max % (inc num))))))
-
 (defn fixture-source
   [diagram name x y]
-  (cloud-fixture diagram "Source" :sources :next-source-num name x y))
+  (fixture-item diagram :sources :next-source-num "source-" "Source" name x y {}))
 
 (defn fixture-sink
   [diagram name x y]
-  (cloud-fixture diagram "Sink" :sinks :next-sink-num name x y))
+  (fixture-item diagram :sinks :next-sink-num "sink-" "Sink" name x y {}))
 
 (defn arm-source-placement
   [diagram]
@@ -256,25 +256,25 @@
   [diagram]
   (assoc diagram :placement-mode :sink))
 
-(defn- cloud-place
-  [diagram mode prefix collection-key next-key x y]
+(defn- place-cloud
+  [diagram mode collection next-key id-prefix label-prefix x y]
   (if (= mode (:placement-mode diagram))
     (let [num (get diagram next-key)
-          name (str prefix num)
-          id (keyword (str (clojure.string/lower-case prefix) "-" num))]
+          name (str label-prefix num)
+          id (keyword (str id-prefix num))]
       (-> diagram
-          (assoc-in [collection-key id] {:name name :x x :y y})
+          (assoc-in [collection id] {:name name :x x :y y})
           (assoc :placement-mode :idle)
           (update next-key inc)))
     diagram))
 
 (defn place-source
   [diagram x y]
-  (cloud-place diagram :source "Source" :sources :next-source-num x y))
+  (place-cloud diagram :source :sources :next-source-num "source-" "Source" x y))
 
 (defn place-sink
   [diagram x y]
-  (cloud-place diagram :sink "Sink" :sinks :next-sink-num x y))
+  (place-cloud diagram :sink :sinks :next-sink-num "sink-" "Sink" x y))
 
 (defn source-placement-disarmed?
   [diagram]
@@ -353,11 +353,15 @@
         (assoc :placement-mode :idle :flow-draft nil)
         (update :next-flow-num inc))))
 
+(defn- arm-link-placement
+  [diagram mode draft-key]
+  (-> diagram
+      (assoc :placement-mode mode)
+      (assoc draft-key nil)))
+
 (defn arm-flow-placement
   [diagram]
-  (-> diagram
-      (assoc :placement-mode :flow)
-      (assoc :flow-draft nil)))
+  (arm-link-placement diagram :flow :flow-draft))
 
 (defn flow-placement-armed?
   [diagram]
@@ -388,15 +392,18 @@
 
 (declare converter-exists?)
 
+(defn- endpoint-existence-checks
+  []
+  {:stock stock-exists?
+   :sink sink-exists?
+   :converter converter-exists?
+   :flow flow-exists?
+   :source source-exists?})
+
 (defn- endpoint-exists?
   [diagram kind name]
-  (case kind
-    :stock (stock-exists? diagram name)
-    :source (source-exists? diagram name)
-    :sink (sink-exists? diagram name)
-    :converter (converter-exists? diagram name)
-    :flow (flow-exists? diagram name)
-    false))
+  (when-let [check (get (endpoint-existence-checks) kind)]
+    (check diagram name)))
 
 (defn- try-connect-flow
   [diagram from kind name]
@@ -446,11 +453,8 @@
 
 (defn fixture-converter
   [diagram name x y]
-  (let [num (num-from-name "Converter" name)
-        id (keyword (str "converter-" num))]
-    (-> diagram
-        (assoc-in [:converters id] {:name name :value "0" :x x :y y})
-        (update :next-converter-num #(max % (inc num))))))
+  (fixture-item diagram :converters :next-converter-num "converter-" "Converter" name x y
+                {:value "0"}))
 
 (defn arm-converter-placement
   [diagram]
@@ -481,6 +485,14 @@
               [tx ty] (endpoint-anchor to-pos (:kind (:to flow)) :left)]
           [(/ (+ fx tx) 2.0) (/ (+ fy ty) 2.0)])))))
 
+(def ^:private clickable-kinds-by-mode
+  {:flow #{:stock :source :sink}
+   :connector #{:stock :converter :flow}})
+
+(defn endpoint-clickable?
+  [diagram kind]
+  (contains? (get clickable-kinds-by-mode (:placement-mode diagram)) kind))
+
 (defn- connector-entry-by-name
   [diagram name]
   (first (filter #(= name (:name (val %))) (:connectors diagram))))
@@ -489,15 +501,18 @@
   [diagram name]
   (some? (connector-entry-by-name diagram name)))
 
+(defn- connector-attribute
+  [diagram name attribute]
+  (when-let [[_ connector] (connector-entry-by-name diagram name)]
+    (get connector attribute)))
+
 (defn connector-from
   [diagram name]
-  (when-let [[_ connector] (connector-entry-by-name diagram name)]
-    (:from connector)))
+  (connector-attribute diagram name :from))
 
 (defn connector-to
   [diagram name]
-  (when-let [[_ connector] (connector-entry-by-name diagram name)]
-    (:to connector)))
+  (connector-attribute diagram name :to))
 
 (defn connector-count
   [diagram]
@@ -526,9 +541,7 @@
 
 (defn arm-connector-placement
   [diagram]
-  (-> diagram
-      (assoc :placement-mode :connector)
-      (assoc :connector-draft nil)))
+  (arm-link-placement diagram :connector :connector-draft))
 
 (defn connector-placement-armed?
   [diagram]
@@ -544,22 +557,25 @@
     (assoc diagram :connector-draft {:from (endpoint-ref kind name)})
     diagram))
 
+(defn- try-connect-connector
+  [diagram from kind name]
+  (let [to (endpoint-ref kind name)]
+    (cond
+      (contains? #{:source :sink :stock} kind)
+      (assoc diagram :connector-draft nil)
+
+      (and (endpoint-exists? diagram kind name)
+           (valid-connector-pair? from to))
+      (create-connector! diagram from to)
+
+      :else
+      (assoc diagram :connector-draft nil))))
+
 (defn connect-connector
   [diagram kind name]
   (if (and (= :connector (:placement-mode diagram))
            (:connector-draft diagram))
-    (let [from (:from (:connector-draft diagram))
-          to (endpoint-ref kind name)]
-      (cond
-        (contains? #{:source :sink :stock} kind)
-        (assoc diagram :connector-draft nil)
-
-        (and (endpoint-exists? diagram kind name)
-             (valid-connector-pair? from to))
-        (create-connector! diagram from to)
-
-        :else
-        (assoc diagram :connector-draft nil)))
+    (try-connect-connector diagram (:from (:connector-draft diagram)) kind name)
     diagram))
 
 (defn connector-placement-disarmed?

@@ -41,3 +41,11 @@
                     (model/select-connector-origin :converter "Converter1")
                     (model/connect-connector :source "Source1"))]
     (is (zero? (model/connector-count diagram)))))
+
+(deftest reject-invalid-connector-pair-test
+  (let [diagram (-> (diagram-with-fixtures)
+                    (model/arm-connector-placement)
+                    (model/select-connector-origin :stock "Stock1")
+                    (model/connect-connector :flow "Flow1"))]
+    (is (zero? (model/connector-count diagram)))
+    (is (nil? (:connector-draft diagram)))))

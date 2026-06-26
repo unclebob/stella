@@ -7,13 +7,6 @@
   [kind name]
   {:event events/endpoint-click :endpoint-kind kind :endpoint-name name})
 
-(defn- endpoint-clickable?
-  [diagram kind]
-  (case (:placement-mode diagram)
-    :flow (contains? #{:stock :source :sink} kind)
-    :connector (contains? #{:stock :converter :flow} kind)
-    false))
-
 (defn- flow-desc
   [diagram {:keys [name rate from to]}]
   (when-let [from-pos (model/endpoint-position diagram from)]
@@ -37,7 +30,7 @@
                              :spacing 2
                              :children [{:fx/type :label :text name}
                                         {:fx/type :label :text (str rate)}]}]}
-          (endpoint-clickable? diagram :flow)
+          (model/endpoint-clickable? diagram :flow)
           (assoc :on-mouse-clicked (endpoint-click :flow name)))))))
 
 (defn- connector-desc
@@ -67,12 +60,19 @@
   [diagram {:keys [name initial-value x y]}]
   (cond-> {:fx/type :group
            :id (str "stock-" name)
-           :children [{:fx/type :label :layout-x x :layout-y y :text name}
-                      {:fx/type :label
-                       :layout-x x
-                       :layout-y (+ y 16)
-                       :text (str initial-value)}]}
-    (endpoint-clickable? diagram :stock)
+           :layout-x x
+           :layout-y y
+           :children [{:fx/type :rectangle
+                       :width 80
+                       :height 50
+                       :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
+                      {:fx/type :vbox
+                       :layout-x 8
+                       :layout-y 8
+                       :spacing 2
+                       :children [{:fx/type :label :text name}
+                                  {:fx/type :label :text (str initial-value)}]}]}
+    (model/endpoint-clickable? diagram :stock)
     (assoc :on-mouse-clicked (endpoint-click :stock name))))
 
 (defn- converter-desc
@@ -92,7 +92,7 @@
                        :spacing 2
                        :children [{:fx/type :label :text name}
                                   {:fx/type :label :text value}]}]}
-    (endpoint-clickable? diagram :converter)
+    (model/endpoint-clickable? diagram :converter)
     (assoc :on-mouse-clicked (endpoint-click :converter name))))
 
 (defn- cloud-desc
@@ -111,21 +111,26 @@
                        :layout-x 20
                        :layout-y 18
                        :text name}]}
-    (endpoint-clickable? diagram kind)
+    (model/endpoint-clickable? diagram kind)
     (assoc :on-mouse-clicked (endpoint-click kind name))))
 
 (defn diagram-overlay-text
   [diagram]
   (let [stocks (for [{:keys [name initial-value]} (model/stocks diagram)]
-                 (str name " " initial-value))
+                (str name " " initial-value))
         flows (for [{:keys [name rate]} (model/flows diagram)]
                 (str name " " rate))
         sources (for [{:keys [name]} (model/sources diagram)] name)
-        sinks (for [{:keys [name]} (model/sinks diagram)] name)]
+        sinks (for [{:keys [name]} (model/sinks diagram)] name)
+        converters (for [{:keys [name value]} (model/converters diagram)]
+                     (str name " " value))
+        connectors (for [{:keys [name]} (model/connectors diagram)] name)]
     (str (str/join " | " stocks)
          (when (seq flows) (str " || " (str/join " | " flows)))
          (when (seq sources) (str " || " (str/join " | " sources)))
-         (when (seq sinks) (str " || " (str/join " | " sinks))))))
+         (when (seq sinks) (str " || " (str/join " | " sinks)))
+         (when (seq converters) (str " || " (str/join " | " converters)))
+         (when (seq connectors) (str " || " (str/join " | " connectors))))))
 
 (defn- canvas-background []
   {:fx/type :rectangle
@@ -144,7 +149,8 @@
         converter-nodes (mapv #(converter-desc diagram %) (model/converters diagram))
         stock-nodes (mapv #(stock-desc diagram %) (model/stocks diagram))
         diagram-nodes (into connector-nodes
-                            (concat flow-nodes source-nodes sink-nodes converter-nodes stock-nodes))
+                            (concat flow-nodes source-nodes sink-nodes
+                                    converter-nodes stock-nodes))
         children (into [(canvas-background)] diagram-nodes)]
     {:fx/type :stack-pane
      :id "canvas"

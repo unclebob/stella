@@ -30,6 +30,8 @@
   (is (true? (dispatch/diagram-event? events/arm-flow)))
   (is (true? (dispatch/diagram-event? events/arm-source)))
   (is (true? (dispatch/diagram-event? events/arm-sink)))
+  (is (true? (dispatch/diagram-event? events/arm-converter)))
+  (is (true? (dispatch/diagram-event? events/arm-connector)))
   (is (true? (dispatch/diagram-event? events/endpoint-click)))
   (is (true? (dispatch/diagram-event? events/canvas-click)))
   (is (false? (dispatch/diagram-event? events/quit))))
@@ -47,12 +49,19 @@
                                                  {:event events/arm-source})))))
     (is (= :sink (:placement-mode (:diagram (dispatch/apply-event
                                                shell
-                                               {:event events/arm-sink})))))))
+                                               {:event events/arm-sink})))))
+    (is (= :converter (:placement-mode (:diagram (dispatch/apply-event
+                                                    shell
+                                                    {:event events/arm-converter})))))
+    (is (= :connector (:placement-mode (:diagram (dispatch/apply-event
+                                                     shell
+                                                     {:event events/arm-connector})))))))
 
 (deftest apply-event-place-on-canvas-test
   (let [stock-shell (cmd/arm-stock-placement-on-shell! (model/default-shell))
         source-shell (cmd/arm-source-placement-on-shell! (model/default-shell))
         sink-shell (cmd/arm-sink-placement-on-shell! (model/default-shell))
+        converter-shell (cmd/arm-converter-placement-on-shell! (model/default-shell))
         idle-shell (model/default-shell)]
     (is (model/stock-exists? (:diagram (dispatch/apply-event
                                           stock-shell
@@ -69,6 +78,11 @@
                                          {:event events/canvas-click
                                           :coordinates [400 150]}))
                              "Sink1"))
+    (is (model/converter-exists? (:diagram (dispatch/apply-event
+                                              converter-shell
+                                              {:event events/canvas-click
+                                               :coordinates [100 250]}))
+                                  "Converter1"))
     (is (= idle-shell (dispatch/apply-event idle-shell
                                              {:event events/canvas-click
                                               :coordinates [1 2]})))))
@@ -87,3 +101,20 @@
                                                  :endpoint-name "Stock2"})]
     (is (= {:kind :stock :id "Stock1"} (:from (:flow-draft (:diagram drafted)))))
     (is (model/flow-exists? (:diagram connected) "Flow1"))))
+
+(deftest apply-event-connect-connector-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 200 150)
+                                        (cmd/fixture-stock! "Stock2" 350 150)
+                                        (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                                        (cmd/fixture-converter! "Converter1" 100 250)
+                                        (cmd/arm-connector-placement!))))
+        drafted (dispatch/apply-event shell {:event events/endpoint-click
+                                             :endpoint-kind :converter
+                                             :endpoint-name "Converter1"})
+        connected (dispatch/apply-event drafted {:event events/endpoint-click
+                                                 :endpoint-kind :flow
+                                                 :endpoint-name "Flow1"})]
+    (is (= {:kind :converter :id "Converter1"} (:from (:connector-draft (:diagram drafted)))))
+    (is (model/connector-exists? (:diagram connected) "Connector1"))))

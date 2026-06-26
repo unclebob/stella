@@ -135,15 +135,17 @@
   [shell]
   (update shell :diagram arm-connector-placement!))
 
+(defn- select-endpoint-on-diagram
+  [diagram kind name]
+  (case (:placement-mode diagram)
+    :flow (if (:flow-draft diagram)
+            (connect-flow! diagram kind name)
+            (select-flow-source! diagram kind name))
+    :connector (if (:connector-draft diagram)
+                 (connect-connector! diagram kind name)
+                 (select-connector-origin! diagram kind name))
+    diagram))
+
 (defn select-endpoint-on-shell!
   [shell kind name]
-  (update shell :diagram
-          (fn [diagram]
-            (case (:placement-mode diagram)
-              :flow (if (:flow-draft diagram)
-                      (connect-flow! diagram kind name)
-                      (select-flow-source! diagram kind name))
-              :connector (if (:connector-draft diagram)
-                           (connect-connector! diagram kind name)
-                           (select-connector-origin! diagram kind name))
-              diagram))))
+  (update shell :diagram #(select-endpoint-on-diagram % kind name)))
