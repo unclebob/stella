@@ -1,5 +1,6 @@
 (ns stella.app
   (:require [cljfx.api :as fx]
+            [stella.commands :as cmd]
             [stella.ui.root :as root])
   (:import [javafx.application Platform]
            [javafx.scene.control Alert Alert$AlertType]))
@@ -13,10 +14,13 @@
 
 (defn start!
   []
-  (fx/create-app
-   {:desc-fn (fn [_] (root/root-desc))
-    :event-handler (fn [event]
-                     (case (:fx/event-type event)
-                       :stella.app/quit (Platform/exit)
-                       :stella.app/show-about (about-dialog)
-                       nil))}))
+  (let [state (atom (cmd/default-shell! nil))]
+    (fx/create-app
+     {:desc-fn (fn [_] (root/root-desc @state))
+      :event-handler (fn [event]
+                       (case (:fx/event-type event)
+                         :stella.app/quit (do (swap! state cmd/quit!)
+                                              (Platform/exit))
+                         :stella.app/show-about (do (swap! state cmd/show-about!)
+                                                    (about-dialog))
+                         nil))})))

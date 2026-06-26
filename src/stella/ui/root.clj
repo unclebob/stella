@@ -3,10 +3,10 @@
             [stella.ui.canvas :as canvas]))
 
 (defn root-desc
-  []
+  [shell]
   {:fx/type :stage
-   :title "Stella"
-   :showing true
+   :title (:window-title shell)
+   :showing (:showing shell)
    :width 1024
    :height 768
    :min-width 640
@@ -14,5 +14,5 @@
    :on-close-request {:event :stella.app/quit}
    :scene {:fx/type :scene
            :root {:fx/type :border-pane
-                  :top (menu/menu-bar-desc)
+                  :top (menu/menu-bar-desc shell)
                   :center (canvas/canvas-desc)}}})

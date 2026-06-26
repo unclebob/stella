@@ -9,3 +9,5 @@ swarmforge/scripts/
 .calva/
 .lsp/
 tmp/
+build/
+acceptance/generated/
