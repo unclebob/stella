@@ -150,6 +150,83 @@
     :fn (fn [world _ _]
           (when-not (model/placement-disarmed? (diagram-from world))
             (fail! "expected stock placement tool disarmed"))
+          world)}
+   {:pattern #"^a diagram model with stock <([A-Za-z0-9_]+)> at <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (require-value example name-param)
+                x (parse-int (require-value example x-param) x-param)
+                y (parse-int (require-value example y-param) y-param)
+                diagram (diagram-from world)]
+            (assoc world :diagram (cmd/fixture-stock! diagram name x y))))}
+   {:pattern #"^a diagram model with stock ([A-Za-z0-9]+) at (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (let [diagram (diagram-from world)]
+            (assoc world :diagram (cmd/fixture-stock! diagram name (parse-int x-str "x") (parse-int y-str "y")))))}
+   {:pattern #"^stock <([A-Za-z0-9_]+)> at <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (require-value example name-param)
+                x (parse-int (require-value example x-param) x-param)
+                y (parse-int (require-value example y-param) y-param)
+                diagram (diagram-from world)]
+            (assoc world :diagram (cmd/fixture-stock! diagram name x y))))}
+   {:pattern #"^stock ([A-Za-z0-9]+) at (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (let [diagram (diagram-from world)]
+            (assoc world :diagram (cmd/fixture-stock! diagram name (parse-int x-str "x") (parse-int y-str "y")))))}
+   {:pattern #"^flow <([A-Za-z0-9_]+)> runs from stock <([A-Za-z0-9_]+)> to stock <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ flow-param from-param to-param] example]
+          (let [flow (require-value example flow-param)
+                from (require-value example from-param)
+                to (require-value example to-param)
+                diagram (diagram-from world)]
+            (assoc world :diagram (cmd/fixture-flow! diagram flow from to))))}
+   {:pattern #"^flow ([A-Za-z0-9]+) runs from stock ([A-Za-z0-9]+) to stock ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ flow from to] _]
+          (let [diagram (diagram-from world)]
+            (assoc world :diagram (cmd/fixture-flow! diagram flow from to))))}
+   {:pattern #"^I arm the flow placement tool$"
+    :fn (fn [world _ _]
+          (update world :diagram cmd/arm-flow-placement!))}
+   {:pattern #"^I select stock <([A-Za-z0-9_]+)> as the flow source$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (update world :diagram #(cmd/select-flow-source! % name))))}
+   {:pattern #"^I select stock <([A-Za-z0-9_]+)> as the flow destination$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (update world :diagram #(cmd/connect-flow! % name))))}
+   {:pattern #"^the diagram should contain flow <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ flow-param] example]
+          (let [flow (require-value example flow-param)]
+            (when-not (model/flow-exists? (diagram-from world) flow)
+              (fail! (str "diagram missing flow " flow)))
+            world))}
+   {:pattern #"^flow <([A-Za-z0-9_]+)> should run from stock <([A-Za-z0-9_]+)> to stock <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ flow-param from-param to-param] example]
+          (let [flow (require-value example flow-param)
+                from (require-value example from-param)
+                to (require-value example to-param)
+                endpoints (model/flow-endpoints (diagram-from world) flow)]
+            (when-not (= [from to] endpoints)
+              (fail! (str "flow " flow " endpoints " endpoints " expected [" from " " to "]")))
+            world))}
+   {:pattern #"^flow <([A-Za-z0-9_]+)> rate should be <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ flow-param rate-param] example]
+          (let [flow (require-value example flow-param)
+                rate (require-value example rate-param)
+                actual (model/flow-rate (diagram-from world) flow)]
+            (when-not (= rate actual)
+              (fail! (str "flow " flow " rate " actual " expected " rate)))
+            world))}
+   {:pattern #"^the diagram flow count should be 0$"
+    :fn (fn [world _ _]
+          (when-not (zero? (model/flow-count (diagram-from world)))
+            (fail! "expected diagram flow count 0"))
+          world)}
+   {:pattern #"^the flow placement tool should be disarmed$"
+    :fn (fn [world _ _]
+          (when-not (model/flow-placement-disarmed? (diagram-from world))
+            (fail! "expected flow placement tool disarmed"))
           world)}])
 
 (defn dispatch-step

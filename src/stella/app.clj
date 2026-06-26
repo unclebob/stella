@@ -24,6 +24,13 @@
       (= event-type events/arm-stock)
       (swap! *state cmd/arm-stock-placement-on-shell!)
 
+      (= event-type events/arm-flow)
+      (swap! *state cmd/arm-flow-placement-on-shell!)
+
+      (= event-type events/stock-click)
+      (when-let [stock-name (:stock-name event)]
+        (swap! *state #(cmd/select-flow-stock-on-shell! % stock-name)))
+
       (= event-type events/canvas-click)
       (when-let [mouse ^MouseEvent (:fx/event event)]
         (swap! *state #(cmd/place-stock-on-shell! % (int (.getX mouse)) (int (.getY mouse)))))
