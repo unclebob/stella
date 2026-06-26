@@ -8,4 +8,7 @@
    :pref-width 80
    :children [{:fx/type :button
                :text "Stock"
-               :on-action {:event events/arm-stock}}]})
+               :on-action {:event events/arm-stock}}
+              {:fx/type :button
+               :text "Flow"
+               :on-action {:event events/arm-flow}}]})

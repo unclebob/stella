@@ -10,6 +10,9 @@
 (defonce *state
   (atom (cmd/default-shell! nil)))
 
+(def ^:private diagram-events
+  #{events/arm-stock events/arm-flow events/canvas-click events/stock-click})
+
 (defn event-type
   [event]
   (or (:event event) (:event/type event)))
@@ -17,9 +20,6 @@
 (defn event-action
   [event]
   (some-> event event-type actions/event->action))
-
-(def ^:private diagram-events
-  #{events/arm-stock events/canvas-click})
 
 (defn diagram-event?
   [event-type]
@@ -47,13 +47,28 @@
     (place-stock-at-coordinates shell coords)
     shell))
 
+(defn stock-name-from-event
+  [event]
+  (:stock-name event))
+
+(defn select-flow-stock-from-event
+  [shell event]
+  (if-let [stock-name (stock-name-from-event event)]
+    (cmd/select-flow-stock-on-shell! shell stock-name)
+    shell))
+
+(defn- diagram-shell-updaters
+  []
+  {events/arm-stock (fn [shell _] (cmd/arm-stock-placement-on-shell! shell))
+   events/arm-flow (fn [shell _] (cmd/arm-flow-placement-on-shell! shell))
+   events/stock-click select-flow-stock-from-event
+   events/canvas-click place-stock-from-click})
+
 (defn update-shell-for-diagram-event
   [shell event]
-  (let [etype (event-type event)]
-    (cond
-      (= etype events/arm-stock) (cmd/arm-stock-placement-on-shell! shell)
-      (= etype events/canvas-click) (place-stock-from-click shell event)
-      :else shell)))
+  (if-let [updater (get (diagram-shell-updaters) (event-type event))]
+    (updater shell event)
+    shell))
 
 (defn process-app-event
   [event]

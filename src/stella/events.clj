@@ -6,4 +6,8 @@
 
 (def arm-stock ::arm-stock)
 
+(def arm-flow ::arm-flow)
+
 (def canvas-click ::canvas-click)
+
+(def stock-click ::stock-click)

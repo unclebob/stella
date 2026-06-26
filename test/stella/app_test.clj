@@ -27,19 +27,39 @@
 
 (deftest diagram-event-test
   (is (true? (app/diagram-event? events/arm-stock)))
+  (is (true? (app/diagram-event? events/arm-flow)))
+  (is (true? (app/diagram-event? events/stock-click)))
   (is (false? (app/diagram-event? events/quit))))
 
 (deftest update-shell-for-diagram-event-test
   (let [shell (model/default-shell)]
     (is (= :stock (:placement-mode (:diagram (app/update-shell-for-diagram-event
                                                shell
-                                               {:event events/arm-stock})))))))
+                                               {:event events/arm-stock})))))
+    (is (= :flow (:placement-mode (:diagram (app/update-shell-for-diagram-event
+                                               shell
+                                               {:event events/arm-flow})))))))
 
 (deftest place-stock-at-coordinates-test
   (let [shell (cmd/arm-stock-placement-on-shell! (model/default-shell))
         placed (app/place-stock-at-coordinates shell [10 20])]
     (is (model/stock-exists? (:diagram placed) "Stock1"))
     (is (= [10 20] (model/stock-position (:diagram placed) "Stock1")))))
+
+(deftest select-flow-stock-from-event-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 100 100)
+                                        (cmd/fixture-stock! "Stock2" 300 200)
+                                        (cmd/arm-flow-placement!))))
+        drafted (app/select-flow-stock-from-event
+                  shell
+                  {:event events/stock-click :stock-name "Stock1"})
+        connected (app/select-flow-stock-from-event
+                    drafted
+                    {:event events/stock-click :stock-name "Stock2"})]
+    (is (= {:from "Stock1"} (:flow-draft (:diagram drafted))))
+    (is (model/flow-exists? (:diagram connected) "Flow1"))))
 
 (deftest dispatch-map-event-test
   (let [state (atom (model/default-shell))

@@ -3,9 +3,11 @@
             [stella.events :as events]
             [stella.ui.palette :as palette]))
 
-(deftest palette-stock-tool-test
+(deftest palette-tools-test
   (let [desc (palette/palette-desc)
-        button (first (:children desc))]
+        [stock-btn flow-btn] (:children desc)]
     (is (= :vbox (:fx/type desc)))
-    (is (= "Stock" (:text button)))
-    (is (= {:event events/arm-stock} (:on-action button)))))
+    (is (= "Stock" (:text stock-btn)))
+    (is (= {:event events/arm-stock} (:on-action stock-btn)))
+    (is (= "Flow" (:text flow-btn)))
+    (is (= {:event events/arm-flow} (:on-action flow-btn)))))
