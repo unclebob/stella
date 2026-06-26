@@ -5,6 +5,10 @@
   [_]
   (model/default-shell))
 
+(defn default-diagram!
+  [_]
+  (model/default-diagram))
+
 (defn show-about!
   [shell]
   (-> shell
@@ -15,6 +19,90 @@
   [shell]
   (assoc shell :showing false))
 
-;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-26T15:23:14.830081-05:00", :module-hash "3633131", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 2, :hash "273392964"} {:id "defn/default-shell!", :kind "defn", :line 4, :end-line 6, :hash "-2121201791"} {:id "defn/show-about!", :kind "defn", :line 8, :end-line 12, :hash "-1322911364"} {:id "defn/quit!", :kind "defn", :line 14, :end-line 16, :hash "-6014701"}]}
-;; clj-mutate-manifest-end
+(defn arm-stock-placement!
+  [diagram]
+  (model/arm-stock-placement diagram))
+
+(defn place-stock!
+  [diagram x y]
+  (model/place-stock diagram x y))
+
+(defn fixture-stock!
+  [diagram name x y]
+  (model/fixture-stock diagram name x y))
+
+(defn arm-source-placement!
+  [diagram]
+  (model/arm-source-placement diagram))
+
+(defn place-source!
+  [diagram x y]
+  (model/place-source diagram x y))
+
+(defn arm-sink-placement!
+  [diagram]
+  (model/arm-sink-placement diagram))
+
+(defn place-sink!
+  [diagram x y]
+  (model/place-sink diagram x y))
+
+(defn fixture-source!
+  [diagram name x y]
+  (model/fixture-source diagram name x y))
+
+(defn fixture-sink!
+  [diagram name x y]
+  (model/fixture-sink diagram name x y))
+
+(defn arm-flow-placement!
+  [diagram]
+  (model/arm-flow-placement diagram))
+
+(defn select-flow-source!
+  [diagram kind name]
+  (model/select-flow-source diagram kind name))
+
+(defn connect-flow!
+  [diagram kind name]
+  (model/connect-flow diagram kind name))
+
+(defn fixture-flow!
+  [diagram flow-name from-stock to-stock]
+  (model/fixture-flow diagram flow-name from-stock to-stock))
+
+(defn arm-stock-placement-on-shell!
+  [shell]
+  (update shell :diagram arm-stock-placement!))
+
+(defn place-stock-on-shell!
+  [shell x y]
+  (update shell :diagram #(place-stock! % x y)))
+
+(defn arm-source-placement-on-shell!
+  [shell]
+  (update shell :diagram arm-source-placement!))
+
+(defn place-source-on-shell!
+  [shell x y]
+  (update shell :diagram #(place-source! % x y)))
+
+(defn arm-sink-placement-on-shell!
+  [shell]
+  (update shell :diagram arm-sink-placement!))
+
+(defn place-sink-on-shell!
+  [shell x y]
+  (update shell :diagram #(place-sink! % x y)))
+
+(defn arm-flow-placement-on-shell!
+  [shell]
+  (update shell :diagram arm-flow-placement!))
+
+(defn select-flow-endpoint-on-shell!
+  [shell kind name]
+  (update shell :diagram
+          (fn [diagram]
+            (if (:flow-draft diagram)
+              (connect-flow! diagram kind name)
+              (select-flow-source! diagram kind name)))))
