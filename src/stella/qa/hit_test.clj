@@ -86,6 +86,14 @@
     (or (fx-nodes/find-by-id root (str (name kind) "-" element-name))
         (find-label-node root element-name))))
 
+(defn- link-target
+  [from-pos to-pos width height]
+  (let [[fx fy] from-pos
+        [tx ty] to-pos
+        mid-x (/ (+ fx tx) 2.0)
+        mid-y (/ (+ fy ty) 2.0)]
+    {:x mid-x :y mid-y :w width :h height}))
+
 (defn stock-targets
   "Returns semantic hit-test targets for stocks on the diagram."
   [diagram]
@@ -121,12 +129,8 @@
         (for [{:keys [name from to]} (model/flows diagram)
               :let [from-pos (model/endpoint-position diagram from)
                     to-pos (model/endpoint-position diagram to)]
-              :when (and from-pos to-pos)
-              :let [[fx fy] from-pos
-                    [tx ty] to-pos
-                    mid-x (/ (+ fx tx 80) 2.0)
-                    mid-y (/ (+ fy ty 50) 2.0)]]
-          [[:flow name] {:x mid-x :y mid-y :w 60 :h 30}])))
+              :when (and from-pos to-pos)]
+          [[:flow name] (link-target from-pos to-pos 60 30)])))
 
 (defn connector-targets
   "Returns semantic hit-test targets for connectors on the diagram."
@@ -135,20 +139,16 @@
         (for [{:keys [name from to]} (model/connectors diagram)
               :let [from-pos (model/endpoint-position diagram from)
                     to-pos (model/endpoint-position diagram to)]
-              :when (and from-pos to-pos)
-              :let [[fx fy] from-pos
-                    [tx ty] to-pos
-                    mid-x (/ (+ fx tx 80) 2.0)
-                    mid-y (/ (+ fy ty 50) 2.0)]]
-          [[:connector name] {:x mid-x :y mid-y :w 60 :h 20}])))
+              :when (and from-pos to-pos)]
+          [[:connector name] (link-target from-pos to-pos 60 20)])))
 
 (defn- semantic-targets
   [diagram]
   (merge (stock-targets diagram)
          (source-targets diagram)
          (sink-targets diagram)
-         (flow-targets diagram)
          (converter-targets diagram)
+         (flow-targets diagram)
          (connector-targets diagram)))
 
 (defn- semantic-bounds
