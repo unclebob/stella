@@ -5,6 +5,14 @@
   {"Quit" events/quit
    "About Stella" events/show-about})
 
+(def ^:private display-labels
+  {"Open..." "Open…"
+   "Save As..." "Save As…"})
+
+(defn- display-text
+  [label]
+  (get display-labels label label))
+
 (defn- separator-desc []
   {:fx/type :separator-menu-item})
 
@@ -13,7 +21,7 @@
   (if (:separator item)
     (separator-desc)
     (cond-> {:fx/type :menu-item
-             :text (:label item)}
+             :text (display-text (:label item))}
       (:disabled item) (assoc :disable true)
       (get item-events (:label item))
       (assoc :on-action {:event (get item-events (:label item))}))))
