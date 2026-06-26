@@ -1,66 +1,66 @@
 (ns stella.qa.hit-test
-  (:require [stella.model :as model]))
+  (:import [javafx.geometry Bounds]
+           [javafx.scene Node Parent]
+           [javafx.scene.control Label]
+           [javafx.scene.layout BorderPane Pane]
+           [javafx.stage Stage]))
 
-(defn stock-targets
-  "Returns semantic hit-test targets for stocks on the diagram."
-  [diagram]
-  (into {}
-        (for [{:keys [name x y]} (model/stocks diagram)]
-          [[:stock name] {:x x :y :y :w 80 :h 50}])))
+(defn- find-by-id [^Node node id]
+  (cond
+    (= id (.getId node)) node
+    (instance? Parent node)
+    (some #(find-by-id % id) (.getChildrenUnmodifiable ^Parent node))
+    :else nil))
 
-(defn source-targets
-  "Returns semantic hit-test targets for sources on the diagram."
-  [diagram]
-  (into {}
-        (for [{:keys [name x y]} (model/sources diagram)]
-          [[:source name] {:x x :y :y :w 80 :h 50}])))
+(defn- canvas-node [^Stage stage]
+  (or (some-> stage .getScene .getRoot (find-by-id "canvas"))
+      (when-let [root (some-> stage .getScene .getRoot)]
+        (when (instance? BorderPane root)
+          (let [center (.getCenter ^BorderPane root)]
+            (when (instance? Pane center) center))))))
 
-(defn sink-targets
-  "Returns semantic hit-test targets for sinks on the diagram."
-  [diagram]
-  (into {}
-        (for [{:keys [name x y]} (model/sinks diagram)]
-          [[:sink name] {:x x :y :y :w 80 :h 50}])))
+(defn region-node
+  [^Stage stage region]
+  (case region
+    :canvas (canvas-node stage)
+    nil))
 
-(defn flow-targets
-  "Returns semantic hit-test targets for flows on the diagram."
-  [diagram]
-  (into {}
-        (for [{:keys [name from to]} (model/flows diagram)
-              :let [from-pos (case (:kind from)
-                               :stock (model/stock-position diagram (:id from))
-                               :source (model/source-position diagram (:id from)))
-                    to-pos (case (:kind to)
-                             :stock (model/stock-position diagram (:id to))
-                             :sink (model/sink-position diagram (:id to)))]
-              :when (and from-pos to-pos)]
-          (let [[fx fy] from-pos
-                [tx ty] to-pos
-                mid-x (/ (+ fx tx 80) 2.0)
-                mid-y (/ (+ fy ty 50) 2.0)]
-            [[:flow name] {:x mid-x :y mid-y :w 60 :h 30}])))
+(defn region-bounds
+  [^Stage stage region]
+  (when-let [^Node node (region-node stage region)]
+    (let [^Bounds local (.getBoundsInParent node)
+          ^Bounds screen (.localToScreen node (.getBoundsInLocal node))]
+      {:x (.getMinX screen)
+       :y (.getMinY screen)
+       :width (.getWidth local)
+       :height (.getHeight local)})))
 
-(defn converter-targets
-  "Returns semantic hit-test targets for converters on the diagram."
-  [diagram]
-  (into {}
-        (for [{:keys [name x y]} (model/converters diagram)]
-          [[:converter name] {:x x :y :y :w 50 :h 50}])))
+(defn wait-for-region-bounds
+  [^Stage stage region attempts]
+  (loop [n attempts]
+    (if (region-node stage region)
+      (or (region-bounds stage region) {:width 1 :height 1})
+      (when (pos? n)
+        (Thread/sleep 100)
+        (recur (dec n))))))
 
-(defn connector-targets
-  "Returns semantic hit-test targets for connectors on the diagram."
-  [diagram]
-  (into {}
-        (for [{:keys [name from to]} (model/connectors diagram)
-              :let [from-pos (case (:kind from)
-                               :stock (model/stock-position diagram (:id from))
-                               :converter (model/converter-position diagram (:id from)))
-                    to-pos (case (:kind to)
-                             :flow (model/flow-midpoint diagram (:id to))
-                             :converter (model/converter-position diagram (:id to)))]
-              :when (and from-pos to-pos)]
-          (let [[fx fy] from-pos
-                [tx ty] to-pos
-                mid-x (/ (+ fx tx) 2.0)
-                mid-y (/ (+ fy ty) 2.0)]
-            [[:connector name] {:x mid-x :y mid-y :w 60 :h 20}])))
+(defn region-center
+  [^Stage stage region]
+  (when-let [{:keys [x y width height]} (region-bounds stage region)]
+    {:x (+ x (/ width 2.0))
+     :y (+ y (/ height 2.0))}))
+
+(defn label-texts
+  [^Node node]
+  (cond
+    (instance? Label node)
+    [(.getText ^Label node)]
+
+    (instance? Parent node)
+    (mapcat label-texts (.getChildrenUnmodifiable ^Parent node))
+
+    :else []))
+
+(defn visible-text
+  [^Stage stage]
+  (set (label-texts (.getRoot (.getScene stage)))))
