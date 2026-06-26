@@ -27,6 +27,17 @@
   (when (model/menu-item-disabled? shell item)
     (fail! (str "expected menu item enabled: " item))))
 
+(defn- parse-int
+  [value label]
+  (try
+    (Integer/parseInt (str value))
+    (catch NumberFormatException _
+      (fail! (str "invalid integer for " label ": " value)))))
+
+(defn- diagram-from
+  [world]
+  (or (:diagram world) (model/default-diagram)))
+
 (def step-handlers
   [{:pattern #"^a default shell application$"
     :fn (fn [world _ _]
@@ -81,6 +92,64 @@
     :fn (fn [world _ _]
           (when-not (model/diagram-empty? (:shell world))
             (fail! "expected empty diagram canvas"))
+          world)}
+   {:pattern #"^an empty diagram model$"
+    :fn (fn [world _ _]
+          (assoc world :diagram (cmd/default-diagram! nil)))}
+   {:pattern #"^I arm the stock placement tool$"
+    :fn (fn [world _ _]
+          (update world :diagram cmd/arm-stock-placement!))}
+   {:pattern #"^I place a stock at <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ x-param y-param] example]
+          (let [x (parse-int (require-value example x-param) x-param)
+                y (parse-int (require-value example y-param) y-param)]
+            (update world :diagram #(cmd/place-stock! % x y))))}
+   {:pattern #"^the diagram should contain stock <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (when-not (model/stock-exists? (diagram-from world) name)
+              (fail! (str "diagram missing stock " name)))
+            world))}
+   {:pattern #"^stock <([A-Za-z0-9_]+)> should be at position <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (require-value example name-param)
+                x (parse-int (require-value example x-param) x-param)
+                y (parse-int (require-value example y-param) y-param)
+                pos (model/stock-position (diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (fail! (str "stock " name " at " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^stock <([A-Za-z0-9_]+)> initial value should be <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param value-param] example]
+          (let [name (require-value example name-param)
+                value (require-value example value-param)
+                actual (model/stock-initial-value (diagram-from world) name)]
+            (when-not (= value actual)
+              (fail! (str "stock " name " value " actual " expected " value)))
+            world))}
+   {:pattern #"^stock <([A-Za-z0-9_]+)> initial value should be 0$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)
+                actual (model/stock-initial-value (diagram-from world) name)]
+            (when-not (= "0" actual)
+              (fail! (str "stock " name " value " actual " expected 0")))
+            world))}
+   {:pattern #"^the diagram stock count should be <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ count-param] example]
+          (let [count (parse-int (require-value example count-param) count-param)
+                actual (model/stock-count (diagram-from world))]
+            (when-not (= count actual)
+              (fail! (str "stock count " actual " expected " count)))
+            world))}
+   {:pattern #"^the diagram stock count should be 0$"
+    :fn (fn [world _ _]
+          (when-not (zero? (model/stock-count (diagram-from world)))
+            (fail! "expected diagram stock count 0"))
+          world)}
+   {:pattern #"^the stock placement tool should be disarmed$"
+    :fn (fn [world _ _]
+          (when-not (model/placement-disarmed? (diagram-from world))
+            (fail! "expected stock placement tool disarmed"))
           world)}])
 
 (defn dispatch-step

@@ -25,12 +25,30 @@
          (app/process-app-event {:event events/quit})))
   (is (nil? (app/process-app-event {:event :stella.ui/unknown}))))
 
+(deftest diagram-event-test
+  (is (true? (app/diagram-event? events/arm-stock)))
+  (is (false? (app/diagram-event? events/quit))))
+
+(deftest update-shell-for-diagram-event-test
+  (let [shell (model/default-shell)]
+    (is (= :stock (:placement-mode (:diagram (app/update-shell-for-diagram-event
+                                               shell
+                                               {:event events/arm-stock})))))))
+
+(deftest place-stock-at-coordinates-test
+  (let [shell (cmd/arm-stock-placement-on-shell! (model/default-shell))
+        placed (app/place-stock-at-coordinates shell [10 20])]
+    (is (model/stock-exists? (:diagram placed) "Stock1"))
+    (is (= [10 20] (model/stock-position (:diagram placed) "Stock1")))))
+
 (deftest dispatch-map-event-test
   (let [state (atom (model/default-shell))
         effects (atom [])]
     (with-redefs [stella.fx.effects/run-effect #(swap! effects conj %)]
       (app/dispatch-map-event! {:event events/quit} state)
-      (app/dispatch-map-event! {:event events/show-about} state))
+      (app/dispatch-map-event! {:event events/show-about} state)
+      (app/dispatch-map-event! {:event events/arm-stock} state))
     (is (false? (:showing @state)))
     (is (:about-visible @state))
+    (is (= :stock (:placement-mode (:diagram @state))))
     (is (= [:platform-exit :about-dialog] @effects))))

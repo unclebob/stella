@@ -28,7 +28,7 @@
         edit (menu-by-text desc "Edit")
         view (menu-by-text desc "View")]
     (testing "File stub items"
-      (doseq [label ["New" "Open..." "Save" "Save As..."]]
+      (doseq [label ["New" "Open…" "Save" "Save As…"]]
         (is (:disable (menu-item-by-text file label)))))
     (testing "Edit stub items"
       (doseq [label ["Undo" "Redo" "Cut" "Copy" "Paste"]]

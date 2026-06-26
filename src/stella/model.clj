@@ -34,6 +34,11 @@
   {:label "Help"
    :items [(menu-item "About Stella" false)]})
 
+(defn default-diagram []
+  {:stocks {}
+   :placement-mode :idle
+   :next-stock-num 1})
+
 (defn default-shell []
   {:showing true
    :window-title "Stella"
@@ -43,7 +48,7 @@
               (edit-menu)
               (view-menu)
               (help-menu)]
-   :diagram-elements []})
+   :diagram (default-diagram)})
 
 (defn top-level-menus
   [shell]
@@ -81,4 +86,51 @@
 
 (defn diagram-empty?
   [shell]
-  (empty? (:diagram-elements shell)))
+  (empty? (:stocks (:diagram shell))))
+
+(defn stock-count
+  [diagram]
+  (count (:stocks diagram)))
+
+(defn- stock-entry-by-name
+  [diagram name]
+  (first (filter #(= name (:name (val %))) (:stocks diagram))))
+
+(defn stock-exists?
+  [diagram name]
+  (some? (stock-entry-by-name diagram name)))
+
+(defn stock-position
+  [diagram name]
+  (when-let [[_ stock] (stock-entry-by-name diagram name)]
+    [(:x stock) (:y stock)]))
+
+(defn stock-initial-value
+  [diagram name]
+  (when-let [[_ stock] (stock-entry-by-name diagram name)]
+    (:initial-value stock)))
+
+(defn placement-disarmed?
+  [diagram]
+  (= :idle (:placement-mode diagram)))
+
+(defn arm-stock-placement
+  [diagram]
+  (assoc diagram :placement-mode :stock))
+
+(defn place-stock
+  [diagram x y]
+  (if (= :stock (:placement-mode diagram))
+    (let [num (:next-stock-num diagram)
+          name (str "Stock" num)
+          id (keyword (str "stock-" num))
+          stock {:name name :initial-value "0" :x x :y y}]
+      (-> diagram
+          (assoc-in [:stocks id] stock)
+          (assoc :placement-mode :idle)
+          (update :next-stock-num inc)))
+    diagram))
+
+(defn stocks
+  [diagram]
+  (vals (:stocks diagram)))
