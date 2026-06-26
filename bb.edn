@@ -1,11 +1,34 @@
 {:tasks
- {run        (shell "clojure -M:run")
-  test       (shell "clojure -M:test")
-  property   (shell "clojure -X:property")
+ {run {:doc "Launch the Stella desktop app"
+       :override-builtin true
+       :task (shell "clojure -M:run")}
+  parse-acceptance {:doc "Parse Gherkin features to JSON IR"
+                    :task (shell "bash" "-c"
+                                 (str "set -euo pipefail; "
+                                      "mkdir -p build/acceptance/ir; "
+                                      "for f in features/shell/*.feature; do "
+                                      "  name=$(basename \"$f\" .feature); "
+                                      "  gherkin-parser \"$f\" \"build/acceptance/ir/${name}.json\"; "
+                                      "done"))}
+  generate-acceptance {:doc "Generate acceptance test entrypoints from IR"
+                       :depends [parse-acceptance]
+                       :task (shell "bash" "-c"
+                                    (str "set -euo pipefail; "
+                                         "mkdir -p acceptance/generated; "
+                                         "for f in build/acceptance/ir/*.json; do "
+                                         "  bin/acceptance-entrypoint-generator \"$f\" acceptance/generated; "
+                                         "done"))}
+  accept {:doc "APS normal path: parse, generate, run acceptance tests"
+          :depends [generate-acceptance]
+          :task (shell "clojure -M:accept")}
+  test {:doc "Unit tests and Gherkin acceptance (headless)"
+        :depends [generate-acceptance]
+        :task (shell "clojure -M:test")}
+  property (shell "clojure -X:property")
   arch-check (shell "bb scripts/arch_check.bb")
-  verify     {:depends [arch-check test property]}
-  qa         {:depends [test]
-               :task (shell "clojure -M:qa")}
-  crap       (shell "clojure -M:crap")
-  dry        (shell "clojure -M:dry src")
-  mutate     (shell "clojure -M:mutate {{file}} --scan")}}
+  verify {:depends [arch-check test property]}
+  qa {:depends [test]
+      :task (shell "clojure -M:qa")}
+  crap (shell "clojure -M:crap")
+  dry (shell "clojure -M:dry src")
+  mutate (shell "clojure -M:mutate {{file}} --scan")}}

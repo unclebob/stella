@@ -10,3 +10,5 @@ swarmforge/scripts/
 .lsp/
 tmp/
 target/
+build/
+acceptance/generated/
