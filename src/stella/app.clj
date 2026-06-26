@@ -1,26 +1,33 @@
 (ns stella.app
   (:require [cljfx.api :as fx]
+            [stella.actions :as actions]
             [stella.commands :as cmd]
-            [stella.ui.root :as root])
-  (:import [javafx.application Platform]
-           [javafx.scene.control Alert Alert$AlertType]))
+            [stella.fx.effects :as fx-effects]
+            [stella.ui.root :as root]))
 
-(defn- about-dialog []
-  (doto (Alert. Alert$AlertType/INFORMATION)
-    (.setTitle "About Stella")
-    (.setHeaderText "Stella")
-    (.setContentText "A system dynamics diagram editor.")
-    .showAndWait))
+(defonce *state
+  (atom (cmd/default-shell! nil)))
+
+(defn- apply-action!
+  [action]
+  (case action
+    :quit (swap! *state cmd/quit!)
+    :show-about (swap! *state cmd/show-about!)
+    nil))
+
+(defn- handle-map-event
+  [event]
+  (when-let [event-type (or (:event event) (:event/type event))]
+    (when-let [action (actions/event->action event-type)]
+      (apply-action! action)
+      (when-let [effect (actions/action->effect action)]
+        (fx-effects/run-effect effect)))))
+
+(defonce ^:private renderer
+  (fx/create-renderer
+   :middleware (fx/wrap-map-desc (fn [shell] (root/root-desc shell)))
+   :opts {:fx.opt/map-event-handler handle-map-event}))
 
 (defn start!
   []
-  (let [state (atom (cmd/default-shell! nil))]
-    (fx/create-app
-     {:desc-fn (fn [_] (root/root-desc @state))
-      :event-handler (fn [event]
-                       (case (:fx/event-type event)
-                         :stella.app/quit (do (swap! state cmd/quit!)
-                                              (Platform/exit))
-                         :stella.app/show-about (do (swap! state cmd/show-about!)
-                                                    (about-dialog))
-                         nil))})))
+  (fx/mount-renderer *state renderer))

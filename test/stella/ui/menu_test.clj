@@ -1,5 +1,6 @@
 (ns stella.ui.menu-test
   (:require [clojure.test :refer [deftest is testing]]
+            [stella.events :as events]
             [stella.model :as model]
             [stella.ui.menu :as menu]))
 
@@ -27,7 +28,7 @@
         edit (menu-by-text desc "Edit")
         view (menu-by-text desc "View")]
     (testing "File stub items"
-      (doseq [label ["New" "Open..." "Save" "Save As..."]]
+      (doseq [label ["New" "Open…" "Save" "Save As…"]]
         (is (:disable (menu-item-by-text file label)))))
     (testing "Edit stub items"
       (doseq [label ["Undo" "Redo" "Cut" "Copy" "Paste"]]
@@ -51,4 +52,4 @@
         desc (menu/menu-bar-desc shell)
         file (menu-by-text desc "File")
         quit (menu-item-by-text file "Quit")]
-    (is (= {:event :stella.app/quit} (:on-action quit)))))
+    (is (= {:event events/quit} (:on-action quit)))))

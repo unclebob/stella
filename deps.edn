@@ -14,4 +14,27 @@
                       {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
          :main-opts ["-m" "cognitect.test-runner"
                       "-d" "test"
-                      "-d" "acceptance/generated"]}}}
+                      "-d" "acceptance/generated"]}
+  :property {:extra-paths ["test" "test-property"]
+             :extra-deps {io.github.cognitect-labs/test-runner
+                          {:git/tag "v0.5.1" :git/sha "dfb30dd"}
+                          org.clojure/test.check {:mvn/version "1.1.1"}}
+             :exec-fn cognitect.test-runner.api/test
+             :exec-args {:dirs ["test-property"]}}
+  :cov {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}}
+        :extra-paths ["test"]
+        :main-opts ["-m" "cloverage.coverage" "-p" "src" "-s" "test" "--lcov"]}
+  :crap {:extra-deps {io.github.unclebob/crap4clj
+                      {:git/url "https://github.com/unclebob/crap4clj.git"
+                       :git/sha "63a56db38f898d8d63cb044c71da09c7bfa3abcd"}}
+         :main-opts ["-m" "crap4clj.core"]}
+  :dry {:main-opts ["-m" "dry4clj.core"]
+        :extra-deps {io.github.unclebob/dry4clj
+                     {:git/url "https://github.com/unclebob/dry4clj.git"
+                      :git/sha "5994ef2bcaaae8d12bcd0afb4f091ae09083228c"}}}
+  :mutate {:main-opts ["-m" "clj-mutate.core"]
+           :extra-deps {io.github.unclebob/clj-mutate
+                        {:git/url "https://github.com/unclebob/clj-mutate.git"
+                         :git/sha "e27dd5df63c4efdd66438587d1c5f49e73661b69"}
+                        org.clojure/tools.reader {:mvn/version "1.4.2"}}}
+  :qa {:main-opts ["-m" "qa.cljfx-shell"]}}}

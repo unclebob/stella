@@ -11,3 +11,4 @@ swarmforge/scripts/
 tmp/
 build/
 acceptance/generated/
+target/
