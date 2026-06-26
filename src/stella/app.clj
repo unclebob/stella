@@ -2,13 +2,15 @@
   (:require [cljfx.api :as fx]
             [stella.actions :as actions]
             [stella.commands :as cmd]
+            [stella.events :as events]
             [stella.fx.effects :as fx-effects]
-            [stella.ui.root :as root]))
+            [stella.ui.root :as root])
+  (:import [javafx.scene.input MouseEvent]))
 
 (defonce *state
   (atom (cmd/default-shell! nil)))
 
-(defn- apply-action!
+(defn- apply-shell-action!
   [action]
   (case action
     :quit (swap! *state cmd/quit!)
@@ -17,11 +19,20 @@
 
 (defn- handle-map-event
   [event]
-  (when-let [event-type (or (:event event) (:event/type event))]
-    (when-let [action (actions/event->action event-type)]
-      (apply-action! action)
-      (when-let [effect (actions/action->effect action)]
-        (fx-effects/run-effect effect)))))
+  (let [event-type (or (:event event) (:event/type event))]
+    (cond
+      (= event-type events/arm-stock)
+      (swap! *state cmd/arm-stock-placement-on-shell!)
+
+      (= event-type events/canvas-click)
+      (when-let [mouse ^MouseEvent (:fx/event event)]
+        (swap! *state #(cmd/place-stock-on-shell! % (int (.getX mouse)) (int (.getY mouse)))))
+
+      :else
+      (when-let [action (actions/event->action event-type)]
+        (apply-shell-action! action)
+        (when-let [effect (actions/action->effect action)]
+          (fx-effects/run-effect effect))))))
 
 (defonce ^:private renderer
   (fx/create-renderer

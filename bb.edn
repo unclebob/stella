@@ -6,9 +6,12 @@
                     :task (shell "bash" "-c"
                                  (str "set -euo pipefail; "
                                       "mkdir -p build/acceptance/ir; "
-                                      "for f in features/shell/*.feature; do "
-                                      "  name=$(basename \"$f\" .feature); "
-                                      "  gherkin-parser \"$f\" \"build/acceptance/ir/${name}.json\"; "
+                                      "rm -f build/acceptance/ir/*.json; "
+                                      "for f in features/*/*.feature; do "
+                                      "  rel=${f#features/}; "
+                                      "  rel=${rel%.feature}; "
+                                      "  ir=$(echo \"$rel\" | tr '/' '-'); "
+                                      "  gherkin-parser \"$f\" \"build/acceptance/ir/${ir}.json\"; "
                                       "done"))}
   generate-acceptance {:doc "Generate acceptance test entrypoints from IR"
                        :depends [parse-acceptance]

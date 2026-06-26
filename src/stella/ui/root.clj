@@ -1,7 +1,8 @@
 (ns stella.ui.root
   (:require [stella.events :as events]
             [stella.ui.canvas :as canvas]
-            [stella.ui.menu :as menu]))
+            [stella.ui.menu :as menu]
+            [stella.ui.palette :as palette]))
 
 (defn root-desc
   [shell]
@@ -16,4 +17,5 @@
    :scene {:fx/type :scene
            :root {:fx/type :border-pane
                   :top (menu/menu-bar-desc shell)
-                  :center (canvas/canvas-desc)}}})
+                  :left (palette/palette-desc)
+                  :center (canvas/canvas-desc shell)}}})
