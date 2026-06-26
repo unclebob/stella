@@ -1,26 +1,26 @@
 (ns stella.app
   (:require [cljfx.api :as fx]
-            [stella.actions :as actions]
+            [stella.commands :as cmd]
+            [stella.dispatch :as dispatch]
             [stella.fx.effects :as fx-effects]
             [stella.ui.root :as root]))
 
-(def ^:private initial-state
-  {:showing true})
-
 (defonce *state
-  (atom initial-state))
+  (atom (cmd/default-shell! nil)))
 
-(defn- handle-map-event [event]
-  (when-let [event-type (or (:event event) (:event/type event))]
-    (when-let [action (actions/event->action event-type)]
-      (when-let [effect (actions/action->effect action)]
-        (fx-effects/run-effect effect)))))
+(defn dispatch-map-event!
+  ([event] (dispatch-map-event! event *state))
+  ([event state-atom]
+   (when-let [{:keys [action effect]} (dispatch/process-event event)]
+     (swap! state-atom dispatch/apply-action action)
+     (when effect (fx-effects/run-effect effect)))))
 
 (defonce ^:private renderer
   (fx/create-renderer
-   :middleware (fx/wrap-map-desc (fn [_] (root/root-desc)))
-   :opts {:fx.opt/map-event-handler handle-map-event}))
+   :middleware (fx/wrap-map-desc (fn [_] (root/root-desc @*state)))
+   :opts {:fx.opt/map-event-handler dispatch-map-event!}))
 
 (defn start!
   []
+  (reset! *state (cmd/default-shell! nil))
   (fx/mount-renderer *state renderer))
