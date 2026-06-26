@@ -86,3 +86,7 @@
              :children children}
       (#{:stock :source :sink} (:placement-mode diagram))
       (assoc :on-mouse-clicked {:event events/canvas-click}))))
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-26T15:44:35.210024-05:00", :module-hash "-433728703", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 3, :hash "-465839271"} {:id "defn-/canvas-pane", :kind "defn-", :line 5, :end-line 9, :hash "-939857556"} {:id "defn-/flow-desc", :kind "defn-", :line 11, :end-line 32, :hash "-1927454499"} {:id "defn-/endpoint-click", :kind "defn-", :line 34, :end-line 36, :hash "-1042549141"} {:id "defn-/stock-desc", :kind "defn-", :line 38, :end-line 54, :hash "128931971"} {:id "defn-/cloud-desc", :kind "defn-", :line 56, :end-line 72, :hash "-666234367"} {:id "defn/canvas-desc", :kind "defn", :line 74, :end-line 88, :hash "-393729737"}]}
+;; clj-mutate-manifest-end

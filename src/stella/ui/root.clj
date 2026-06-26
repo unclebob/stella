@@ -19,3 +19,7 @@
                   :top (menu/menu-bar-desc shell)
                   :left (palette/palette-desc)
                   :center (canvas/canvas-desc shell)}}})
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-26T15:41:16.930163-05:00", :module-hash "1329997746", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "1522927926"} {:id "defn/root-desc", :kind "defn", :line 7, :end-line 21, :hash "1152760083"}]}
+;; clj-mutate-manifest-end
