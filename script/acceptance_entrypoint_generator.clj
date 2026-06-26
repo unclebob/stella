@@ -18,7 +18,10 @@
     (System/exit 1))
 
   (let [ir-name (fs/strip-ext (fs/file-name ir-path))
-        feature-path (str "features/shell/" ir-name ".feature")
+        feature-path (or (first (fs/glob "features" (str "**/" ir-name ".feature")))
+                         (when-let [[_ category base] (re-matches #"^(.+)-([^-]+)$" ir-name)]
+                           (str "features/" category "/" base ".feature"))
+                         (str "features/shell/" ir-name ".feature"))
         metadata-base (-> feature-path
                           str/lower-case
                           (str/replace #"[^a-z0-9]+" "-")

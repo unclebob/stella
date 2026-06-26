@@ -2,11 +2,16 @@
   (:require [cljfx.api :as fx]
             [clojure.string :as str]
             [stella.app :as app]
+            [stella.events :as events]
+            [stella.fx.nodes :as fx-nodes]
             [stella.qa.hit-test :as hit-test])
-  (:import [javafx.event ActionEvent]
+  (:import [javafx.event ActionEvent EventHandler]
+           [javafx.geometry Bounds]
            [javafx.scene Node Parent]
            [javafx.scene.control Button Menu MenuBar MenuItem]
-           [javafx.scene.layout BorderPane]
+           [javafx.scene.input MouseButton MouseEvent]
+           [javafx.scene.layout BorderPane VBox]
+           [javafx.scene.robot Robot]
            [javafx.stage Stage Window]))
 
 (defn launch-app!
@@ -16,6 +21,7 @@
   (when height
     (System/setProperty "stella.qa.height" (str height)))
   (System/setProperty "stella.qa.soft-exit" (if hard-exit? "false" "true"))
+  (System/setProperty "stella.qa.semantic-targets" "true")
   (fx/on-fx-thread (app/start!)))
 
 (defn wait-for-stage
@@ -81,10 +87,90 @@
     (when-let [^Button ok (find-ok-button (.getRoot (.getScene dialog)))]
       (.fire ok))))
 
+(defn- palette-pane [^Stage stage]
+  (when-let [root (some-> stage .getScene .getRoot)]
+    (when (instance? BorderPane root)
+      (.getLeft ^BorderPane root))))
+
+(defn- find-button-by-text [^Node node text]
+  (fx-nodes/find-child
+   node
+   #(and (instance? Button %) (= text (.getText ^Button %)))))
+
+(defn- robot-click!
+  [screen-x screen-y]
+  (let [^Robot robot (Robot.)
+        buttons (into-array MouseButton [MouseButton/PRIMARY])]
+    (.mouseMove robot screen-x screen-y)
+    (Thread/sleep 50)
+    (.mousePress robot buttons)
+    (.mouseRelease robot buttons)
+    (Thread/sleep 100)))
+
+
+
+(defn click-palette!
+  [^Stage stage label]
+  (when-let [palette (palette-pane stage)]
+    (when-let [^Button button (find-button-by-text palette label)]
+      (if-let [handler (.getOnAction button)]
+        (.handle ^javafx.event.EventHandler handler (ActionEvent.))
+        (let [{:keys [x y]} (hit-test/node-screen-center button)]
+          (robot-click! x y)))
+      (Thread/sleep 250))))
+
+(defn- resolve-position
+  [position center]
+  (cond
+    (nil? position) center
+    (keyword? position) (case position
+                          :center center
+                          center)
+    (and (vector? position) (= 2 (count position)))
+    (let [[dx dy] position]
+      {:x (+ (:x center) dx) :y (+ (:y center) dy)})
+    :else center))
+
+(defn- synthesize-mouse-click!
+  [^Node node screen-x screen-y]
+  (let [local (.screenToLocal node screen-x screen-y)
+        lx (.getX local)
+        ly (.getY local)
+        ^MouseEvent event (MouseEvent. node node
+                                      MouseEvent/MOUSE_CLICKED
+                                      lx ly screen-x screen-y
+                                      MouseButton/PRIMARY 1
+                                      false false false true false false false false false false
+                                      nil)
+        ^EventHandler handler (.getOnMouseClicked node)]
+    (when handler
+      (.handle handler event))))
+
 (defn click-in-region!
-  [^Stage stage region & [_position]]
+  [^Stage stage region & [position]]
   (when-let [^Node node (hit-test/region-node stage region)]
-    (.requestFocus node)))
+    (when-let [center (hit-test/region-center stage region)]
+      (let [{:keys [x y]} (resolve-position position center)]
+        (if-let [handler (.getOnMouseClicked node)]
+          (synthesize-mouse-click! node x y)
+          (robot-click! x y))))))
+
+(defn click-element!
+  [^Stage stage kind name]
+  (if (= :flow (get-in @app/*state [:diagram :placement-mode]))
+    (do (app/dispatch-map-event! {:event events/endpoint-click
+                                  :endpoint-kind kind
+                                  :endpoint-name name})
+        (Thread/sleep 100))
+    (when-let [diagram (:diagram @app/*state)]
+      (when-let [{:keys [x y width height]} (hit-test/element-bounds stage diagram kind name)]
+        (let [cx (+ x (/ width 2.0))
+              cy (+ y (/ height 2.0))
+              ^Node target (or (hit-test/element-node stage kind name)
+                               (hit-test/region-node stage :canvas))]
+          (if-let [handler (when target (.getOnMouseClicked target))]
+            (synthesize-mouse-click! target cx cy)
+            (robot-click! cx cy)))))))
 
 (defn resize-window!
   [^Stage stage target-width target-height]
@@ -125,3 +211,35 @@
         ^Menu menu (menu-by-label bar menu-label)
         ^MenuItem item (menu-item-by-text menu item-label)]
     (.isDisable item)))
+
+(defn element-visible?
+  [^Stage stage kind name]
+  (or (some #(str/includes? % name) (visible-text stage))
+      (boolean (hit-test/element-bounds stage (:diagram @app/*state) kind name))))
+
+(defn wait-for-element!
+  [^Stage stage kind name & {:keys [attempts] :or {attempts 20}}]
+  (loop [n attempts]
+    (if (element-visible? stage kind name)
+      true
+      (when (pos? n)
+        (Thread/sleep 100)
+        (recur (dec n))))))
+
+(defn element-shows?
+  [^Stage stage _kind name text]
+  (some #(and (str/includes? % name) (str/includes? % (str text)))
+        (visible-text stage)))
+
+(defn- endpoint-bounds
+  [stage name]
+  (let [diagram (:diagram @app/*state)]
+    (or (hit-test/element-bounds stage diagram :stock name)
+        (hit-test/element-bounds stage diagram :source name)
+        (hit-test/element-bounds stage diagram :sink name))))
+
+(defn flow-directed?
+  [^Stage stage from-name to-name]
+  (when-let [from (endpoint-bounds stage from-name)]
+    (when-let [to (endpoint-bounds stage to-name)]
+      (< (:x from) (:x to)))))

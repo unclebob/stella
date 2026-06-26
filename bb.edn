@@ -6,9 +6,12 @@
                     :task (shell "bash" "-c"
                                  (str "set -euo pipefail; "
                                       "mkdir -p build/acceptance/ir; "
-                                      "for f in features/shell/*.feature; do "
-                                      "  name=$(basename \"$f\" .feature); "
-                                      "  gherkin-parser \"$f\" \"build/acceptance/ir/${name}.json\"; "
+                                      "rm -f build/acceptance/ir/*.json; "
+                                      "for f in features/*/*.feature; do "
+                                      "  rel=${f#features/}; "
+                                      "  rel=${rel%.feature}; "
+                                      "  ir=$(echo \"$rel\" | tr '/' '-'); "
+                                      "  gherkin-parser \"$f\" \"build/acceptance/ir/${ir}.json\"; "
                                       "done"))}
   generate-acceptance {:doc "Generate acceptance test entrypoints from IR"
                        :depends [parse-acceptance]
@@ -24,11 +27,18 @@
   test {:doc "Unit tests and Gherkin acceptance (headless)"
         :depends [generate-acceptance]
         :task (shell "clojure -M:test")}
-  property (shell "clojure -X:property")
-  arch-check (shell "bb scripts/arch_check.bb")
-  verify {:depends [arch-check test property]}
-  qa {:depends [test]
+  property {:doc "Property tests"
+            :task (shell "clojure -X:property")}
+  arch-check {:doc "Architecture dependency check"
+              :task (shell "bb scripts/arch_check.bb")}
+  verify {:doc "Architecture check, unit, and property tests"
+          :depends [arch-check test property]}
+  qa {:doc "Headed UI QA suites"
+      :depends [test]
       :task (shell "bash scripts/run_qa_suites.sh")}
-  crap (shell "clojure -M:crap")
-  dry (shell "clojure -M:dry src")
-  mutate (shell "clojure -M:mutate {{file}} --scan")}}
+  crap {:doc "CRAP analysis"
+        :task (shell "clojure -M:crap")}
+  dry {:doc "DRY analysis"
+       :task (shell "clojure -M:dry src")}
+  mutate {:doc "Mutation scan for a source file"
+          :task (shell "clojure -M:mutate {{file}} --scan")}}}
