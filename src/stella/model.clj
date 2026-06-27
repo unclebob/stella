@@ -658,6 +658,71 @@
   [diagram name]
   (connector-attribute diagram name :to))
 
+(defn connector-formula
+  [diagram name]
+  (connector-attribute diagram name :formula))
+
+(defn- rename-converter-endpoint
+  [endpoint old-name new-name]
+  (if (and (= :converter (:kind endpoint)) (= old-name (:id endpoint)))
+    (assoc endpoint :id new-name)
+    endpoint))
+
+(defn- rename-converter-endpoints
+  [diagram old-name new-name]
+  (let [rename (fn [endpoint]
+                 (rename-converter-endpoint endpoint old-name new-name))
+        update-connector (fn [connector]
+                           (-> connector
+                               (update :from rename)
+                               (update :to rename)))]
+    (update diagram :connectors #(reduce-kv (fn [m id connector]
+                                              (assoc m id (update-connector connector)))
+                                            {}
+                                            %))))
+
+(defn set-converter-name
+  [diagram old-name new-name]
+  (cond
+    (not (seq (str new-name))) diagram
+    (= old-name new-name) diagram
+    (not (converter-exists? diagram old-name)) diagram
+    (converter-exists? diagram new-name) diagram
+    :else
+    (let [[id _] (converter-entry-by-name diagram old-name)]
+      (-> diagram
+          (assoc-in [:converters id :name] new-name)
+          (rename-converter-endpoints old-name new-name)))))
+
+(defn- converter-to-flow-connector-id
+  [diagram converter-name]
+  (some (fn [[id {:keys [from to]}]]
+          (when (and (= :converter (:kind from))
+                     (= converter-name (:id from))
+                     (= :flow (:kind to)))
+            id))
+        (:connectors diagram)))
+
+(defn set-converter-formula
+  [diagram converter-name formula]
+  (if (seq (str formula))
+    (if-let [id (converter-to-flow-connector-id diagram converter-name)]
+      (assoc-in diagram [:connectors id :formula] (str formula))
+      diagram)
+    diagram))
+
+(defn fixture-connector
+  [diagram connector-name from-converter to-flow]
+  (let [num (num-from-name "Connector" connector-name)
+        id (keyword (str "connector-" num))]
+    (-> diagram
+        (assoc-in [:connectors id]
+                  {:name connector-name
+                   :from (endpoint-ref :converter from-converter)
+                   :to (endpoint-ref :flow to-flow)
+                   :formula ""})
+        (update :next-connector-num #(max % (inc num))))))
+
 (defn connector-count
   [diagram]
   (count (:connectors diagram)))
@@ -679,7 +744,7 @@
         name (str "Connector" num)
         id (keyword (str "connector-" num))]
     (-> diagram
-        (assoc-in [:connectors id] {:name name :from from :to to})
+        (assoc-in [:connectors id] {:name name :from from :to to :formula ""})
         (assoc :placement-mode :idle :connector-draft nil)
         (update :next-connector-num inc))))
 
