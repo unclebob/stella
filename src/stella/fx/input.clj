@@ -2,7 +2,7 @@
   (:require [stella.events :as events]
             [stella.fx.nodes :as fx-nodes])
   (:import [javafx.scene.control TextField]
-           [javafx.scene.input MouseEvent]))
+           [javafx.scene.input KeyEvent MouseEvent]))
 
 (defn- event-type
   [event]
@@ -18,6 +18,11 @@
   [event]
   (when-let [^MouseEvent mouse (:fx/event event)]
     [(int (.getSceneX mouse)) (int (.getSceneY mouse))]))
+
+(defn- shift-down?
+  [event]
+  (when-let [^MouseEvent mouse (:fx/event event)]
+    (.isShiftDown mouse)))
 
 (defn- field-text
   [id]
@@ -55,6 +60,21 @@
       (assoc :scene-coordinates (scene-coordinates event))
       (and (:from-canvas event) (not (:canvas-coordinates event)))
       (assoc :canvas-coordinates (click-coordinates event)))
+
+    (= events/selection-click (event-type event))
+    (cond-> event
+      (nil? (:shift-key event))
+      (assoc :shift-key (boolean (shift-down? event))))
+
+    (#{events/marquee-drag-start events/marquee-drag-end} (event-type event))
+    (cond-> event
+      (and (:from-canvas event) (not (:canvas-coordinates event)))
+      (assoc :canvas-coordinates (click-coordinates event)))
+
+    (#{events/clear-selection events/scene-key-pressed} (event-type event))
+    (if-let [^KeyEvent key (:fx/event event)]
+      (assoc event :key-code (keyword (.getName (.getCode key))))
+      event)
 
     (and (= events/edit-stock-apply (event-type event))
          (not (:draft event)))

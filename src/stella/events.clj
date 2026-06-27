@@ -2,8 +2,6 @@
 
 (def quit ::quit)
 
-(def window-close ::window-close)
-
 (def show-about ::show-about)
 
 (def arm-stock ::arm-stock)
@@ -47,3 +45,13 @@
 (def converter-drag-start ::converter-drag-start)
 
 (def converter-drag-end ::converter-drag-end)
+
+(def selection-click ::selection-click)
+
+(def marquee-drag-start ::marquee-drag-start)
+
+(def marquee-drag-end ::marquee-drag-end)
+
+(def clear-selection ::clear-selection)
+
+(def scene-key-pressed ::scene-key-pressed)

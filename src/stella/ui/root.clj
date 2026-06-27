@@ -21,6 +21,7 @@
    :min-height 480
    :on-close-request {:event events/window-close}
    :scene {:fx/type :scene
+           :on-key-pressed {:event events/scene-key-pressed}
            :root {:fx/type :border-pane
                   :top (menu/menu-bar-desc shell)
                   :left (palette/palette-desc)

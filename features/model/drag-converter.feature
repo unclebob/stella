@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=7ba8e0e01d51ec2c1ae189c4c9e1f2bb56fe8e6cee5902ddd8aaec890c00922b
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-06-27T15:22:32.085759Z","feature_name":"Drag converter","feature_path":"features/model/drag-converter.feature","background_hash":"fd69d82c9748fd80eceff8252817a91f8218541ed07572010ad6a454fc491800","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Move converter to new position","scenario_hash":"11964618c689ff18063a6731ad591b5040b1248f3da2d5803a0d06439ebe4f6b","mutation_count":2,"result":{"Total":2,"Killed":2,"Survived":0,"Errors":0},"tested_at":"2026-06-27T15:22:32.085759Z"},{"index":3,"name":"Move one converter without moving the other","scenario_hash":"fcb95d81dfbd8f34aa4298aaf3a7040dc2dc99336a97793a27c328c37380a209","mutation_count":3,"result":{"Total":3,"Killed":3,"Survived":0,"Errors":0},"tested_at":"2026-06-27T15:22:32.085759Z"}]}
+# acceptance-mutation-manifest-end
+
 Feature: Drag converter
 
 Background:

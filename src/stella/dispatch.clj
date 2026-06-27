@@ -94,7 +94,37 @@
    events/converter-drag-start (fn [shell event]
                                  (cmd/start-converter-drag-on-shell! shell event))
    events/converter-drag-end (fn [shell event]
-                               (cmd/end-converter-drag-on-shell! shell event))})
+                               (cmd/end-converter-drag-on-shell! shell event))
+   events/selection-click (fn [shell event]
+                            (if (:shift-key event)
+                              (cmd/shift-click-select-on-shell! shell
+                                                                (:object-kind event)
+                                                                (:object-name event))
+                              (cmd/click-select-on-shell! shell
+                                                          (:object-kind event)
+                                                          (:object-name event))))
+   events/marquee-drag-start (fn [shell event]
+                               (cmd/start-marquee-drag-on-shell! shell event))
+   events/marquee-drag-end (fn [shell event]
+                             (cmd/end-marquee-drag-on-shell! shell event))
+   events/clear-selection (fn [shell event]
+                            (if (= :Esc (:key-code event))
+                              (cmd/clear-selection-on-shell! shell)
+                              shell))
+   events/scene-key-pressed (fn [shell event]
+                              (cond
+                                (= :Esc (:key-code event))
+                                (cmd/clear-selection-on-shell! shell)
+
+                                (#{:Delete :Backspace} (:key-code event))
+                                (if (and (= :idle (get-in shell [:diagram :placement-mode]))
+                                         (not (:edit-stock shell))
+                                         (not (:edit-flow shell))
+                                         (not (:edit-converter shell)))
+                                  (cmd/delete-selection-on-shell! shell)
+                                  shell)
+
+                                :else shell))})
 
 (defn diagram-event?
   [event-type]
@@ -104,7 +134,6 @@
   [shell action]
   (cond
     (= action :quit) (cmd/quit! shell)
-    (= action :window-close) shell
     (= action :show-about) (cmd/show-about! shell)
     :else shell))
 

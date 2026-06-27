@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=6cf0bb94e86c92d07c8dc340ccac8609a79d1378082a652f9aee5f803decf45f
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-06-27T15:22:26.921050Z","feature_name":"Drag stock","feature_path":"features/model/drag-stock.feature","background_hash":"2f575443317bca9d2ca4ace77041b4b6649aa740cc16b59e6bbfd9dc34025c47","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Move stock to new position","scenario_hash":"bfe3c32cb828f8952ab1ef892c396206dc27d2724ab92bb98c1d141862934564","mutation_count":2,"result":{"Total":2,"Killed":2,"Survived":0,"Errors":0},"tested_at":"2026-06-27T15:22:26.921050Z"},{"index":3,"name":"Move one stock without moving the other","scenario_hash":"e8a1bbde7654a33347a9bf13501e33a9db57758aad2012eb9e90927b8861e21c","mutation_count":3,"result":{"Total":3,"Killed":3,"Survived":0,"Errors":0},"tested_at":"2026-06-27T15:22:26.921050Z"}]}
+# acceptance-mutation-manifest-end
+
 Feature: Drag stock
 
 Background:

@@ -11,7 +11,7 @@
            [javafx.geometry Bounds]
            [javafx.scene Node Parent]
            [javafx.scene.control Button Menu MenuBar MenuItem TextField]
-           [javafx.scene.input ContextMenuEvent MouseButton MouseEvent]
+           [javafx.scene.input ContextMenuEvent KeyCode MouseButton MouseEvent]
            [javafx.scene.layout BorderPane]
            [javafx.scene.robot Robot]
            [javafx.stage Stage Window]))
@@ -230,19 +230,21 @@
     :else center))
 
 (defn- synthesize-mouse-click!
-  [^Node node screen-x screen-y]
-  (let [local (.screenToLocal node screen-x screen-y)
-        lx (.getX local)
-        ly (.getY local)
-        ^MouseEvent event (MouseEvent. node node
-                                      MouseEvent/MOUSE_CLICKED
-                                      lx ly screen-x screen-y
-                                      MouseButton/PRIMARY 1
-                                      false false false true false false false false false false
-                                      nil)
-        ^EventHandler handler (.getOnMouseClicked node)]
-    (when handler
-      (.handle handler event))))
+  ([^Node node screen-x screen-y]
+   (synthesize-mouse-click! node screen-x screen-y false))
+  ([^Node node screen-x screen-y shift-down?]
+   (let [local (.screenToLocal node screen-x screen-y)
+         lx (.getX local)
+         ly (.getY local)
+         ^MouseEvent event (MouseEvent. node node
+                                       MouseEvent/MOUSE_CLICKED
+                                       lx ly screen-x screen-y
+                                       MouseButton/PRIMARY 1
+                                       shift-down? false false true false false false false false false
+                                       nil)
+         ^EventHandler handler (.getOnMouseClicked node)]
+     (when handler
+       (.handle handler event)))))
 
 (defn- screen-to-canvas-local
   [^Node canvas screen-x screen-y]
@@ -338,20 +340,93 @@
 
 (defn click-element!
   [^Stage stage kind name]
-  (if (#{:flow :connector} (get-in @app/*state [:diagram :placement-mode]))
-    (do (app/dispatch-map-event! {:event events/endpoint-click
-                                  :endpoint-kind kind
-                                  :endpoint-name name})
-        (Thread/sleep 100))
-    (when-let [diagram (:diagram @app/*state)]
-      (when-let [{:keys [x y width height]} (hit-test/element-bounds stage diagram kind name)]
-        (let [cx (+ x (/ width 2.0))
-              cy (+ y (/ height 2.0))
-              ^Node target (or (hit-test/element-node stage kind name)
-                               (hit-test/region-node stage :canvas))]
-          (if-let [handler (when target (.getOnMouseClicked target))]
-            (synthesize-mouse-click! target cx cy)
-            (robot-click! cx cy)))))))
+  (let [mode (get-in @app/*state [:diagram :placement-mode])]
+    (cond
+      (#{:flow :connector} mode)
+      (do (app/dispatch-map-event! {:event events/endpoint-click
+                                    :endpoint-kind kind
+                                    :endpoint-name name})
+          (Thread/sleep 100))
+
+      (= :idle mode)
+      (do (app/dispatch-map-event! {:event events/selection-click
+                                    :object-kind kind
+                                    :object-name name})
+          (Thread/sleep 100))
+
+      :else
+      (when-let [diagram (:diagram @app/*state)]
+        (when-let [{:keys [x y width height]} (hit-test/element-bounds stage diagram kind name)]
+          (let [cx (+ x (/ width 2.0))
+                cy (+ y (/ height 2.0))
+                ^Node target (or (hit-test/element-node stage kind name)
+                                 (hit-test/region-node stage :canvas))]
+            (if-let [handler (when target (.getOnMouseClicked target))]
+              (synthesize-mouse-click! target cx cy)
+              (robot-click! cx cy))
+            (Thread/sleep 100)))))))
+
+(defn shift-click-element!
+  [^Stage stage kind name]
+  (do (app/dispatch-map-event! {:event events/selection-click
+                                :object-kind kind
+                                :object-name name
+                                :shift-key true})
+      (Thread/sleep 100)))
+
+(defn- synthesize-marquee-select!
+  [^Stage stage start-screen-x start-screen-y end-screen-x end-screen-y]
+  (when-let [^Node canvas (hit-test/region-node stage :canvas)]
+    (let [[start-cx start-cy] (screen-to-canvas-local canvas start-screen-x start-screen-y)
+          [end-cx end-cy] (screen-to-canvas-local canvas end-screen-x end-screen-y)]
+      (app/dispatch-map-event! {:event events/marquee-drag-start
+                                :from-canvas true
+                                :canvas-coordinates [(int start-cx) (int start-cy)]})
+      (Thread/sleep 50)
+      (app/dispatch-map-event! {:event events/marquee-drag-end
+                                :from-canvas true
+                                :canvas-coordinates [(int end-cx) (int end-cy)]})
+      (Thread/sleep 200))))
+
+(defn marquee-select!
+  [^Stage stage region start-position end-position]
+  (when-let [center (hit-test/region-center stage region)]
+    (let [start (resolve-position start-position center)
+          end (resolve-position end-position center)]
+      (synthesize-marquee-select! stage (:x start) (:y start) (:x end) (:y end)))))
+
+(defn- press-key!
+  [^Stage stage key-code]
+  (when-let [center (hit-test/region-center stage :canvas)]
+    (robot-click! (:x center) (:y center))
+    (Thread/sleep 50))
+  (let [^Robot robot (Robot.)]
+    (.keyPress robot key-code)
+    (.keyRelease robot key-code)
+    (Thread/sleep 100))
+  (app/dispatch-map-event! {:event events/scene-key-pressed
+                            :key-code (keyword (.getName key-code))})
+  (Thread/sleep 100))
+
+(defn press-escape!
+  [^Stage stage]
+  (press-key! stage KeyCode/ESCAPE))
+
+(defn press-delete!
+  [^Stage stage]
+  (press-key! stage KeyCode/DELETE))
+
+(defn press-backspace!
+  [^Stage stage]
+  (press-key! stage KeyCode/BACK_SPACE))
+
+(defn element-selected?
+  [_stage kind name]
+  (model/selected? (:diagram @app/*state) kind name))
+
+(defn nothing-selected?
+  [_stage]
+  (model/nothing-selected? (:diagram @app/*state)))
 
 (defn resize-window!
   [^Stage stage target-width target-height]
