@@ -184,8 +184,7 @@ test/stella/                      # unit tests
 
 ```bash
 bb test          # unit tests + Gherkin acceptance (headless)
-bb qa            # E2E UI suite (headed, TestFX; passes --qa 90 per suite)
-clojure -M:run -- --qa 30   # manual launch with auto-close after 30 seconds
+bb qa            # E2E UI suite (headed, TestFX; see qa/procedures/qa-auto-close.qa.md)
 bb accept        # APS normal path: parse → generate → run
 ```
 
