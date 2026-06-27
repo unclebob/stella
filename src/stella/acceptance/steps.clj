@@ -179,10 +179,20 @@
             (when-not (= "0" actual)
               (fail! (str "stock " name " value " actual " expected 0")))
             world))}
+   {:pattern #"^stock ([A-Za-z0-9]+) initial value should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name value] _]
+          (let [actual (model/stock-initial-value (diagram-from world) name)]
+            (when-not (= value actual)
+              (fail! (str "stock " name " value " actual " expected " value)))
+            world))}
    {:pattern #"^I set stock <([A-Za-z0-9_]+)> name to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param new-name-param] example]
           (let [name (require-value example name-param)
                 new-name (require-value example new-name-param)]
+            (apply-diagram-edit world #(cmd/set-stock-name! % name new-name))))}
+   {:pattern #"^I set stock ([A-Za-z0-9]+) name to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name new-name-param] example]
+          (let [new-name (require-value example new-name-param)]
             (apply-diagram-edit world #(cmd/set-stock-name! % name new-name))))}
    {:pattern #"^I set stock ([A-Za-z0-9]+) name to ([A-Za-z0-9]+)$"
     :fn (fn [world [_ name new-name] _]
@@ -192,15 +202,33 @@
           (let [name (require-value example name-param)
                 value (require-value example value-param)]
             (apply-diagram-edit world #(cmd/set-stock-initial-value! % name value))))}
+   {:pattern #"^I set stock ([A-Za-z0-9]+) initial value to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name value-param] example]
+          (let [value (require-value example value-param)]
+            (apply-diagram-edit world #(cmd/set-stock-initial-value! % name value))))}
+   {:pattern #"^I set stock ([A-Za-z0-9]+) initial value to ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name value] _]
+          (apply-diagram-edit world #(cmd/set-stock-initial-value! % name value)))}
    {:pattern #"^I set stock <([A-Za-z0-9_]+)> minimum to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param min-param] example]
           (let [name (require-value example name-param)
                 min-value (require-value example min-param)]
             (apply-diagram-edit world #(cmd/set-stock-min! % name min-value))))}
+   {:pattern #"^I set stock ([A-Za-z0-9]+) minimum to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name min-param] example]
+          (let [min-value (require-value example min-param)]
+            (apply-diagram-edit world #(cmd/set-stock-min! % name min-value))))}
+   {:pattern #"^I set stock ([A-Za-z0-9]+) minimum to ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name min-value] _]
+          (apply-diagram-edit world #(cmd/set-stock-min! % name min-value)))}
    {:pattern #"^I set stock <([A-Za-z0-9_]+)> maximum to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param max-param] example]
           (let [name (require-value example name-param)
                 max-value (require-value example max-param)]
+            (apply-diagram-edit world #(cmd/set-stock-max! % name max-value))))}
+   {:pattern #"^I set stock ([A-Za-z0-9]+) maximum to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name max-param] example]
+          (let [max-value (require-value example max-param)]
             (apply-diagram-edit world #(cmd/set-stock-max! % name max-value))))}
    {:pattern #"^I set stock ([A-Za-z0-9]+) maximum to (\d+)$"
     :fn (fn [world [_ name max-value] _]
@@ -220,11 +248,23 @@
             (when-not (= min-value actual)
               (fail! (str "stock " name " minimum " actual " expected " min-value)))
             world))}
+   {:pattern #"^stock ([A-Za-z0-9]+) minimum should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name min-value] _]
+          (let [actual (model/stock-min-value (diagram-from world) name)]
+            (when-not (= min-value actual)
+              (fail! (str "stock " name " minimum " actual " expected " min-value)))
+            world))}
    {:pattern #"^stock <([A-Za-z0-9_]+)> maximum should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param max-param] example]
           (let [name (require-value example name-param)
                 max-value (require-value example max-param)
                 actual (model/stock-max-value (diagram-from world) name)]
+            (when-not (= max-value actual)
+              (fail! (str "stock " name " maximum " actual " expected " max-value)))
+            world))}
+   {:pattern #"^stock ([A-Za-z0-9]+) maximum should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name max-value] _]
+          (let [actual (model/stock-max-value (diagram-from world) name)]
             (when-not (= max-value actual)
               (fail! (str "stock " name " maximum " actual " expected " max-value)))
             world))}
@@ -243,16 +283,25 @@
           (let [name (require-value example name-param)
                 text (require-value example text-param)]
             (assert-stock-canvas-label world name :name text)))}
+   {:pattern #"^stock ([A-Za-z0-9]+) canvas name should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name text] _]
+          (assert-stock-canvas-label world name :name text))}
    {:pattern #"^stock <([A-Za-z0-9_]+)> canvas minimum should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param min-param] example]
           (let [name (require-value example name-param)
                 min-value (require-value example min-param)]
             (assert-stock-canvas-label world name :min min-value)))}
+   {:pattern #"^stock ([A-Za-z0-9]+) canvas minimum should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name min-value] _]
+          (assert-stock-canvas-label world name :min min-value))}
    {:pattern #"^stock <([A-Za-z0-9_]+)> canvas maximum should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param max-param] example]
           (let [name (require-value example name-param)
                 max-value (require-value example max-param)]
             (assert-stock-canvas-label world name :max max-value)))}
+   {:pattern #"^stock ([A-Za-z0-9]+) canvas maximum should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name max-value] _]
+          (assert-stock-canvas-label world name :max max-value))}
    {:pattern #"^stock ([A-Za-z0-9]+) should display no maximum on canvas$"
     :fn (fn [world [_ name] _]
           (let [labels (canvas/stock-canvas-labels (diagram-from world) name)]
@@ -672,5 +721,5 @@
       (fail! (str "unsupported step: " text)))))
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-26T17:14:23.075047-05:00", :module-hash "454439326", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "-113792008"} {:id "defn-/fail!", :kind "defn-", :line 6, :end-line 8, :hash "425420929"} {:id "defn-/require-value", :kind "defn-", :line 10, :end-line 14, :hash "369839950"} {:id "defn-/assert-menu-includes", :kind "defn-", :line 16, :end-line 19, :hash "-1322422941"} {:id "defn-/assert-menu-item-disabled", :kind "defn-", :line 21, :end-line 24, :hash "580418853"} {:id "defn-/assert-menu-item-enabled", :kind "defn-", :line 26, :end-line 31, :hash "-1393044992"} {:id "defn-/assert-about-includes", :kind "defn-", :line 33, :end-line 38, :hash "1963673308"} {:id "defn-/parse-int", :kind "defn-", :line 40, :end-line 45, :hash "60081232"} {:id "defn-/diagram-from", :kind "defn-", :line 47, :end-line 49, :hash "1678108818"} {:id "def/step-handlers", :kind "def", :line 51, :end-line 564, :hash "-1558652395"} {:id "defn/dispatch-step", :kind "defn", :line 566, :end-line 571, :hash "602476927"}]}
+;; {:version 1, :tested-at "2026-06-27T10:09:18.544533-05:00", :module-hash "-1840315301", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-608000062"} {:id "defn-/fail!", :kind "defn-", :line 7, :end-line 9, :hash "425420929"} {:id "defn-/require-value", :kind "defn-", :line 11, :end-line 15, :hash "369839950"} {:id "defn-/assert-menu-includes", :kind "defn-", :line 17, :end-line 20, :hash "-1322422941"} {:id "defn-/assert-menu-item-disabled", :kind "defn-", :line 22, :end-line 25, :hash "580418853"} {:id "defn-/assert-menu-item-enabled", :kind "defn-", :line 27, :end-line 32, :hash "-1393044992"} {:id "defn-/assert-about-includes", :kind "defn-", :line 34, :end-line 39, :hash "1963673308"} {:id "defn-/parse-int", :kind "defn-", :line 41, :end-line 46, :hash "60081232"} {:id "defn-/diagram-from", :kind "defn-", :line 48, :end-line 50, :hash "1678108818"} {:id "defn-/apply-diagram-edit", :kind "defn-", :line 52, :end-line 58, :hash "-2116522859"} {:id "defn-/assert-stock-canvas-label", :kind "defn-", :line 60, :end-line 68, :hash "1288836845"} {:id "def/step-handlers", :kind "def", :line 70, :end-line 714, :hash "-1145225958"} {:id "defn/dispatch-step", :kind "defn", :line 716, :end-line 721, :hash "834207964"}]}
 ;; clj-mutate-manifest-end
