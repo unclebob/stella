@@ -75,6 +75,16 @@
   [world flow-name field expected]
   (assert-canvas-label world flow-name "flow" canvas/flow-canvas-labels field expected))
 
+(defn assert-converter-canvas-label
+  [world converter-name field expected]
+  (assert-canvas-label world converter-name "converter"
+                       canvas/converter-canvas-labels field expected))
+
+(defn assert-connector-canvas-label
+  [world connector-name field expected]
+  (assert-canvas-label world connector-name "connector"
+                       canvas/connector-canvas-labels field expected))
+
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-27T10:13:21.036755-05:00", :module-hash "1685934464", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "1159229129"} {:id "defn/fail!", :kind "defn", :line 7, :end-line 9, :hash "-526803145"} {:id "defn/require-value", :kind "defn", :line 11, :end-line 15, :hash "-545191389"} {:id "defn/assert-menu-includes", :kind "defn", :line 17, :end-line 20, :hash "-349348030"} {:id "defn/assert-menu-item-disabled", :kind "defn", :line 22, :end-line 25, :hash "-1165811575"} {:id "defn/assert-menu-item-enabled", :kind "defn", :line 27, :end-line 32, :hash "-2090116262"} {:id "defn/assert-about-includes", :kind "defn", :line 34, :end-line 39, :hash "606493738"} {:id "defn/parse-int", :kind "defn", :line 41, :end-line 46, :hash "-520638366"} {:id "defn/diagram-from", :kind "defn", :line 48, :end-line 50, :hash "641980991"} {:id "defn/apply-diagram-edit", :kind "defn", :line 52, :end-line 58, :hash "-1350231762"} {:id "defn-/assert-canvas-label", :kind "defn-", :line 60, :end-line 68, :hash "1218037688"} {:id "defn/assert-stock-canvas-label", :kind "defn", :line 70, :end-line 72, :hash "142324445"} {:id "defn/assert-flow-canvas-label", :kind "defn", :line 74, :end-line 76, :hash "-730263822"}]}
+;; {:version 1, :tested-at "2026-06-27T10:17:57.398018-05:00", :module-hash "1364608564", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "1159229129"} {:id "defn/fail!", :kind "defn", :line 7, :end-line 9, :hash "-526803145"} {:id "defn/require-value", :kind "defn", :line 11, :end-line 15, :hash "-545191389"} {:id "defn/assert-menu-includes", :kind "defn", :line 17, :end-line 20, :hash "-349348030"} {:id "defn/assert-menu-item-disabled", :kind "defn", :line 22, :end-line 25, :hash "-1165811575"} {:id "defn/assert-menu-item-enabled", :kind "defn", :line 27, :end-line 32, :hash "-2090116262"} {:id "defn/assert-about-includes", :kind "defn", :line 34, :end-line 39, :hash "606493738"} {:id "defn/parse-int", :kind "defn", :line 41, :end-line 46, :hash "-520638366"} {:id "defn/diagram-from", :kind "defn", :line 48, :end-line 50, :hash "641980991"} {:id "defn/apply-diagram-edit", :kind "defn", :line 52, :end-line 58, :hash "-1350231762"} {:id "defn-/assert-canvas-label", :kind "defn-", :line 60, :end-line 68, :hash "1218037688"} {:id "defn/assert-stock-canvas-label", :kind "defn", :line 70, :end-line 72, :hash "142324445"} {:id "defn/assert-flow-canvas-label", :kind "defn", :line 74, :end-line 76, :hash "-730263822"} {:id "defn/assert-converter-canvas-label", :kind "defn", :line 78, :end-line 81, :hash "906876011"} {:id "defn/assert-connector-canvas-label", :kind "defn", :line 83, :end-line 86, :hash "-590705219"}]}
 ;; clj-mutate-manifest-end

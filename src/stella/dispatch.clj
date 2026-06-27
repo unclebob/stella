@@ -70,7 +70,17 @@
                               (cmd/apply-edit-flow-on-shell! shell (:draft event))
                               shell))
    events/edit-flow-cancel (fn [shell _]
-                             (cmd/cancel-edit-flow-on-shell! shell))})
+                             (cmd/cancel-edit-flow-on-shell! shell))
+   events/edit-converter-open (fn [shell event]
+                                (if (:converter-name event)
+                                  (cmd/open-edit-converter-on-shell! shell (:converter-name event))
+                                  shell))
+   events/edit-converter-apply (fn [shell event]
+                                 (if (:draft event)
+                                   (cmd/apply-edit-converter-on-shell! shell (:draft event))
+                                   shell))
+   events/edit-converter-cancel (fn [shell _]
+                                  (cmd/cancel-edit-converter-on-shell! shell))})
 
 (defn diagram-event?
   [event-type]

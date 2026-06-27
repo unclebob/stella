@@ -31,6 +31,11 @@
   {:name (field-text "edit-flow-name")
    :rate (field-text "edit-flow-rate")})
 
+(defn- read-edit-converter-draft
+  []
+  {:name (field-text "edit-converter-name")
+   :formula (field-text "edit-converter-formula")})
+
 (defn enrich-event
   "Adds derived fields to platform events before dispatch."
   [event]
@@ -45,6 +50,10 @@
     (and (= events/edit-flow-apply (event-type event))
          (not (:draft event)))
     (assoc event :draft (read-edit-flow-draft))
+
+    (and (= events/edit-converter-apply (event-type event))
+         (not (:draft event)))
+    (assoc event :draft (read-edit-converter-draft))
 
     :else event))
 

@@ -146,6 +146,43 @@
             (when-not (= value actual)
               (support/fail! (str "converter " name " value " actual " expected " value)))
             world))}
+   {:pattern #"^I set converter <([A-Za-z0-9_]+)> name to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param new-name-param] example]
+          (let [name (support/require-value example name-param)
+                new-name (support/require-value example new-name-param)]
+            (support/apply-diagram-edit world #(cmd/set-converter-name! % name new-name))))}
+   {:pattern #"^I set converter ([A-Za-z0-9]+) name to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name new-name-param] example]
+          (let [new-name (support/require-value example new-name-param)]
+            (support/apply-diagram-edit world #(cmd/set-converter-name! % name new-name))))}
+   {:pattern #"^I set converter ([A-Za-z0-9]+) name to ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name new-name] _]
+          (support/apply-diagram-edit world #(cmd/set-converter-name! % name new-name)))}
+   {:pattern #"^I set converter <([A-Za-z0-9_]+)> formula to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param formula-param] example]
+          (let [name (support/require-value example name-param)
+                formula (support/require-value example formula-param)]
+            (support/apply-diagram-edit world #(cmd/set-converter-formula! % name formula))))}
+   {:pattern #"^I set converter ([A-Za-z0-9]+) formula to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name formula-param] example]
+          (let [formula (support/require-value example formula-param)]
+            (support/apply-diagram-edit world #(cmd/set-converter-formula! % name formula))))}
+   {:pattern #"^I set converter ([A-Za-z0-9]+) formula to (.+)$"
+    :fn (fn [world [_ name formula] _]
+          (support/apply-diagram-edit world #(cmd/set-converter-formula! % name formula)))}
+   {:pattern #"^converter <([A-Za-z0-9_]+)> canvas name should be <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param text-param] example]
+          (let [name (support/require-value example name-param)
+                text (support/require-value example text-param)]
+            (support/assert-converter-canvas-label world name :name text)))}
+   {:pattern #"^converter ([A-Za-z0-9]+) canvas name should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name text] _]
+          (support/assert-converter-canvas-label world name :name text))}
+   {:pattern #"^the converter edit should be rejected$"
+    :fn (fn [world _ _]
+          (when-not (:last-edit-rejected? world)
+            (support/fail! "expected converter edit to be rejected"))
+          world)}
    {:pattern #"^the diagram converter count should be 0$"
     :fn (fn [world _ _]
           (when-not (zero? (model/converter-count (support/diagram-from world)))
@@ -211,6 +248,51 @@
             (when-not (model/connector-exists? (support/diagram-from world) name)
               (support/fail! (str "diagram missing connector " name)))
             world))}
+   {:pattern #"^connector <([A-Za-z0-9_]+)> runs from converter <([A-Za-z0-9_]+)> to flow <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ connector-param from-param to-param] example]
+          (let [connector (support/require-value example connector-param)
+                from (support/require-value example from-param)
+                to (support/require-value example to-param)
+                diagram (support/diagram-from world)]
+            (assoc world :diagram (cmd/fixture-connector! diagram connector from to))))}
+   {:pattern #"^connector ([A-Za-z0-9]+) runs from converter ([A-Za-z0-9]+) to flow ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ connector from to] _]
+          (let [diagram (support/diagram-from world)]
+            (assoc world :diagram (cmd/fixture-connector! diagram connector from to))))}
+   {:pattern #"^connector <([A-Za-z0-9_]+)> formula should be <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ connector-param formula-param] example]
+          (let [connector (support/require-value example connector-param)
+                formula (support/require-value example formula-param)
+                actual (model/connector-formula (support/diagram-from world) connector)]
+            (when-not (= formula actual)
+              (support/fail! (str "connector " connector " formula " actual " expected " formula)))
+            world))}
+   {:pattern #"^connector ([A-Za-z0-9]+) formula should be (.+)$"
+    :fn (fn [world [_ connector formula] _]
+          (let [actual (model/connector-formula (support/diagram-from world) connector)]
+            (when-not (= formula actual)
+              (support/fail! (str "connector " connector " formula " actual " expected " formula)))
+            world))}
+   {:pattern #"^connector <([A-Za-z0-9_]+)> should have no formula$"
+    :fn (fn [world [_ connector-param] example]
+          (let [connector (support/require-value example connector-param)
+                actual (model/connector-formula (support/diagram-from world) connector)]
+            (when (seq actual)
+              (support/fail! (str "connector " connector " formula " actual " expected none")))
+            world))}
+   {:pattern #"^connector ([A-Za-z0-9]+) should have no formula$"
+    :fn (fn [world [_ connector] _]
+          (when (seq (model/connector-formula (support/diagram-from world) connector))
+            (support/fail! (str "connector " connector " formula expected none")))
+          world)}
+   {:pattern #"^connector <([A-Za-z0-9_]+)> canvas formula should be <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ connector-param formula-param] example]
+          (let [connector (support/require-value example connector-param)
+                formula (support/require-value example formula-param)]
+            (support/assert-connector-canvas-label world connector :formula formula)))}
+   {:pattern #"^connector ([A-Za-z0-9]+) canvas formula should be (.+)$"
+    :fn (fn [world [_ connector formula] _]
+          (support/assert-connector-canvas-label world connector :formula formula))}
    {:pattern #"^connector <([A-Za-z0-9_]+)> should run from converter <([A-Za-z0-9_]+)> to flow <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ connector-param from-param to-param] example]
           (let [connector (support/require-value example connector-param)
@@ -225,6 +307,16 @@
    {:pattern #"^connector ([A-Za-z0-9]+) should run from converter ([A-Za-z0-9]+) to flow ([A-Za-z0-9]+)$"
     :fn (fn [world [_ connector from to] _]
           (let [diagram (support/diagram-from world)]
+            (when-not (= {:kind :converter :id from} (model/connector-from diagram connector))
+              (support/fail! (str "connector " connector " from mismatch")))
+            (when-not (= {:kind :flow :id to} (model/connector-to diagram connector))
+              (support/fail! (str "connector " connector " to mismatch")))
+            world))}
+   {:pattern #"^connector <([A-Za-z0-9_]+)> should run from converter <([A-Za-z0-9_]+)> to flow ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ connector-param from-param to] example]
+          (let [connector (support/require-value example connector-param)
+                from (support/require-value example from-param)
+                diagram (support/diagram-from world)]
             (when-not (= {:kind :converter :id from} (model/connector-from diagram connector))
               (support/fail! (str "connector " connector " from mismatch")))
             (when-not (= {:kind :flow :id to} (model/connector-to diagram connector))
@@ -259,5 +351,5 @@
   ])
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-27T10:13:46.687905-05:00", :module-hash "1584066463", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1285667419"} {:id "def/connect-handlers", :kind "def", :line 7, :end-line 259, :hash "1029774666"}]}
+;; {:version 1, :tested-at "2026-06-27T10:19:12.531861-05:00", :module-hash "-584901200", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1285667419"} {:id "def/connect-handlers", :kind "def", :line 7, :end-line 351, :hash "766242081"}]}
 ;; clj-mutate-manifest-end
