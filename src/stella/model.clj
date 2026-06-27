@@ -150,16 +150,16 @@
          (or (nil? max-value)
              (<= num (numeric-value max-value))))))
 
-(defn- rename-stock-endpoint
-  [endpoint old-name new-name]
-  (if (and (= :stock (:kind endpoint)) (= old-name (:id endpoint)))
+(defn- rename-endpoint-id
+  [endpoint kind old-name new-name]
+  (if (and (= kind (:kind endpoint)) (= old-name (:id endpoint)))
     (assoc endpoint :id new-name)
     endpoint))
 
 (defn- rename-stock-endpoints
   [diagram old-name new-name]
   (let [rename (fn [endpoint]
-                 (rename-stock-endpoint endpoint old-name new-name))
+                 (rename-endpoint-id endpoint :stock old-name new-name))
         update-item (fn [item]
                       (-> item
                           (update :from rename)
@@ -420,6 +420,51 @@
 (defn flow-rate
   [diagram name]
   (flow-attribute diagram name :rate))
+
+(defn- rename-flow-endpoints
+  [diagram old-name new-name]
+  (let [rename (fn [endpoint]
+                 (rename-endpoint-id endpoint :flow old-name new-name))
+        update-connector (fn [connector]
+                           (-> connector
+                               (update :from rename)
+                               (update :to rename)))]
+    (update diagram :connectors #(reduce-kv (fn [m id connector]
+                                              (assoc m id (update-connector connector)))
+                                            {}
+                                            %))))
+
+(defn- flow-rename-blocked?
+  [diagram old-name new-name]
+  (or (not (seq (str new-name)))
+      (= old-name new-name)
+      (not (flow-exists? diagram old-name))
+      (flow-exists? diagram new-name)))
+
+(defn set-flow-name
+  [diagram old-name new-name]
+  (if (flow-rename-blocked? diagram old-name new-name)
+    diagram
+    (let [[id _] (flow-entry-by-name diagram old-name)]
+      (-> diagram
+          (assoc-in [:flows id :name] new-name)
+          (rename-flow-endpoints old-name new-name)))))
+
+(defn- parseable-number?
+  [value]
+  (and (seq (str value))
+       (try
+         (numeric-value value)
+         true
+         (catch Exception _ false))))
+
+(defn set-flow-rate
+  [diagram name rate]
+  (if-let [[id _] (flow-entry-by-name diagram name)]
+    (if (parseable-number? rate)
+      (assoc-in diagram [:flows id :rate] (str rate))
+      diagram)
+    diagram))
 
 (defn flow-count
   [diagram]
