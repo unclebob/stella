@@ -2,6 +2,7 @@
   "Executable QA suites mapped to qa/procedures/*.qa.md.
   Drives the live JavaFX app through stella.qa.ui-driver only."
   (:require [cljfx.api :as fx]
+            [stella.qa.args :as qa-args]
             [stella.qa.ui-driver :as ui])
   (:import [javafx.stage Stage Window]))
 
@@ -282,9 +283,12 @@
    "connectors" run-connectors!})
 
 (defn -main [& args]
-  (when-not (first args)
-    (fail! "Usage: clojure -M:qa <suite-name>"))
-  (let [suite (first args)]
+  (let [{:keys [qa-seconds args]} (qa-args/parse-qa-flag args)
+        suite (first args)]
+    (when qa-seconds
+      (System/setProperty "stella.qa.auto-close-seconds" (str qa-seconds)))
+    (when-not suite
+      (fail! "Usage: clojure -M:qa [--qa <seconds>] <suite-name>"))
     (if-let [run (get suites suite)]
       (run-suite! suite (fn [] (run)))
       (fail! (str "Unknown suite: " suite)))))

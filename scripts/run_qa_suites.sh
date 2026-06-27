@@ -8,7 +8,7 @@ suites=(shell-launch shell-menus shell-about shell-resize shell-quit
 
 for suite in "${suites[@]}"; do
   echo "Running QA suite: ${suite}"
-  clojure -M:qa "${suite}"
+  clojure -M:qa --qa 90 "${suite}"
   sleep 2
 done
 

@@ -5,6 +5,7 @@
             [stella.fx.effects :as fx-effects]
             [stella.fx.input :as fx-input]
             [stella.fx.overlay :as fx-overlay]
+            [stella.qa.auto-close :as qa-auto-close]
             [stella.ui.root :as root]))
 
 (defonce *state
@@ -28,4 +29,5 @@
 (defn start!
   []
   (reset! *state (cmd/default-shell! nil))
-  (fx/mount-renderer *state renderer))
+  (fx/mount-renderer *state renderer)
+  (qa-auto-close/schedule-if-configured!))

@@ -8,7 +8,7 @@ Verify the user can launch Stella and see the main window with a standard menu b
 ## Preconditions
 
 - Display available (headed UI).
-- Run via `bb qa` or the documented QA launch command.
+- Run via `bb qa` or `clojure -M:qa --qa 90 <suite>` (the `--qa` flag auto-closes Stella after 90 seconds).
 
 ## Procedure
 
