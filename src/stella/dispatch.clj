@@ -80,7 +80,11 @@
                                    (cmd/apply-edit-converter-on-shell! shell (:draft event))
                                    shell))
    events/edit-converter-cancel (fn [shell _]
-                                  (cmd/cancel-edit-converter-on-shell! shell))})
+                                  (cmd/cancel-edit-converter-on-shell! shell))
+   events/stock-drag-start (fn [shell event]
+                            (cmd/start-stock-drag-on-shell! shell event))
+   events/stock-drag-end (fn [shell event]
+                           (cmd/end-stock-drag-on-shell! shell event))})
 
 (defn diagram-event?
   [event-type]

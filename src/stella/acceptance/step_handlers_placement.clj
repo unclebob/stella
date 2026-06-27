@@ -95,6 +95,39 @@
             (when-not (= [x y] pos)
               (support/fail! (str "stock " name " at " pos " expected [" x " " y "]")))
             world))}
+   {:pattern #"^I move stock <([A-Za-z0-9_]+)> to <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (support/require-value example name-param)
+                x (support/parse-int (support/require-value example x-param) x-param)
+                y (support/parse-int (support/require-value example y-param) y-param)]
+            (update world :diagram #(cmd/move-stock! % name x y))))}
+   {:pattern #"^I move stock ([A-Za-z0-9]+) to <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name x-param y-param] example]
+          (let [x (support/parse-int (support/require-value example x-param) x-param)
+                y (support/parse-int (support/require-value example y-param) y-param)]
+            (update world :diagram #(cmd/move-stock! % name x y))))}
+   {:pattern #"^I move stock ([A-Za-z0-9]+) to (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (update world :diagram #(cmd/move-stock! % name
+                                                   (support/parse-int x-str "x")
+                                                   (support/parse-int y-str "y"))))}
+   {:pattern #"^stock <([A-Za-z0-9_]+)> canvas position should be <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (support/require-value example name-param)
+                x (support/parse-int (support/require-value example x-param) x-param)
+                y (support/parse-int (support/require-value example y-param) y-param)
+                pos (canvas/stock-canvas-position (support/diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (support/fail! (str "stock " name " canvas position " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^stock ([A-Za-z0-9]+) canvas position should be (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (let [x (support/parse-int x-str "x")
+                y (support/parse-int y-str "y")
+                pos (canvas/stock-canvas-position (support/diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (support/fail! (str "stock " name " canvas position " pos " expected [" x " " y "]")))
+            world))}
    {:pattern #"^stock <([A-Za-z0-9_]+)> initial value should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param value-param] example]
           (let [name (support/require-value example name-param)

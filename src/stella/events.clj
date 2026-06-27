@@ -37,3 +37,7 @@
 (def edit-converter-apply ::edit-converter-apply)
 
 (def edit-converter-cancel ::edit-converter-cancel)
+
+(def stock-drag-start ::stock-drag-start)
+
+(def stock-drag-end ::stock-drag-end)

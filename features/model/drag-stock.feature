@@ -5,13 +5,13 @@ Background:
 
 # drag-stock-01
 Scenario Outline: Move stock to new position
-  When I move stock <name> to <x> <y>
-  Then stock <name> should be at position <x> <y>
-  And stock <name> canvas position should be <x> <y>
+  When I move stock Stock1 to <x> <y>
+  Then stock Stock1 should be at position 250 180
+  And stock Stock1 canvas position should be 250 180
 
   Examples:
-    | name   | x   | y   |
-    | Stock1 | 250 | 180 |
+    | x   | y   |
+    | 250 | 180 |
 
 # drag-stock-02
 Scenario: Moving stock does not create another stock
@@ -31,9 +31,9 @@ Scenario: Moving stock preserves flow endpoints
 Scenario Outline: Move one stock without moving the other
   Given a diagram model with stock Stock2 at 300 200
   When I move stock <name> to <x> <y>
-  Then stock <name> should be at position <x> <y>
-  And stock <other> should be at position 300 200
+  Then stock Stock1 should be at position 120 90
+  And stock Stock2 should be at position 300 200
 
   Examples:
-    | name   | other  | x   | y   |
-    | Stock1 | Stock2 | 120 | 90  |
+    | name   | x   | y   |
+    | Stock1 | 120 | 90  |

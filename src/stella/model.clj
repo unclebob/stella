@@ -117,10 +117,28 @@
   (when-let [[_ stock] (stock-entry-by-name diagram name)]
     [(:x stock) (:y stock)]))
 
+(def stock-icon-width 80)
+(def stock-icon-height 50)
+
+(defn stock-at-canvas-point
+  "Returns the stock name whose icon contains canvas-local point [x y], or nil."
+  [diagram cx cy]
+  (some (fn [{:keys [name x y]}]
+          (when (and (<= x cx (+ x stock-icon-width))
+                     (<= y cy (+ y stock-icon-height)))
+            name))
+        (vals (:stocks diagram))))
+
 (defn- stock-field
   [diagram name key]
   (when-let [[_ stock] (stock-entry-by-name diagram name)]
     (get stock key)))
+
+(defn move-stock
+  [diagram name x y]
+  (if-let [[id stock] (stock-entry-by-name diagram name)]
+    (assoc-in diagram [:stocks id] (assoc stock :x x :y y))
+    diagram))
 
 (defn stock-initial-value
   [diagram name]

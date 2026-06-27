@@ -440,6 +440,50 @@
       (ui/quit-app! stage)
       (pass! "edit-converter" "Quit requested"))))
 
+(defn- run-drag-stock! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas :center)
+      (when-not (ui/wait-for-element! stage :stock "Stock1" :attempts 20)
+        (fail! "Stock1 did not appear"))
+      (let [initial-bounds (ui/element-bounds stage :stock "Stock1")]
+        (ui/drag-element! stage :stock "Stock1" :canvas [120 60])
+        (when-not (ui/wait-for-bounds-change! stage :stock "Stock1" initial-bounds :attempts 20)
+          (fail! "Stock1 bounds did not change after drag"))
+        (when-not (ui/element-visible? stage :stock "Stock1")
+          (fail! "Stock1 not visible after drag"))
+        (when-not (= 1 (ui/diagram-stock-count stage))
+          (fail! "Expected exactly one stock after drag"))
+        (pass! "drag-stock" "Stock1 dragged to new position")
+        (ui/click-palette! stage "Stock")
+        (ui/click-in-region! stage :canvas [200 40])
+        (when-not (ui/wait-for-element! stage :stock "Stock2" :attempts 20)
+          (fail! "Stock2 did not appear"))
+        (ui/click-palette! stage "Flow")
+        (ui/click-element! stage :stock "Stock1")
+        (ui/click-element! stage :stock "Stock2")
+        (assert-flow! stage "Flow1" "Stock1" "Stock2" :suite "drag-stock")
+        (let [stock2-before (ui/element-bounds stage :stock "Stock2")]
+          (ui/drag-element! stage :stock "Stock1" :canvas [40 -20])
+          (Thread/sleep 300)
+          (when-not (ui/flow-directed? stage "Stock1" "Stock2")
+            (fail! "Flow1 not directed from Stock1 to Stock2 after drag"))
+          (when-not (ui/element-visible? stage :stock "Stock2")
+            (fail! "Stock2 missing after Stock1 drag"))
+          (when-not (ui/bounds-unchanged? stage :stock "Stock2" stock2-before)
+            (fail! "Stock2 moved when only Stock1 was dragged"))
+          (pass! "drag-stock" "Flow follows dragged Stock1; Stock2 unchanged"))
+        (ui/click-palette! stage "Stock")
+        (let [stock2-armed-before (ui/element-bounds stage :stock "Stock2")]
+          (ui/drag-element! stage :stock "Stock2" :canvas :center)
+          (Thread/sleep 300)
+          (when-not (ui/bounds-unchanged? stage :stock "Stock2" stock2-armed-before)
+            (fail! "Stock2 moved while placement tool armed"))
+          (pass! "drag-stock" "Drag disabled while placement armed"))
+        (ui/quit-app! stage)
+        (pass! "drag-stock" "Quit requested")))))
+
 (def ^:private suites
   {"shell-launch" run-shell-launch!
    "shell-menus" run-shell-menus!
@@ -452,7 +496,8 @@
    "connectors" run-connectors!
    "edit-stock" run-edit-stock!
    "edit-flow" run-edit-flow!
-   "edit-converter" run-edit-converter!})
+   "edit-converter" run-edit-converter!
+   "drag-stock" run-drag-stock!})
 
 (defn -main [& args]
   (let [{:keys [qa-seconds args]} (qa-args/parse-qa-flag args)
