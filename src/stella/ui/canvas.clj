@@ -56,24 +56,50 @@
                      :text name
                      :style "-fx-font-size: 10px;"}]}))))
 
+(def ^:private bound-label-style "-fx-font-size: 9px;")
+
+(defn stock-icon-labels
+  [{:keys [name min-value max-value]}]
+  {:name name
+   :min (or min-value "0")
+   :max max-value})
+
+(defn stock-canvas-labels
+  [diagram stock-name]
+  (some->> (model/stocks diagram)
+           (filter #(= stock-name (:name %)))
+           first
+           stock-icon-labels))
+
 (defn- stock-desc
-  [diagram {:keys [name initial-value x y]}]
-  (cond-> {:fx/type :group
-           :id (str "stock-" name)
-           :layout-x x
-           :layout-y y
-           :children [{:fx/type :rectangle
-                       :width 80
-                       :height 50
-                       :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
-                      {:fx/type :v-box
-                       :layout-x 8
-                       :layout-y 8
-                       :spacing 2
-                       :children [{:fx/type :label :text name}
-                                  {:fx/type :label :text (str initial-value)}]}]}
-    (model/endpoint-clickable? diagram :stock)
-    (assoc :on-mouse-clicked (endpoint-click :stock name))))
+  [diagram {:keys [name x y] :as stock}]
+  (let [{:keys [name min max]} (stock-icon-labels stock)
+        children (into [{:fx/type :rectangle
+                         :width 80
+                         :height 50
+                         :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
+                        {:fx/type :label
+                         :layout-x 20
+                         :layout-y 14
+                         :text name}
+                        {:fx/type :label
+                         :layout-x 4
+                         :layout-y 36
+                         :text min
+                         :style bound-label-style}]
+                       (when max
+                         [{:fx/type :label
+                           :layout-x 52
+                           :layout-y 36
+                           :text max
+                           :style bound-label-style}]))]
+    (cond-> {:fx/type :group
+             :id (str "stock-" name)
+             :layout-x x
+             :layout-y y
+             :children children}
+      (model/endpoint-clickable? diagram :stock)
+      (assoc :on-mouse-clicked (endpoint-click :stock name)))))
 
 (defn- converter-desc
   [diagram {:keys [name value x y]}]

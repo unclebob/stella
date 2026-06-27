@@ -21,7 +21,8 @@
         stock (first stocks)]
     (is (= 1 (count stocks)))
     (is (= "stock-Stock1" (:id stock)))
-    (is (= :v-box (:fx/type (second (:children stock)))))))
+    (is (= {:name "Stock1" :min "0" :max nil}
+           (canvas/stock-canvas-labels (:diagram shell) "Stock1")))))
 
 (deftest canvas-renders-clouds-test
   (let [diagram (-> (cmd/default-diagram! nil)
