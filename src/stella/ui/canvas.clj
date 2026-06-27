@@ -24,7 +24,7 @@
                              :end-y end-y
                              :stroke "#333"
                              :stroke-width 2}
-                            {:fx/type :vbox
+                            {:fx/type :v-box
                              :layout-x (- mid-x 30)
                              :layout-y (- mid-y 20)
                              :spacing 2
@@ -66,7 +66,7 @@
                        :width 80
                        :height 50
                        :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
-                      {:fx/type :vbox
+                      {:fx/type :v-box
                        :layout-x 8
                        :layout-y 8
                        :spacing 2
@@ -86,7 +86,7 @@
                        :center-y 25
                        :radius 25
                        :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
-                      {:fx/type :vbox
+                      {:fx/type :v-box
                        :layout-x 5
                        :layout-y 12
                        :spacing 2
@@ -98,7 +98,7 @@
 (defn- cloud-desc
   [diagram kind {:keys [name x y]}]
   (cond-> {:fx/type :group
-           :id (str (name kind) "-" name)
+           :id (str (clojure.core/name kind) "-" name)
            :layout-x x
            :layout-y y
            :children [{:fx/type :ellipse
@@ -124,7 +124,7 @@
                                  (str name " " initial-value))
                                (model/stocks diagram)))
         (overlay-segment (map (fn [{:keys [name rate]}] (str name " " rate))
-                                (model/flows diagram)))
+                              (model/flows diagram)))
         (overlay-segment (map :name (model/sources diagram)))
         (overlay-segment (map :name (model/sinks diagram)))
         (overlay-segment (map (fn [{:keys [name value]}] (str name " " value))
