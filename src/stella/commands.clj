@@ -31,6 +31,26 @@
   [diagram name x y]
   (model/fixture-stock diagram name x y))
 
+(defn set-stock-name!
+  [diagram old-name new-name]
+  (model/set-stock-name diagram old-name new-name))
+
+(defn set-stock-initial-value!
+  [diagram name value]
+  (model/set-stock-initial-value diagram name value))
+
+(defn set-stock-min!
+  [diagram name min-value]
+  (model/set-stock-min diagram name min-value))
+
+(defn set-stock-max!
+  [diagram name max-value]
+  (model/set-stock-max diagram name max-value))
+
+(defn clear-stock-max!
+  [diagram name]
+  (model/clear-stock-max diagram name))
+
 (defn arm-source-placement!
   [diagram]
   (model/arm-source-placement diagram))

@@ -122,6 +122,102 @@
   (when-let [[_ stock] (stock-entry-by-name diagram name)]
     (:initial-value stock)))
 
+(defn stock-min-value
+  [diagram name]
+  (when-let [[_ stock] (stock-entry-by-name diagram name)]
+    (:min-value stock)))
+
+(defn stock-max-value
+  [diagram name]
+  (when-let [[_ stock] (stock-entry-by-name diagram name)]
+    (:max-value stock)))
+
+(defn stock-named?
+  [diagram name]
+  (stock-exists? diagram name))
+
+(defn- numeric-value
+  [value]
+  (Double/parseDouble (str value)))
+
+(defn- value-within-bounds?
+  [value min-value max-value]
+  (let [num (numeric-value value)
+        min-num (numeric-value min-value)]
+    (and (>= num min-num)
+         (or (nil? max-value)
+             (<= num (numeric-value max-value))))))
+
+(defn- rename-stock-endpoint
+  [endpoint old-name new-name]
+  (if (and (= :stock (:kind endpoint)) (= old-name (:id endpoint)))
+    (assoc endpoint :id new-name)
+    endpoint))
+
+(defn- rename-stock-endpoints
+  [diagram old-name new-name]
+  (let [rename (fn [endpoint]
+                 (rename-stock-endpoint endpoint old-name new-name))
+        update-item (fn [item]
+                      (-> item
+                          (update :from rename)
+                          (update :to rename)))]
+    (-> diagram
+        (update :flows #(reduce-kv (fn [m id flow] (assoc m id (update-item flow)))
+                                 {}
+                                 %))
+        (update :connectors #(reduce-kv (fn [m id connector]
+                                          (assoc m id (update-item connector)))
+                                       {}
+                                       %)))))
+
+(defn set-stock-name
+  [diagram old-name new-name]
+  (cond
+    (not (seq (str new-name))) diagram
+    (= old-name new-name) diagram
+    (not (stock-exists? diagram old-name)) diagram
+    (stock-exists? diagram new-name) diagram
+    :else
+    (let [[id _] (stock-entry-by-name diagram old-name)]
+      (-> diagram
+          (assoc-in [:stocks id :name] new-name)
+          (rename-stock-endpoints old-name new-name)))))
+
+(defn set-stock-initial-value
+  [diagram name value]
+  (if-let [[id stock] (stock-entry-by-name diagram name)]
+    (if (value-within-bounds? value (:min-value stock "0") (:max-value stock))
+      (assoc-in diagram [:stocks id :initial-value] (str value))
+      diagram)
+    diagram))
+
+(defn set-stock-min
+  [diagram name min-value]
+  (if-let [[id stock] (stock-entry-by-name diagram name)]
+    (let [min-num (numeric-value min-value)
+          max-num (when-let [max-v (:max-value stock)] (numeric-value max-v))]
+      (if (or (nil? max-num) (<= min-num max-num))
+        (assoc-in diagram [:stocks id :min-value] (str min-value))
+        diagram))
+    diagram))
+
+(defn set-stock-max
+  [diagram name max-value]
+  (if-let [[id stock] (stock-entry-by-name diagram name)]
+    (let [max-num (numeric-value max-value)
+          min-num (numeric-value (:min-value stock "0"))]
+      (if (>= max-num min-num)
+        (assoc-in diagram [:stocks id :max-value] (str max-value))
+        diagram))
+    diagram))
+
+(defn clear-stock-max
+  [diagram name]
+  (if-let [[id _] (stock-entry-by-name diagram name)]
+    (assoc-in diagram [:stocks id :max-value] nil)
+    diagram))
+
 (defn placement-disarmed?
   [diagram]
   (= :idle (:placement-mode diagram)))
@@ -136,7 +232,7 @@
     (let [num (:next-stock-num diagram)
           name (str "Stock" num)
           id (keyword (str "stock-" num))
-          stock {:name name :initial-value "0" :x x :y y}]
+          stock {:name name :initial-value "0" :min-value "0" :max-value nil :x x :y y}]
       (-> diagram
           (assoc-in [:stocks id] stock)
           (assoc :placement-mode :idle)
@@ -162,7 +258,7 @@
 (defn fixture-stock
   [diagram name x y]
   (fixture-item diagram :stocks :next-stock-num "stock-" "Stock" name x y
-                {:initial-value "0"}))
+                {:initial-value "0" :min-value "0" :max-value nil}))
 
 (defn- endpoint-ref
   [kind id]

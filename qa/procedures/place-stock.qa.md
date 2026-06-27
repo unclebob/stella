@@ -3,7 +3,7 @@
 **Task:** `place-stock`  
 **Suite:** place-stock
 
-Verify the user can arm the stock tool, place stocks on the canvas one at a time, and see each stock's name and initial value.
+Verify the user can arm the stock tool, place stocks on the canvas one at a time, and see each stock's name and minimum value.
 
 ## Preconditions
 
@@ -29,5 +29,5 @@ Verify the user can arm the stock tool, place stocks on the canvas one at a time
 ## Pass criteria
 
 - Each stock requires a separate palette arm + canvas click (disarm between placements).
-- Both stocks show name and initial value `0` on the canvas.
+- Both stocks show name and minimum `0` on the canvas (initial value is not shown on the icon).
 - No project API used; palette and canvas interactions only.
