@@ -74,3 +74,13 @@
 (defn assert-flow-canvas-label
   [world flow-name field expected]
   (assert-canvas-label world flow-name "flow" canvas/flow-canvas-labels field expected))
+
+(defn assert-converter-canvas-label
+  [world converter-name field expected]
+  (assert-canvas-label world converter-name "converter"
+                       canvas/converter-canvas-labels field expected))
+
+(defn assert-connector-canvas-label
+  [world connector-name field expected]
+  (assert-canvas-label world connector-name "connector"
+                       canvas/connector-canvas-labels field expected))

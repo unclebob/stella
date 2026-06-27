@@ -60,6 +60,12 @@
     (is (= {:name "Flow1" :rate "0"}
            (canvas/flow-canvas-labels diagram "Flow1")))))
 
+(deftest converter-canvas-labels-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-converter! "Converter1" 100 250)
+                    (cmd/set-converter-name! "Converter1" "Growth"))]
+    (is (= {:name "Growth"} (canvas/converter-canvas-labels diagram "Growth")))))
+
 (deftest diagram-overlay-text-test
   (let [diagram (-> (cmd/default-diagram! nil)
                     (cmd/fixture-stock! "Stock1" 100 100)

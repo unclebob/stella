@@ -20,7 +20,7 @@ Verify the user can place a converter and draw connectors to a flow and from a s
 6. Click palette `Converter`.
 7. Click in region `:canvas` at offset `(0, +100)` from `:center`.
 8. Assert element `:converter "Converter1"` is visible.
-9. Assert element `:converter "Converter1"` shows `0`.
+9. Assert element `:converter "Converter1"` shows `Converter1` only (name, not value).
 10. Click palette `Connector`.
 11. Click element `:converter "Converter1"`.
 12. Click element `:flow "Flow1"`.
