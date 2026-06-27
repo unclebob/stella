@@ -67,6 +67,16 @@
                   (get labels field) " expected " expected)))
     world))
 
+(defn- assert-flow-canvas-label
+  [world flow-name field expected]
+  (let [labels (canvas/flow-canvas-labels (diagram-from world) flow-name)]
+    (when-not labels
+      (fail! (str "flow " flow-name " not on canvas")))
+    (when-not (= expected (get labels field))
+      (fail! (str "flow " flow-name " canvas " (name field) " "
+                  (get labels field) " expected " expected)))
+    world))
+
 (def step-handlers
   [{:pattern #"^a default shell application$"
     :fn (fn [world _ _]
@@ -384,6 +394,41 @@
             (when-not (= rate actual)
               (fail! (str "flow " flow " rate " actual " expected " rate)))
             world))}
+   {:pattern #"^flow <([A-Za-z0-9_]+)> rate should be 0$"
+    :fn (fn [world [_ flow-param] example]
+          (let [flow (require-value example flow-param)
+                actual (model/flow-rate (diagram-from world) flow)]
+            (when-not (= "0" actual)
+              (fail! (str "flow " flow " rate " actual " expected 0")))
+            world))}
+   {:pattern #"^I set flow <([A-Za-z0-9_]+)> name to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param new-name-param] example]
+          (let [name (require-value example name-param)
+                new-name (require-value example new-name-param)]
+            (apply-diagram-edit world #(cmd/set-flow-name! % name new-name))))}
+   {:pattern #"^I set flow ([A-Za-z0-9]+) name to ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name new-name] _]
+          (apply-diagram-edit world #(cmd/set-flow-name! % name new-name)))}
+   {:pattern #"^I set flow <([A-Za-z0-9_]+)> rate to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param rate-param] example]
+          (let [name (require-value example name-param)
+                rate (require-value example rate-param)]
+            (apply-diagram-edit world #(cmd/set-flow-rate! % name rate))))}
+   {:pattern #"^the flow edit should be rejected$"
+    :fn (fn [world _ _]
+          (when-not (:last-edit-rejected? world)
+            (fail! "expected flow edit to be rejected"))
+          world)}
+   {:pattern #"^flow <([A-Za-z0-9_]+)> canvas name should be <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param text-param] example]
+          (let [name (require-value example name-param)
+                text (require-value example text-param)]
+            (assert-flow-canvas-label world name :name text)))}
+   {:pattern #"^flow <([A-Za-z0-9_]+)> canvas rate should be <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param rate-param] example]
+          (let [name (require-value example name-param)
+                rate (require-value example rate-param)]
+            (assert-flow-canvas-label world name :rate rate)))}
    {:pattern #"^the diagram flow count should be 0$"
     :fn (fn [world _ _]
           (when-not (zero? (model/flow-count (diagram-from world)))
@@ -632,6 +677,14 @@
                 from (require-value example from-param)
                 to (require-value example to-param)
                 diagram (diagram-from world)]
+            (when-not (= {:kind :converter :id from} (model/connector-from diagram connector))
+              (fail! (str "connector " connector " from mismatch")))
+            (when-not (= {:kind :flow :id to} (model/connector-to diagram connector))
+              (fail! (str "connector " connector " to mismatch")))
+            world))}
+   {:pattern #"^connector ([A-Za-z0-9]+) should run from converter ([A-Za-z0-9]+) to flow ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ connector from to] _]
+          (let [diagram (diagram-from world)]
             (when-not (= {:kind :converter :id from} (model/connector-from diagram connector))
               (fail! (str "connector " connector " from mismatch")))
             (when-not (= {:kind :flow :id to} (model/connector-to diagram connector))

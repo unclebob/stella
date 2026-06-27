@@ -421,6 +421,54 @@
   [diagram name]
   (flow-attribute diagram name :rate))
 
+(defn- rename-flow-endpoint
+  [endpoint old-name new-name]
+  (if (and (= :flow (:kind endpoint)) (= old-name (:id endpoint)))
+    (assoc endpoint :id new-name)
+    endpoint))
+
+(defn- rename-flow-endpoints
+  [diagram old-name new-name]
+  (let [rename (fn [endpoint]
+                 (rename-flow-endpoint endpoint old-name new-name))
+        update-connector (fn [connector]
+                           (-> connector
+                               (update :from rename)
+                               (update :to rename)))]
+    (update diagram :connectors #(reduce-kv (fn [m id connector]
+                                              (assoc m id (update-connector connector)))
+                                            {}
+                                            %))))
+
+(defn set-flow-name
+  [diagram old-name new-name]
+  (cond
+    (not (seq (str new-name))) diagram
+    (= old-name new-name) diagram
+    (not (flow-exists? diagram old-name)) diagram
+    (flow-exists? diagram new-name) diagram
+    :else
+    (let [[id _] (flow-entry-by-name diagram old-name)]
+      (-> diagram
+          (assoc-in [:flows id :name] new-name)
+          (rename-flow-endpoints old-name new-name)))))
+
+(defn- parseable-number?
+  [value]
+  (and (seq (str value))
+       (try
+         (numeric-value value)
+         true
+         (catch Exception _ false))))
+
+(defn set-flow-rate
+  [diagram name rate]
+  (if-let [[id _] (flow-entry-by-name diagram name)]
+    (if (parseable-number? rate)
+      (assoc-in diagram [:flows id :rate] (str rate))
+      diagram)
+    diagram))
+
 (defn flow-count
   [diagram]
   (count (:flows diagram)))

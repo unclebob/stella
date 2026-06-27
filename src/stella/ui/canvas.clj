@@ -71,6 +71,18 @@
            first
            stock-icon-labels))
 
+(defn flow-icon-labels
+  [{:keys [name rate]}]
+  {:name name
+   :rate (str rate)})
+
+(defn flow-canvas-labels
+  [diagram flow-name]
+  (when-let [flow (first (filter #(= flow-name (:name %)) (model/flows diagram)))]
+    (when (and (model/endpoint-position diagram (:from flow))
+               (model/endpoint-position diagram (:to flow)))
+      (flow-icon-labels flow))))
+
 (defn- stock-desc
   [diagram {:keys [name x y] :as stock}]
   (let [{:keys [name min max]} (stock-icon-labels stock)
