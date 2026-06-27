@@ -111,6 +111,18 @@
   [diagram name x y]
   (model/fixture-converter diagram name x y))
 
+(defn fixture-connector!
+  [diagram connector-name from-converter to-flow]
+  (model/fixture-connector diagram connector-name from-converter to-flow))
+
+(defn set-converter-name!
+  [diagram old-name new-name]
+  (model/set-converter-name diagram old-name new-name))
+
+(defn set-converter-formula!
+  [diagram name formula]
+  (model/set-converter-formula diagram name formula))
+
 (defn arm-connector-placement!
   [diagram]
   (model/arm-connector-placement diagram))
