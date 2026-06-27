@@ -292,6 +292,11 @@
           (when-not (zero? (model/stock-count (support/diagram-from world)))
             (support/fail! "expected diagram stock count 0"))
           world)}
+   {:pattern #"^the diagram stock count should be 1$"
+    :fn (fn [world _ _]
+          (when-not (= 1 (model/stock-count (support/diagram-from world)))
+            (support/fail! (str "stock count " (model/stock-count (support/diagram-from world)) " expected 1")))
+          world)}
    {:pattern #"^the stock placement tool should be disarmed$"
     :fn (fn [world _ _]
           (when-not (model/placement-disarmed? (support/diagram-from world))
@@ -392,6 +397,12 @@
                 from (support/require-value example from-param)
                 to (support/require-value example to-param)
                 endpoints (model/flow-endpoints (support/diagram-from world) flow)]
+            (when-not (= [from to] endpoints)
+              (support/fail! (str "flow " flow " endpoints " endpoints " expected [" from " " to "]")))
+            world))}
+   {:pattern #"^flow ([A-Za-z0-9]+) should run from stock ([A-Za-z0-9]+) to stock ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ flow from to] _]
+          (let [endpoints (model/flow-endpoints (support/diagram-from world) flow)]
             (when-not (= [from to] endpoints)
               (support/fail! (str "flow " flow " endpoints " endpoints " expected [" from " " to "]")))
             world))}
