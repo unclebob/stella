@@ -41,6 +41,7 @@
    :flows {}
    :converters {}
    :connectors {}
+   :selection #{}
    :placement-mode :idle
    :flow-draft nil
    :connector-draft nil
@@ -787,6 +788,120 @@
 (defn connector-placement-disarmed?
   [diagram]
   (placement-disarmed? diagram))
+
+(defn- object-ref
+  [kind name]
+  {:kind kind :id name})
+
+(defn selected?
+  [diagram kind name]
+  (contains? (:selection diagram #{}) (object-ref kind name)))
+
+(defn selection-count
+  [diagram]
+  (count (:selection diagram #{})))
+
+(defn nothing-selected?
+  [diagram]
+  (zero? (selection-count diagram)))
+
+(defn- normalize-rect
+  [x1 y1 x2 y2]
+  [(min x1 x2) (min y1 y2) (max x1 x2) (max y1 y2)])
+
+(defn- rects-intersect?
+  [[mx1 my1 mx2 my2] [ox1 oy1 ox2 oy2]]
+  (and (< mx1 ox2) (> mx2 ox1) (< my1 oy2) (> my2 oy1)))
+
+(defn- stock-bounds
+  [{:keys [x y]}]
+  [x y (+ x 80) (+ y 50)])
+
+(defn- converter-bounds
+  [{:keys [x y]}]
+  [x y (+ x 50) (+ y 50)])
+
+(defn- cloud-bounds
+  [{:keys [x y]}]
+  [x y (+ x 80) (+ y 50)])
+
+(defn- link-bounds
+  [diagram from to padding]
+  (when-let [from-pos (endpoint-position diagram from)]
+    (when-let [to-pos (endpoint-position diagram to)]
+      (let [[fx fy] (endpoint-anchor from-pos (:kind from) :right)
+            [tx ty] (endpoint-anchor to-pos (:kind to) :left)]
+        [(min fx tx) (- (min fy ty) padding)
+         (max fx tx) (+ (max fy ty) padding)]))))
+
+(defn- selectable-objects-with-bounds
+  [diagram]
+  (concat
+   (for [[_ {:keys [name] :as stock}] (:stocks diagram)]
+     [(object-ref :stock name) (stock-bounds stock)])
+   (for [[_ {:keys [name] :as converter}] (:converters diagram)]
+     [(object-ref :converter name) (converter-bounds converter)])
+   (for [[_ {:keys [name from to]}] (:flows diagram)]
+     (when-let [bounds (link-bounds diagram from to 20)]
+       [(object-ref :flow name) bounds]))
+   (for [[_ {:keys [name from to]}] (:connectors diagram)]
+     (when-let [bounds (link-bounds diagram from to 15)]
+       [(object-ref :connector name) bounds]))
+   (for [[_ {:keys [name] :as source}] (:sources diagram)]
+     [(object-ref :source name) (cloud-bounds source)])
+   (for [[_ {:keys [name] :as sink}] (:sinks diagram)]
+     [(object-ref :sink name) (cloud-bounds sink)])))
+
+(defn- update-selection-when-idle
+  [diagram update-fn]
+  (if (placement-disarmed? diagram)
+    (update-fn diagram)
+    diagram))
+
+(defn click-select
+  [diagram kind name]
+  (update-selection-when-idle
+   diagram
+   (fn [diagram]
+     (if (endpoint-exists? diagram kind name)
+       (let [ref (object-ref kind name)
+             selection (:selection diagram #{})]
+         (assoc diagram :selection
+                (if (contains? selection ref)
+                  (disj selection ref)
+                  #{ref})))
+       diagram))))
+
+(defn shift-click-select
+  [diagram kind name]
+  (update-selection-when-idle
+   diagram
+   (fn [diagram]
+     (if (endpoint-exists? diagram kind name)
+       (let [ref (object-ref kind name)
+             selection (:selection diagram #{})]
+         (assoc diagram :selection
+                (if (contains? selection ref)
+                  (disj selection ref)
+                  (conj selection ref))))
+       diagram))))
+
+(defn marquee-select
+  [diagram x1 y1 x2 y2]
+  (update-selection-when-idle
+   diagram
+   (fn [diagram]
+     (let [marquee (normalize-rect x1 y1 x2 y2)
+           selected (into #{}
+                          (keep (fn [[ref bounds]]
+                                  (when (rects-intersect? marquee bounds)
+                                    ref))
+                                (selectable-objects-with-bounds diagram)))]
+       (assoc diagram :selection selected)))))
+
+(defn clear-selection
+  [diagram]
+  (assoc diagram :selection #{}))
 
 ;; clj-mutate-manifest-begin
 ;; {:version 1, :tested-at "2026-06-27T10:23:29.84515-05:00", :module-hash "-1737858450", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 1, :hash "-289228109"} {:id "defn-/menu-item", :kind "defn-", :line 3, :end-line 4, :hash "1389753846"} {:id "defn-/separator", :kind "defn-", :line 6, :end-line 7, :hash "-830175276"} {:id "defn-/file-menu", :kind "defn-", :line 9, :end-line 16, :hash "-1661503381"} {:id "defn-/edit-menu", :kind "defn-", :line 18, :end-line 25, :hash "1911650603"} {:id "defn-/view-menu", :kind "defn-", :line 27, :end-line 31, :hash "-460340653"} {:id "defn-/help-menu", :kind "defn-", :line 33, :end-line 35, :hash "229400292"} {:id "defn/default-diagram", :kind "defn", :line 37, :end-line 52, :hash "1388292886"} {:id "defn/default-shell", :kind "defn", :line 54, :end-line 63, :hash "-1757765176"} {:id "defn/top-level-menus", :kind "defn", :line 65, :end-line 67, :hash "1987860788"} {:id "defn/menu-includes?", :kind "defn", :line 69, :end-line 71, :hash "-1080604946"} {:id "defn-/menu-items", :kind "defn-", :line 73, :end-line 75, :hash "-1907022954"} {:id "defn/menu-item-disabled?", :kind "defn", :line 77, :end-line 81, :hash "250965749"} {:id "defn/window-title", :kind "defn", :line 83, :end-line 85, :hash "-1791944771"} {:id "defn/showing?", :kind "defn", :line 87, :end-line 89, :hash "-727519168"} {:id "defn/about-visible?", :kind "defn", :line 91, :end-line 93, :hash "1936908001"} {:id "defn/about-text", :kind "defn", :line 95, :end-line 97, :hash "706456501"} {:id "defn/diagram-empty?", :kind "defn", :line 99, :end-line 101, :hash "-256542367"} {:id "defn/stock-count", :kind "defn", :line 103, :end-line 105, :hash "-1679213761"} {:id "defn-/stock-entry-by-name", :kind "defn-", :line 107, :end-line 109, :hash "407514139"} {:id "defn/stock-exists?", :kind "defn", :line 111, :end-line 113, :hash "2041739431"} {:id "defn/stock-position", :kind "defn", :line 115, :end-line 118, :hash "69915530"} {:id "defn-/stock-field", :kind "defn-", :line 120, :end-line 123, :hash "-2043085379"} {:id "defn/move-stock", :kind "defn", :line 125, :end-line 129, :hash "990066087"} {:id "defn/stock-initial-value", :kind "defn", :line 131, :end-line 133, :hash "-567431284"} {:id "defn/stock-min-value", :kind "defn", :line 135, :end-line 137, :hash "1340209325"} {:id "defn/stock-max-value", :kind "defn", :line 139, :end-line 141, :hash "684410828"} {:id "defn/stock-named?", :kind "defn", :line 143, :end-line 145, :hash "-166675305"} {:id "defn-/numeric-value", :kind "defn-", :line 147, :end-line 149, :hash "-1365632356"} {:id "defn-/value-within-bounds?", :kind "defn-", :line 151, :end-line 157, :hash "-1066502942"} {:id "defn-/rename-endpoint-id", :kind "defn-", :line 159, :end-line 163, :hash "-1464052815"} {:id "defn-/rename-stock-endpoints", :kind "defn-", :line 165, :end-line 180, :hash "1076302708"} {:id "defn-/rename-blocked?", :kind "defn-", :line 182, :end-line 187, :hash "192871783"} {:id "defn/set-stock-name", :kind "defn", :line 189, :end-line 196, :hash "1651947829"} {:id "defn/set-stock-initial-value", :kind "defn", :line 198, :end-line 204, :hash "982226397"} {:id "defn-/set-stock-bound", :kind "defn-", :line 206, :end-line 212, :hash "2008645735"} {:id "defn/set-stock-min", :kind "defn", :line 214, :end-line 221, :hash "-405763036"} {:id "defn/set-stock-max", :kind "defn", :line 223, :end-line 228, :hash "218751066"} {:id "defn/clear-stock-max", :kind "defn", :line 230, :end-line 234, :hash "398894882"} {:id "defn/placement-disarmed?", :kind "defn", :line 236, :end-line 238, :hash "351569028"} {:id "defn/arm-stock-placement", :kind "defn", :line 240, :end-line 242, :hash "1928911371"} {:id "defn/place-stock", :kind "defn", :line 244, :end-line 255, :hash "1114170010"} {:id "defn/stocks", :kind "defn", :line 257, :end-line 259, :hash "-801020159"} {:id "defn-/num-from-name", :kind "defn-", :line 261, :end-line 263, :hash "1864201808"} {:id "defn-/fixture-item", :kind "defn-", :line 265, :end-line 271, :hash "-1104049080"} {:id "defn/fixture-stock", :kind "defn", :line 273, :end-line 276, :hash "1548349638"} {:id "defn-/endpoint-ref", :kind "defn-", :line 278, :end-line 280, :hash "916366387"} {:id "defn-/source-entry-by-name", :kind "defn-", :line 282, :end-line 284, :hash "1345064248"} {:id "defn-/sink-entry-by-name", :kind "defn-", :line 286, :end-line 288, :hash "-2143000880"} {:id "defn/source-exists?", :kind "defn", :line 290, :end-line 292, :hash "1146108815"} {:id "defn/sink-exists?", :kind "defn", :line 294, :end-line 296, :hash "-2079647085"} {:id "defn/source-position", :kind "defn", :line 298, :end-line 301, :hash "1966756"} {:id "defn/sink-position", :kind "defn", :line 303, :end-line 306, :hash "856729128"} {:id "form/53/declare", :kind "declare", :line 308, :end-line 308, :hash "-1373642061"} {:id "defn-/endpoint-position-resolvers", :kind "defn-", :line 310, :end-line 316, :hash "-1370097299"} {:id "defn/endpoint-position", :kind "defn", :line 318, :end-line 321, :hash "-1526732716"} {:id "def/endpoint-anchor-offsets", :kind "def", :line 323, :end-line 331, :hash "-1752866723"} {:id "defn/endpoint-anchor", :kind "defn", :line 333, :end-line 336, :hash "-1604573613"} {:id "defn/source-count", :kind "defn", :line 338, :end-line 340, :hash "913527496"} {:id "defn/sink-count", :kind "defn", :line 342, :end-line 344, :hash "1591552436"} {:id "defn/sources", :kind "defn", :line 346, :end-line 348, :hash "-973921734"} {:id "defn/sinks", :kind "defn", :line 350, :end-line 352, :hash "1773380131"} {:id "defn/fixture-source", :kind "defn", :line 354, :end-line 356, :hash "-1647492037"} {:id "defn/fixture-sink", :kind "defn", :line 358, :end-line 360, :hash "453893490"} {:id "defn/arm-source-placement", :kind "defn", :line 362, :end-line 364, :hash "-1296780729"} {:id "defn/arm-sink-placement", :kind "defn", :line 366, :end-line 368, :hash "1869647698"} {:id "defn-/place-cloud", :kind "defn-", :line 370, :end-line 380, :hash "752912211"} {:id "defn/place-source", :kind "defn", :line 382, :end-line 384, :hash "394591180"} {:id "defn/place-sink", :kind "defn", :line 386, :end-line 388, :hash "785372302"} {:id "defn/source-placement-disarmed?", :kind "defn", :line 390, :end-line 392, :hash "1135284315"} {:id "defn/sink-placement-disarmed?", :kind "defn", :line 394, :end-line 396, :hash "-1769136352"} {:id "defn-/flow-entry-by-name", :kind "defn-", :line 398, :end-line 400, :hash "-1730283296"} {:id "defn/flow-exists?", :kind "defn", :line 402, :end-line 404, :hash "905629296"} {:id "defn-/flow-attribute", :kind "defn-", :line 406, :end-line 409, :hash "1273430238"} {:id "defn/flow-from", :kind "defn", :line 411, :end-line 413, :hash "-751374872"} {:id "defn/flow-to", :kind "defn", :line 415, :end-line 417, :hash "1500420793"} {:id "defn/flow-endpoints", :kind "defn", :line 419, :end-line 424, :hash "1470373818"} {:id "defn/flow-rate", :kind "defn", :line 426, :end-line 428, :hash "-2102829222"} {:id "defn-/rename-endpoints-in-connectors", :kind "defn-", :line 430, :end-line 435, :hash "-1425675650"} {:id "defn/set-flow-name", :kind "defn", :line 437, :end-line 444, :hash "-79078843"} {:id "defn-/parseable-number?", :kind "defn-", :line 446, :end-line 452, :hash "928557303"} {:id "defn/set-flow-rate", :kind "defn", :line 454, :end-line 460, :hash "-112745979"} {:id "defn/flow-count", :kind "defn", :line 462, :end-line 464, :hash "-2009265396"} {:id "defn/flows", :kind "defn", :line 466, :end-line 468, :hash "608017970"} {:id "defn-/fixture-named-link", :kind "defn-", :line 470, :end-line 476, :hash "999899682"} {:id "defn-/fixture-endpoint-link", :kind "defn-", :line 478, :end-line 484, :hash "-1371478247"} {:id "defn/fixture-flow", :kind "defn", :line 486, :end-line 489, :hash "614964979"} {:id "defn-/valid-flow-pair?", :kind "defn-", :line 491, :end-line 497, :hash "-269751023"} {:id "defn-/create-collection-link!", :kind "defn-", :line 499, :end-line 507, :hash "-1154634412"} {:id "defn-/create-flow!", :kind "defn-", :line 509, :end-line 518, :hash "-1588176197"} {:id "defn-/arm-link-placement", :kind "defn-", :line 520, :end-line 524, :hash "1605520295"} {:id "defn/arm-flow-placement", :kind "defn", :line 526, :end-line 528, :hash "402481411"} {:id "defn/flow-placement-armed?", :kind "defn", :line 530, :end-line 532, :hash "-943631268"} {:id "defn-/draft-from-endpoint", :kind "defn-", :line 534, :end-line 543, :hash "1978981143"} {:id "defn/select-flow-source", :kind "defn", :line 545, :end-line 551, :hash "-323164585"} {:id "defn-/clear-flow-draft", :kind "defn-", :line 553, :end-line 555, :hash "-371891314"} {:id "form/96/declare", :kind "declare", :line 557, :end-line 557, :hash "1070947401"} {:id "defn-/endpoint-existence-checks", :kind "defn-", :line 559, :end-line 565, :hash "-1016995454"} {:id "defn-/endpoint-exists?", :kind "defn-", :line 567, :end-line 570, :hash "-1897963117"} {:id "defn-/try-connect-flow", :kind "defn-", :line 572, :end-line 580, :hash "822432826"} {:id "defn/connect-flow", :kind "defn", :line 582, :end-line 586, :hash "-817203079"} {:id "defn/flow-placement-disarmed?", :kind "defn", :line 588, :end-line 590, :hash "31272842"} {:id "defn-/converter-entry-by-name", :kind "defn-", :line 592, :end-line 594, :hash "-1383344081"} {:id "defn/converter-exists?", :kind "defn", :line 596, :end-line 598, :hash "300239202"} {:id "defn/converter-position", :kind "defn", :line 600, :end-line 603, :hash "843288393"} {:id "defn/move-converter", :kind "defn", :line 605, :end-line 609, :hash "-1179681609"} {:id "defn/converter-value", :kind "defn", :line 611, :end-line 614, :hash "13277447"} {:id "defn/converter-count", :kind "defn", :line 616, :end-line 618, :hash "267660665"} {:id "defn/converters", :kind "defn", :line 620, :end-line 622, :hash "-1686748773"} {:id "defn/fixture-converter", :kind "defn", :line 624, :end-line 627, :hash "-475935667"} {:id "defn/arm-converter-placement", :kind "defn", :line 629, :end-line 631, :hash "-2068224481"} {:id "defn/place-converter", :kind "defn", :line 633, :end-line 643, :hash "1356484642"} {:id "defn/converter-placement-disarmed?", :kind "defn", :line 645, :end-line 647, :hash "887795504"} {:id "defn/flow-midpoint", :kind "defn", :line 649, :end-line 656, :hash "1396828306"} {:id "def/clickable-kinds-by-mode", :kind "def", :line 658, :end-line 660, :hash "733363462"} {:id "defn/endpoint-clickable?", :kind "defn", :line 662, :end-line 664, :hash "1518566357"} {:id "defn-/connector-entry-by-name", :kind "defn-", :line 666, :end-line 668, :hash "971711688"} {:id "defn/connector-exists?", :kind "defn", :line 670, :end-line 672, :hash "314481541"} {:id "defn-/connector-attribute", :kind "defn-", :line 674, :end-line 677, :hash "709631432"} {:id "defn/connector-from", :kind "defn", :line 679, :end-line 681, :hash "524525571"} {:id "defn/connector-to", :kind "defn", :line 683, :end-line 685, :hash "799906750"} {:id "defn/connector-formula", :kind "defn", :line 687, :end-line 689, :hash "-1029787925"} {:id "defn/set-converter-name", :kind "defn", :line 691, :end-line 698, :hash "-847157151"} {:id "defn-/converter-to-flow-connector-id", :kind "defn-", :line 700, :end-line 707, :hash "-195957966"} {:id "defn/set-converter-formula", :kind "defn", :line 709, :end-line 715, :hash "-823051875"} {:id "defn/fixture-connector", :kind "defn", :line 717, :end-line 720, :hash "248601847"} {:id "defn/connector-count", :kind "defn", :line 722, :end-line 724, :hash "-1826970045"} {:id "defn/connectors", :kind "defn", :line 726, :end-line 728, :hash "-1048990130"} {:id "defn-/valid-connector-pair?", :kind "defn-", :line 730, :end-line 735, :hash "1385416327"} {:id "defn-/create-connector!", :kind "defn-", :line 737, :end-line 746, :hash "364741780"} {:id "defn/arm-connector-placement", :kind "defn", :line 748, :end-line 750, :hash "-1475706923"} {:id "defn/connector-placement-armed?", :kind "defn", :line 752, :end-line 754, :hash "-675985363"} {:id "defn/select-connector-origin", :kind "defn", :line 756, :end-line 764, :hash "1914302439"} {:id "defn-/try-connect-connector", :kind "defn-", :line 766, :end-line 778, :hash "1616656565"} {:id "defn/connect-connector", :kind "defn", :line 780, :end-line 785, :hash "1621379443"} {:id "defn/connector-placement-disarmed?", :kind "defn", :line 787, :end-line 789, :hash "-1401416734"}]}
