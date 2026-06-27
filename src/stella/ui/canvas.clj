@@ -98,7 +98,7 @@
 (defn- cloud-desc
   [diagram kind {:keys [name x y]}]
   (cond-> {:fx/type :group
-           :id (str (name kind) "-" name)
+           :id (str (clojure.core/name kind) "-" name)
            :layout-x x
            :layout-y y
            :children [{:fx/type :ellipse
