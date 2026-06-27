@@ -72,14 +72,31 @@
           (assoc :on-context-menu-requested
                  {:event events/edit-flow-open :flow-name name}))))))
 
+(def ^:private connector-label-style "-fx-font-size: 10px;")
+(def ^:private connector-formula-style "-fx-font-size: 9px;")
+
+(defn connector-canvas-labels
+  [diagram connector-name]
+  (when-let [connector (first (filter #(= connector-name (:name %))
+                                      (model/connectors diagram)))]
+    (when (and (model/endpoint-position diagram (:from connector))
+               (model/endpoint-position diagram (:to connector)))
+      (cond-> {:name (:name connector)}
+        (seq (:formula connector)) (assoc :formula (:formula connector))))))
+
 (defn- connector-desc
-  [diagram {:keys [name from to]}]
+  [diagram {:keys [name from to formula]}]
   (when-let [from-pos (model/endpoint-position diagram from)]
     (when-let [to-pos (model/endpoint-position diagram to)]
       (let [[start-x start-y] (model/endpoint-anchor from-pos (:kind from) :right)
             [end-x end-y] (model/endpoint-anchor to-pos (:kind to) :left)
             mid-x (/ (+ start-x end-x) 2.0)
-            mid-y (/ (+ start-y end-y) 2.0)]
+            mid-y (/ (+ start-y end-y) 2.0)
+            label-children (into [{:fx/type :label :text name :style connector-label-style}]
+                                 (when (seq formula)
+                                   [{:fx/type :label
+                                     :text formula
+                                     :style connector-formula-style}]))]
         {:fx/type :group
          :id (str "connector-" name)
          :children [{:fx/type :line
@@ -89,11 +106,17 @@
                      :end-y end-y
                      :stroke "#666"
                      :stroke-width connector-stroke-width}
-                    {:fx/type :label
+                    {:fx/type :vbox
                      :layout-x (- mid-x 30)
-                     :layout-y (- mid-y 10)
-                     :text name
-                     :style "-fx-font-size: 10px;"}]}))))
+                     :layout-y (- mid-y 15)
+                     :spacing 2
+                     :children label-children}]}))))
+
+(defn converter-canvas-labels
+  [diagram converter-name]
+  (when-let [{:keys [name]} (first (filter #(= converter-name (:name %))
+                                            (model/converters diagram)))]
+    {:name name}))
 
 (def ^:private bound-label-style "-fx-font-size: 9px;")
 
@@ -162,7 +185,7 @@
              {:event events/edit-stock-open :stock-name name}))))
 
 (defn- converter-desc
-  [diagram {:keys [name value x y]}]
+  [diagram {:keys [name x y]}]
   (cond-> {:fx/type :group
            :id (str "converter-" name)
            :layout-x x
@@ -172,14 +195,15 @@
                        :center-y 25
                        :radius 25
                        :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
-                      {:fx/type :vbox
-                       :layout-x 5
-                       :layout-y 12
-                       :spacing 2
-                       :children [{:fx/type :label :text name}
-                                  {:fx/type :label :text value}]}]}
+                      {:fx/type :label
+                       :layout-x 8
+                       :layout-y 18
+                       :text name}]}
     (model/endpoint-clickable? diagram :converter)
-    (assoc :on-mouse-clicked (endpoint-click :converter name))))
+    (assoc :on-mouse-clicked (endpoint-click :converter name))
+    :always
+    (assoc :on-context-menu-requested
+           {:event events/edit-converter-open :converter-name name})))
 
 (defn- cloud-desc
   [diagram kind {:keys [name x y]}]
@@ -215,8 +239,7 @@
                               (model/flows diagram)))
         (overlay-segment (map :name (model/sources diagram)))
         (overlay-segment (map :name (model/sinks diagram)))
-        (overlay-segment (map (fn [{:keys [name value]}] (str name " " value))
-                              (model/converters diagram)))
+        (overlay-segment (map :name (model/converters diagram)))
         (overlay-segment (map :name (model/connectors diagram)))]
        (remove nil?)
        (str/join " || ")))
@@ -251,5 +274,5 @@
   (canvas-stack shell))
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-27T10:13:09.093626-05:00", :module-hash "1416123531", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "477415667"} {:id "defn-/endpoint-click", :kind "defn-", :line 6, :end-line 8, :hash "-1042549141"} {:id "def/flow-pipe-stroke-width", :kind "def", :line 10, :end-line 10, :hash "-936806796"} {:id "def/connector-stroke-width", :kind "def", :line 11, :end-line 11, :hash "-1722330092"} {:id "defn-/unit-vector", :kind "defn-", :line 13, :end-line 18, :hash "-518215995"} {:id "defn-/flow-arrowhead", :kind "defn-", :line 20, :end-line 32, :hash "-1459538016"} {:id "defn-/flow-pipe-body", :kind "defn-", :line 34, :end-line 48, :hash "312484768"} {:id "defn-/flow-desc", :kind "defn-", :line 50, :end-line 70, :hash "-1028093553"} {:id "defn-/connector-desc", :kind "defn-", :line 72, :end-line 93, :hash "-1650792294"} {:id "def/bound-label-style", :kind "def", :line 95, :end-line 95, :hash "-2104208887"} {:id "defn/stock-icon-labels", :kind "defn", :line 97, :end-line 101, :hash "-2139438638"} {:id "defn/stock-canvas-labels", :kind "defn", :line 103, :end-line 108, :hash "-667198372"} {:id "defn/flow-icon-labels", :kind "defn", :line 110, :end-line 113, :hash "860011591"} {:id "defn-/flow-on-canvas", :kind "defn-", :line 115, :end-line 122, :hash "1774993296"} {:id "defn/flow-canvas-labels", :kind "defn", :line 124, :end-line 126, :hash "-1659873221"} {:id "defn-/stock-desc", :kind "defn-", :line 128, :end-line 156, :hash "-1787538790"} {:id "defn-/converter-desc", :kind "defn-", :line 158, :end-line 176, :hash "359382606"} {:id "defn-/cloud-desc", :kind "defn-", :line 178, :end-line 195, :hash "273299004"} {:id "defn-/overlay-segment", :kind "defn-", :line 197, :end-line 199, :hash "-1910896273"} {:id "defn/diagram-overlay-text", :kind "defn", :line 201, :end-line 214, :hash "1103884749"} {:id "defn-/canvas-background", :kind "defn-", :line 216, :end-line 221, :hash "538381286"} {:id "defn/canvas-stack", :kind "defn", :line 223, :end-line 239, :hash "-101801743"} {:id "defn/canvas-desc", :kind "defn", :line 241, :end-line 243, :hash "-772167057"}]}
+;; {:version 1, :tested-at "2026-06-27T10:17:42.187541-05:00", :module-hash "2061787865", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "477415667"} {:id "defn-/endpoint-click", :kind "defn-", :line 6, :end-line 8, :hash "-1042549141"} {:id "def/flow-pipe-stroke-width", :kind "def", :line 10, :end-line 10, :hash "-936806796"} {:id "def/connector-stroke-width", :kind "def", :line 11, :end-line 11, :hash "-1722330092"} {:id "defn-/unit-vector", :kind "defn-", :line 13, :end-line 18, :hash "-518215995"} {:id "defn-/flow-arrowhead", :kind "defn-", :line 20, :end-line 32, :hash "-1459538016"} {:id "defn-/flow-pipe-body", :kind "defn-", :line 34, :end-line 48, :hash "312484768"} {:id "defn-/flow-desc", :kind "defn-", :line 50, :end-line 70, :hash "-1028093553"} {:id "def/connector-label-style", :kind "def", :line 72, :end-line 72, :hash "-514178943"} {:id "def/connector-formula-style", :kind "def", :line 73, :end-line 73, :hash "959198280"} {:id "defn/connector-canvas-labels", :kind "defn", :line 75, :end-line 82, :hash "-1053159609"} {:id "defn-/connector-desc", :kind "defn-", :line 84, :end-line 110, :hash "-2114511346"} {:id "defn/converter-canvas-labels", :kind "defn", :line 112, :end-line 116, :hash "-887333482"} {:id "def/bound-label-style", :kind "def", :line 118, :end-line 118, :hash "-2104208887"} {:id "defn/stock-icon-labels", :kind "defn", :line 120, :end-line 124, :hash "-2139438638"} {:id "defn/stock-canvas-labels", :kind "defn", :line 126, :end-line 131, :hash "1666309085"} {:id "defn/flow-icon-labels", :kind "defn", :line 133, :end-line 136, :hash "860011591"} {:id "defn-/flow-on-canvas", :kind "defn-", :line 138, :end-line 145, :hash "-1857371978"} {:id "defn/flow-canvas-labels", :kind "defn", :line 147, :end-line 149, :hash "-1659873221"} {:id "defn-/stock-desc", :kind "defn-", :line 151, :end-line 179, :hash "-1787538790"} {:id "defn-/converter-desc", :kind "defn-", :line 181, :end-line 197, :hash "399943550"} {:id "defn-/cloud-desc", :kind "defn-", :line 199, :end-line 216, :hash "273299004"} {:id "defn-/overlay-segment", :kind "defn-", :line 218, :end-line 220, :hash "-1910896273"} {:id "defn/diagram-overlay-text", :kind "defn", :line 222, :end-line 235, :hash "1103884749"} {:id "defn-/canvas-background", :kind "defn-", :line 237, :end-line 242, :hash "538381286"} {:id "defn/canvas-stack", :kind "defn", :line 244, :end-line 260, :hash "937153481"} {:id "defn/canvas-desc", :kind "defn", :line 262, :end-line 264, :hash "-772167057"}]}
 ;; clj-mutate-manifest-end

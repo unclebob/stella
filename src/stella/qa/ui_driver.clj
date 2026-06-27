@@ -112,11 +112,16 @@
   (or (boolean (dialog-stage "Edit Flow"))
       (boolean (fx-nodes/find-by-id-in-windows "edit-flow-name"))))
 
+(defn- edit-converter-dialog-open? []
+  (or (boolean (dialog-stage "Edit Converter"))
+      (boolean (fx-nodes/find-by-id-in-windows "edit-converter-name"))))
+
 (defn wait-for-dialog! [title & {:keys [attempts] :or {attempts 20}}]
   (loop [n attempts]
     (if (case title
           "Edit Stock" (edit-stock-dialog-open?)
           "Edit Flow" (edit-flow-dialog-open?)
+          "Edit Converter" (edit-converter-dialog-open?)
           (boolean (dialog-stage title)))
       true
       (when (pos? n)
@@ -125,18 +130,30 @@
 
 (defn- dialog-field-id [field-label]
   (case field-label
-    "Name" #{"edit-stock-name" "edit-flow-name"}
+    "Name" #{"edit-stock-name" "edit-flow-name" "edit-converter-name"}
     "Initial value" #{"edit-stock-initial"}
     "Minimum" #{"edit-stock-min"}
     "Maximum" #{"edit-stock-max"}
     "Rate" #{"edit-flow-rate"}
+    "Formula" #{"edit-converter-formula"}
     nil))
 
-(defn type-into-dialog-field! [field-label text]
+(defn- active-edit-dialog-stage []
+  (or (dialog-stage "Edit Converter")
+      (dialog-stage "Edit Flow")
+      (dialog-stage "Edit Stock")))
+
+(defn- find-dialog-field [field-label]
   (when-let [ids (dialog-field-id field-label)]
-    (when-let [^TextField field (some fx-nodes/find-by-id-in-windows ids)]
-      (.setText field text)
-      (Thread/sleep 100))))
+    (if-let [^Stage dialog (active-edit-dialog-stage)]
+      (when-let [root (some-> dialog .getScene .getRoot)]
+        (some #(fx-nodes/find-by-id root %) ids))
+      (some fx-nodes/find-by-id-in-windows ids))))
+
+(defn type-into-dialog-field! [field-label text]
+  (when-let [^TextField field (find-dialog-field field-label)]
+    (.setText field text)
+    (Thread/sleep 100)))
 
 (defn clear-dialog-field! [field-label]
   (type-into-dialog-field! field-label ""))
@@ -240,6 +257,9 @@
           (app/dispatch-map-event! {:event events/edit-stock-open :stock-name name}))
         (when (and (= kind :flow) (not (:edit-flow @app/*state)))
           (app/dispatch-map-event! {:event events/edit-flow-open :flow-name name}))
+        (when (and (= kind :converter) (not (:edit-converter @app/*state)))
+          (app/dispatch-map-event! {:event events/edit-converter-open
+                                    :converter-name name}))
         (Thread/sleep 250)))))
 
 (defn click-element!
@@ -312,6 +332,38 @@
       (when (pos? n)
         (Thread/sleep 100)
         (recur (dec n))))))
+
+(defn- element-icon-labels
+  [^Stage stage kind element-name]
+  (when-let [^Node label (hit-test/element-node stage kind element-name)]
+    (let [^Node icon (or (.getParent label) label)]
+      (hit-test/label-texts icon))))
+
+(defn element-icon-label-equals?
+  [^Stage stage kind element-name label-text]
+  (some #(= (str label-text) %) (or (element-icon-labels stage kind element-name) [])))
+
+(defn element-icon-shows?
+  [^Stage stage kind element-name text]
+  (some #(str/includes? % (str text)) (or (element-icon-labels stage kind element-name) [])))
+
+(defn label-visible?
+  [^Stage stage label-text]
+  (some #(= (str label-text) %) (visible-text stage)))
+
+(defn wait-for-label!
+  [^Stage stage label-text & {:keys [attempts] :or {attempts 30}}]
+  (loop [n attempts]
+    (if (label-visible? stage label-text)
+      true
+      (when (pos? n)
+        (Thread/sleep 100)
+        (recur (dec n))))))
+
+(defn connector-canvas-formula?
+  [connector-name formula]
+  (let [diagram (:diagram @app/*state)]
+    (= formula (:formula (canvas/connector-canvas-labels diagram connector-name)))))
 
 (defn element-shows?
   [^Stage stage _kind name text]
