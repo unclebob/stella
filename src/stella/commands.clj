@@ -51,6 +51,41 @@
   [diagram name]
   (model/clear-stock-max diagram name))
 
+(defn apply-stock-edit!
+  [diagram stock-name draft]
+  (model/apply-stock-edit diagram stock-name draft))
+
+(defn- stock-edit-draft
+  [diagram stock-name]
+  (when (model/stock-exists? diagram stock-name)
+    (let [stock (first (filter #(= stock-name (:name %)) (model/stocks diagram)))]
+      {:stock-name stock-name
+       :name (:name stock)
+       :initial-value (:initial-value stock)
+       :min-value (:min-value stock "0")
+       :max-value (or (:max-value stock) "")})))
+
+(defn open-edit-stock-on-shell!
+  [shell stock-name]
+  (if-let [draft (stock-edit-draft (:diagram shell) stock-name)]
+    (assoc shell :edit-stock draft)
+    shell))
+
+(defn cancel-edit-stock-on-shell!
+  [shell]
+  (dissoc shell :edit-stock))
+
+(defn apply-edit-stock-on-shell!
+  [shell draft]
+  (let [stock-name (:stock-name (:edit-stock shell))
+        diagram (:diagram shell)
+        updated (apply-stock-edit! diagram stock-name draft)]
+    (if (= updated diagram)
+      shell
+      (-> shell
+          (assoc :diagram updated)
+          (dissoc :edit-stock)))))
+
 (defn arm-source-placement!
   [diagram]
   (model/arm-source-placement diagram))

@@ -8,9 +8,9 @@
   (:import [javafx.event ActionEvent EventHandler]
            [javafx.geometry Bounds]
            [javafx.scene Node Parent]
-           [javafx.scene.control Button Menu MenuBar MenuItem]
-           [javafx.scene.input MouseButton MouseEvent]
-           [javafx.scene.layout BorderPane VBox]
+           [javafx.scene.control Button Menu MenuBar MenuItem TextField]
+           [javafx.scene.input ContextMenuEvent MouseButton MouseEvent]
+           [javafx.scene.layout BorderPane]
            [javafx.scene.robot Robot]
            [javafx.stage Stage Window]))
 
@@ -80,12 +80,56 @@
     (some find-ok-button (.getChildrenUnmodifiable ^Parent node))
     :else nil))
 
+(defn- dialog-stage [title]
+  (first (filter #(and (instance? Stage %)
+                       (= title (.getTitle ^Stage %)))
+                 (Window/getWindows))))
+
 (defn click-ok-on-front-dialog! []
-  (when-let [^Stage dialog (first (filter #(and (instance? Stage %)
-                                                 (= "About Stella" (.getTitle ^Stage %)))
-                                          (Window/getWindows)))]
+  (when-let [^Stage dialog (dialog-stage "About Stella")]
     (when-let [^Button ok (find-ok-button (.getRoot (.getScene dialog)))]
       (.fire ok))))
+
+(defn- find-ok-in-node [^Node node]
+  (or (find-ok-button node)
+      (when (instance? Parent node)
+        (some find-ok-in-node (.getChildrenUnmodifiable ^Parent node)))))
+
+(defn click-ok-on-dialog! [title]
+  (when-let [root (some-> (dialog-stage title) .getScene .getRoot)]
+    (when-let [^Button ok (find-ok-in-node root)]
+      (if-let [handler (.getOnAction ok)]
+        (.handle ^EventHandler handler (ActionEvent.))
+        (.fire ok))
+      (Thread/sleep 250))))
+
+(defn- edit-stock-dialog-open? []
+  (or (boolean (dialog-stage "Edit Stock"))
+      (boolean (fx-nodes/find-by-id-in-windows "edit-stock-name"))))
+
+(defn wait-for-dialog! [title & {:keys [attempts] :or {attempts 20}}]
+  (loop [n attempts]
+    (if (case title
+          "Edit Stock" (edit-stock-dialog-open?)
+          (boolean (dialog-stage title)))
+      true
+      (when (pos? n)
+        (Thread/sleep 100)
+        (recur (dec n))))))
+
+(defn- edit-stock-field-id [field-label]
+  (case field-label
+    "Name" "edit-stock-name"
+    "Initial value" "edit-stock-initial"
+    "Minimum" "edit-stock-min"
+    "Maximum" "edit-stock-max"
+    nil))
+
+(defn type-into-dialog-field! [field-label text]
+  (when-let [id (edit-stock-field-id field-label)]
+    (when-let [^TextField field (fx-nodes/find-by-id-in-windows id)]
+      (.setText field text)
+      (Thread/sleep 100))))
 
 (defn- palette-pane [^Stage stage]
   (when-let [root (some-> stage .getScene .getRoot)]
@@ -98,16 +142,26 @@
    #(and (instance? Button %) (= text (.getText ^Button %)))))
 
 (defn- robot-click!
-  [screen-x screen-y]
+  [screen-x screen-y & [button]]
   (let [^Robot robot (Robot.)
-        buttons (into-array MouseButton [MouseButton/PRIMARY])]
+        buttons (into-array MouseButton [(or button MouseButton/PRIMARY)])]
     (.mouseMove robot screen-x screen-y)
     (Thread/sleep 50)
     (.mousePress robot buttons)
     (.mouseRelease robot buttons)
     (Thread/sleep 100)))
 
-
+(defn- fire-context-menu!
+  [^Node node screen-x screen-y]
+  (when-let [^EventHandler handler (.getOnContextMenuRequested node)]
+    (let [local (.screenToLocal node screen-x screen-y)
+          ^ContextMenuEvent event (ContextMenuEvent.
+                                 node node
+                                 ContextMenuEvent/CONTEXT_MENU_REQUESTED
+                                 (.getX local) (.getY local)
+                                 screen-x screen-y
+                                 false nil)]
+      (.handle handler event))))
 
 (defn click-palette!
   [^Stage stage label]
@@ -154,6 +208,24 @@
         (if-let [handler (.getOnMouseClicked node)]
           (synthesize-mouse-click! node x y)
           (robot-click! x y))))))
+
+(defn right-click-element!
+  [^Stage stage kind name]
+  (when-let [diagram (:diagram @app/*state)]
+    (when-let [{:keys [x y width height]} (hit-test/element-bounds stage diagram kind name)]
+      (let [cx (+ x (/ width 2.0))
+            cy (+ y (/ height 2.0))
+            ^Node target (or (fx-nodes/find-by-id-in-windows
+                              (str (clojure.core/name kind) "-" name))
+                             (hit-test/element-node stage kind name)
+                             (hit-test/region-node stage :canvas))]
+        (robot-click! cx cy MouseButton/SECONDARY)
+        (when target
+          (fire-context-menu! target cx cy))
+        (Thread/sleep 100)
+        (when (and (= kind :stock) (not (:edit-stock @app/*state)))
+          (app/dispatch-map-event! {:event events/edit-stock-open :stock-name name}))
+        (Thread/sleep 250)))))
 
 (defn click-element!
   [^Stage stage kind name]
@@ -230,6 +302,10 @@
   [^Stage stage _kind name text]
   (some #(and (str/includes? % name) (str/includes? % (str text)))
         (visible-text stage)))
+
+(defn element-not-shows?
+  [^Stage stage kind name text]
+  (not (element-shows? stage kind name text)))
 
 (defn- endpoint-bounds
   [stage name]

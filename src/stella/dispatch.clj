@@ -50,7 +50,17 @@
    events/canvas-click (fn [shell event]
                          (if-let [[x y] (:coordinates event)]
                            (place-on-canvas shell [x y])
-                           shell))})
+                           shell))
+   events/edit-stock-open (fn [shell event]
+                            (if (:stock-name event)
+                              (cmd/open-edit-stock-on-shell! shell (:stock-name event))
+                              shell))
+   events/edit-stock-apply (fn [shell event]
+                             (if (:draft event)
+                               (cmd/apply-edit-stock-on-shell! shell (:draft event))
+                               shell))
+   events/edit-stock-cancel (fn [shell _]
+                              (cmd/cancel-edit-stock-on-shell! shell))})
 
 (defn diagram-event?
   [event-type]

@@ -24,7 +24,7 @@
                              :end-y end-y
                              :stroke "#333"
                              :stroke-width 2}
-                            {:fx/type :v-box
+                            {:fx/type :vbox
                              :layout-x (- mid-x 30)
                              :layout-y (- mid-y 20)
                              :spacing 2
@@ -99,7 +99,10 @@
              :layout-y y
              :children children}
       (model/endpoint-clickable? diagram :stock)
-      (assoc :on-mouse-clicked (endpoint-click :stock name)))))
+      (assoc :on-mouse-clicked (endpoint-click :stock name))
+      :always
+      (assoc :on-context-menu-requested
+             {:event events/edit-stock-open :stock-name name}))))
 
 (defn- converter-desc
   [diagram {:keys [name value x y]}]
@@ -112,7 +115,7 @@
                        :center-y 25
                        :radius 25
                        :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
-                      {:fx/type :v-box
+                      {:fx/type :vbox
                        :layout-x 5
                        :layout-y 12
                        :spacing 2
@@ -146,8 +149,10 @@
 
 (defn diagram-overlay-text
   [diagram]
-  (->> [(overlay-segment (map (fn [{:keys [name initial-value]}]
-                                 (str name " " initial-value))
+  (->> [(overlay-segment (map (fn [{:keys [name min-value max-value]}]
+                                 (str name " "
+                                      (or min-value "0")
+                                      (when max-value (str " " max-value))))
                                (model/stocks diagram)))
         (overlay-segment (map (fn [{:keys [name rate]}] (str name " " rate))
                               (model/flows diagram)))
