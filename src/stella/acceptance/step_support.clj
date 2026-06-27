@@ -49,6 +49,10 @@
   [world]
   (or (:diagram world) (model/default-diagram)))
 
+(defn selection-kind
+  [kind-str]
+  (keyword kind-str))
+
 (defn apply-diagram-edit
   [world op]
   (let [before (diagram-from world)

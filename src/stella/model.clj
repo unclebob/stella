@@ -41,6 +41,7 @@
    :flows {}
    :converters {}
    :connectors {}
+   :selection #{}
    :placement-mode :idle
    :flow-draft nil
    :connector-draft nil
@@ -787,3 +788,117 @@
 (defn connector-placement-disarmed?
   [diagram]
   (placement-disarmed? diagram))
+
+(defn- object-ref
+  [kind name]
+  {:kind kind :id name})
+
+(defn selected?
+  [diagram kind name]
+  (contains? (:selection diagram #{}) (object-ref kind name)))
+
+(defn selection-count
+  [diagram]
+  (count (:selection diagram #{})))
+
+(defn nothing-selected?
+  [diagram]
+  (zero? (selection-count diagram)))
+
+(defn- normalize-rect
+  [x1 y1 x2 y2]
+  [(min x1 x2) (min y1 y2) (max x1 x2) (max y1 y2)])
+
+(defn- rects-intersect?
+  [[mx1 my1 mx2 my2] [ox1 oy1 ox2 oy2]]
+  (and (< mx1 ox2) (> mx2 ox1) (< my1 oy2) (> my2 oy1)))
+
+(defn- stock-bounds
+  [{:keys [x y]}]
+  [x y (+ x 80) (+ y 50)])
+
+(defn- converter-bounds
+  [{:keys [x y]}]
+  [x y (+ x 50) (+ y 50)])
+
+(defn- cloud-bounds
+  [{:keys [x y]}]
+  [x y (+ x 80) (+ y 50)])
+
+(defn- link-bounds
+  [diagram from to padding]
+  (when-let [from-pos (endpoint-position diagram from)]
+    (when-let [to-pos (endpoint-position diagram to)]
+      (let [[fx fy] (endpoint-anchor from-pos (:kind from) :right)
+            [tx ty] (endpoint-anchor to-pos (:kind to) :left)]
+        [(min fx tx) (- (min fy ty) padding)
+         (max fx tx) (+ (max fy ty) padding)]))))
+
+(defn- selectable-objects-with-bounds
+  [diagram]
+  (concat
+   (for [[_ {:keys [name] :as stock}] (:stocks diagram)]
+     [(object-ref :stock name) (stock-bounds stock)])
+   (for [[_ {:keys [name] :as converter}] (:converters diagram)]
+     [(object-ref :converter name) (converter-bounds converter)])
+   (for [[_ {:keys [name from to]}] (:flows diagram)]
+     (when-let [bounds (link-bounds diagram from to 20)]
+       [(object-ref :flow name) bounds]))
+   (for [[_ {:keys [name from to]}] (:connectors diagram)]
+     (when-let [bounds (link-bounds diagram from to 15)]
+       [(object-ref :connector name) bounds]))
+   (for [[_ {:keys [name] :as source}] (:sources diagram)]
+     [(object-ref :source name) (cloud-bounds source)])
+   (for [[_ {:keys [name] :as sink}] (:sinks diagram)]
+     [(object-ref :sink name) (cloud-bounds sink)])))
+
+(defn- update-selection-when-idle
+  [diagram update-fn]
+  (if (placement-disarmed? diagram)
+    (update-fn diagram)
+    diagram))
+
+(defn click-select
+  [diagram kind name]
+  (update-selection-when-idle
+   diagram
+   (fn [diagram]
+     (if (endpoint-exists? diagram kind name)
+       (let [ref (object-ref kind name)
+             selection (:selection diagram #{})]
+         (assoc diagram :selection
+                (if (contains? selection ref)
+                  (disj selection ref)
+                  #{ref})))
+       diagram))))
+
+(defn shift-click-select
+  [diagram kind name]
+  (update-selection-when-idle
+   diagram
+   (fn [diagram]
+     (if (endpoint-exists? diagram kind name)
+       (let [ref (object-ref kind name)
+             selection (:selection diagram #{})]
+         (assoc diagram :selection
+                (if (contains? selection ref)
+                  (disj selection ref)
+                  (conj selection ref))))
+       diagram))))
+
+(defn marquee-select
+  [diagram x1 y1 x2 y2]
+  (update-selection-when-idle
+   diagram
+   (fn [diagram]
+     (let [marquee (normalize-rect x1 y1 x2 y2)
+           selected (into #{}
+                          (keep (fn [[ref bounds]]
+                                  (when (rects-intersect? marquee bounds)
+                                    ref))
+                                (selectable-objects-with-bounds diagram)))]
+       (assoc diagram :selection selected)))))
+
+(defn clear-selection
+  [diagram]
+  (assoc diagram :selection #{}))

@@ -39,6 +39,22 @@
   [diagram name x y]
   (model/move-converter diagram name x y))
 
+(defn click-select!
+  [diagram kind name]
+  (model/click-select diagram kind name))
+
+(defn shift-click-select!
+  [diagram kind name]
+  (model/shift-click-select diagram kind name))
+
+(defn marquee-select!
+  [diagram x1 y1 x2 y2]
+  (model/marquee-select diagram x1 y1 x2 y2))
+
+(defn clear-selection!
+  [diagram]
+  (model/clear-selection diagram))
+
 (defn set-stock-name!
   [diagram old-name new-name]
   (model/set-stock-name diagram old-name new-name))
