@@ -110,6 +110,11 @@
                 x (support/parse-int (support/require-value example x-param) x-param)
                 y (support/parse-int (support/require-value example y-param) y-param)]
             (update world :diagram #(cmd/move-stock! % name x y))))}
+   {:pattern #"^I move stock ([A-Za-z0-9]+) to <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name x-param y-param] example]
+          (let [x (support/parse-int (support/require-value example x-param) x-param)
+                y (support/parse-int (support/require-value example y-param) y-param)]
+            (update world :diagram #(cmd/move-stock! % name x y))))}
    {:pattern #"^I move stock ([A-Za-z0-9]+) to (\d+) (\d+)$"
     :fn (fn [world [_ name x-str y-str] _]
           (update world :diagram #(cmd/move-stock! % name
@@ -120,6 +125,14 @@
           (let [name (support/require-value example name-param)
                 x (support/parse-int (support/require-value example x-param) x-param)
                 y (support/parse-int (support/require-value example y-param) y-param)
+                pos (canvas/stock-canvas-position (support/diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (support/fail! (str "stock " name " canvas position " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^stock ([A-Za-z0-9]+) canvas position should be (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (let [x (support/parse-int x-str "x")
+                y (support/parse-int y-str "y")
                 pos (canvas/stock-canvas-position (support/diagram-from world) name)]
             (when-not (= [x y] pos)
               (support/fail! (str "stock " name " canvas position " pos " expected [" x " " y "]")))
@@ -514,5 +527,5 @@
   ])
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-27T10:14:53.456305-05:00", :module-hash "-1918848835", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1666922602"} {:id "def/placement-handlers", :kind "def", :line 7, :end-line 474, :hash "55219339"}]}
+;; {:version 1, :tested-at "2026-06-27T10:23:02.266141-05:00", :module-hash "-544100078", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1666922602"} {:id "def/placement-handlers", :kind "def", :line 7, :end-line 527, :hash "1841368671"}]}
 ;; clj-mutate-manifest-end

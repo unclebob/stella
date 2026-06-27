@@ -147,6 +147,11 @@
                 x (support/parse-int (support/require-value example x-param) x-param)
                 y (support/parse-int (support/require-value example y-param) y-param)]
             (update world :diagram #(cmd/move-converter! % name x y))))}
+   {:pattern #"^I move converter ([A-Za-z0-9]+) to <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name x-param y-param] example]
+          (let [x (support/parse-int (support/require-value example x-param) x-param)
+                y (support/parse-int (support/require-value example y-param) y-param)]
+            (update world :diagram #(cmd/move-converter! % name x y))))}
    {:pattern #"^I move converter ([A-Za-z0-9]+) to (\d+) (\d+)$"
     :fn (fn [world [_ name x-str y-str] _]
           (update world :diagram #(cmd/move-converter! % name
@@ -157,6 +162,14 @@
           (let [name (support/require-value example name-param)
                 x (support/parse-int (support/require-value example x-param) x-param)
                 y (support/parse-int (support/require-value example y-param) y-param)
+                pos (canvas/converter-canvas-position (support/diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (support/fail! (str "converter " name " canvas position " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^converter ([A-Za-z0-9]+) canvas position should be (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (let [x (support/parse-int x-str "x")
+                y (support/parse-int y-str "y")
                 pos (canvas/converter-canvas-position (support/diagram-from world) name)]
             (when-not (= [x y] pos)
               (support/fail! (str "converter " name " canvas position " pos " expected [" x " " y "]")))
@@ -385,5 +398,5 @@
   ])
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-27T10:19:12.531861-05:00", :module-hash "-584901200", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1285667419"} {:id "def/connect-handlers", :kind "def", :line 7, :end-line 351, :hash "766242081"}]}
+;; {:version 1, :tested-at "2026-06-27T10:23:14.746964-05:00", :module-hash "-492284581", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1285667419"} {:id "def/connect-handlers", :kind "def", :line 7, :end-line 398, :hash "-1865108"}]}
 ;; clj-mutate-manifest-end
