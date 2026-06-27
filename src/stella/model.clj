@@ -602,6 +602,12 @@
   (when-let [[_ converter] (converter-entry-by-name diagram name)]
     [(:x converter) (:y converter)]))
 
+(defn move-converter
+  [diagram name x y]
+  (if-let [[id converter] (converter-entry-by-name diagram name)]
+    (assoc-in diagram [:converters id] (assoc converter :x x :y y))
+    diagram))
+
 (defn converter-value
   [diagram name]
   (when-let [[_ converter] (converter-entry-by-name diagram name)]
