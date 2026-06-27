@@ -330,6 +330,55 @@
       (ui/quit-app! stage)
       (pass! "edit-stock" "Quit requested"))))
 
+(defn- run-edit-flow! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (place-two-stocks! stage)
+      (ui/click-palette! stage "Flow")
+      (ui/click-element! stage :stock "Stock1")
+      (ui/click-element! stage :stock "Stock2")
+      (assert-flow! stage "Flow1" "Stock1" "Stock2" :suite "edit-flow")
+      (ui/right-click-element! stage :flow "Flow1")
+      (when-not (ui/wait-for-dialog! "Edit Flow" :attempts 50)
+        (fail! "Edit Flow dialog did not appear"))
+      (ui/type-into-dialog-field! "Name" "Drain")
+      (ui/type-into-dialog-field! "Rate" "5")
+      (ui/click-ok-on-dialog! "Edit Flow")
+      (when-not (ui/wait-for-element! stage :flow "Drain")
+        (fail! "Drain did not appear after rename"))
+      (when-not (ui/element-shows? stage :flow "Drain" "Drain")
+        (fail! "Drain name not visible"))
+      (when-not (ui/element-shows? stage :flow "Drain" "5")
+        (fail! "Drain rate not visible"))
+      (when-not (ui/flow-pipe-thicker-than-connector? stage)
+        (fail! "Flow pipe is not thicker than connector arrows"))
+      (pass! "edit-flow" "Flow renamed to Drain with rate 5")
+      (ui/click-palette! stage "Flow")
+      (ui/click-element! stage :stock "Stock2")
+      (ui/click-element! stage :stock "Stock1")
+      (when-not (ui/wait-for-element! stage :flow "Flow2")
+        (fail! "Flow2 did not appear"))
+      (ui/right-click-element! stage :flow "Drain")
+      (when-not (ui/wait-for-dialog! "Edit Flow")
+        (fail! "Edit Flow dialog missing for duplicate rename"))
+      (ui/type-into-dialog-field! "Name" "Flow2")
+      (ui/click-ok-on-dialog! "Edit Flow")
+      (when-not (ui/element-visible? stage :flow "Drain")
+        (fail! "Drain disappeared after rejected duplicate rename"))
+      (when-not (ui/element-visible? stage :flow "Flow2")
+        (fail! "Flow2 missing after rejected duplicate rename"))
+      (pass! "edit-flow" "Duplicate rename rejected")
+      (ui/right-click-element! stage :flow "Drain")
+      (when-not (ui/wait-for-dialog! "Edit Flow")
+        (fail! "Edit Flow dialog missing for empty rate test"))
+      (ui/clear-dialog-field! "Rate")
+      (ui/click-ok-on-dialog! "Edit Flow")
+      (when-not (ui/element-shows? stage :flow "Drain" "5")
+        (fail! "Drain rate changed after empty rate rejected"))
+      (pass! "edit-flow" "Empty rate rejected")
+      (ui/quit-app! stage)
+      (pass! "edit-flow" "Quit requested"))))
+
 (def ^:private suites
   {"shell-launch" run-shell-launch!
    "shell-menus" run-shell-menus!
@@ -340,7 +389,8 @@
    "connect-flow" run-connect-flow!
    "cloud-endpoints" run-cloud-endpoints!
    "connectors" run-connectors!
-   "edit-stock" run-edit-stock!})
+   "edit-stock" run-edit-stock!
+   "edit-flow" run-edit-flow!})
 
 (defn -main [& args]
   (let [{:keys [qa-seconds args]} (qa-args/parse-qa-flag args)

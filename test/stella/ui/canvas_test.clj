@@ -43,11 +43,22 @@
                     (cmd/fixture-flow! "Flow1" "Stock1" "Stock2"))
         shell (assoc (cmd/default-shell! nil) :diagram diagram)
         desc (canvas/canvas-desc shell)
-        lines (filter (fn [node]
-                        (and (= :group (:fx/type node))
-                             (= :line (:fx/type (first (:children node))))))
-                      (:children desc))]
-    (is (= 1 (count lines)))))
+        flow (first (filter #(= "flow-Flow1" (:id %)) (:children desc)))
+        pipe-line (first (filter #(= :line (:fx/type %)) (:children flow)))
+        arrowhead (first (filter #(= :polygon (:fx/type %)) (:children flow)))]
+    (is (some? flow))
+    (is (>= (:stroke-width pipe-line) 6))
+    (is (some? arrowhead))
+    (is (= {:name "Flow1" :rate "0"}
+           (canvas/flow-canvas-labels diagram "Flow1")))))
+
+(deftest flow-canvas-labels-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-stock! "Stock1" 100 100)
+                    (cmd/fixture-stock! "Stock2" 300 200)
+                    (cmd/fixture-flow! "Flow1" "Stock1" "Stock2"))]
+    (is (= {:name "Flow1" :rate "0"}
+           (canvas/flow-canvas-labels diagram "Flow1")))))
 
 (deftest diagram-overlay-text-test
   (let [diagram (-> (cmd/default-diagram! nil)
@@ -71,8 +82,16 @@
                     (cmd/connect-connector! :flow "Flow1"))
         shell (assoc (cmd/default-shell! nil) :diagram diagram)
         desc (canvas/canvas-desc shell)
-        connectors (filter (fn [node]
-                             (and (= :group (:fx/type node))
-                                  (= "#666" (:stroke (first (:children node))))))
-                           (:children desc))]
-    (is (= 1 (count connectors)))))
+        flow-line (some->> (:children desc)
+                            (filter #(= "flow-Flow1" (:id %)))
+                            first
+                            :children
+                            (filter #(= :line (:fx/type %)))
+                            first)
+        connector-line (some->> (:children desc)
+                                 (filter #(re-matches #"connector-.*" (:id %)))
+                                 first
+                                 :children
+                                 first)]
+    (is (some? connector-line))
+    (is (> (:stroke-width flow-line) (:stroke-width connector-line)))))

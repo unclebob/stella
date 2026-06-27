@@ -3,6 +3,7 @@
             [stella.commands :as cmd]
             [stella.dispatch :as dispatch]
             [stella.events :as events]
+            [stella.fx.edit-flow-dialog :as edit-flow-dialog]
             [stella.fx.edit-stock-dialog :as edit-stock-dialog]
             [stella.fx.effects :as fx-effects]
             [stella.fx.input :as fx-input]
@@ -22,13 +23,22 @@
          effect (dispatch/event-effect event)]
      (let [shell (swap! state-atom dispatch/apply-event event)]
        (when (or (dispatch/diagram-event? etype)
-                 (= events/edit-stock-apply etype))
+                 (= events/edit-stock-apply etype)
+                 (= events/edit-flow-apply etype))
          (fx-overlay/sync-diagram-overlay! (:diagram shell)))
        (when (and (= events/edit-stock-open etype) (:edit-stock shell))
          (let [show! (fn []
                        (edit-stock-dialog/show! (:edit-stock shell)
                                                 (fn [dialog-event]
                                                   (dispatch-map-event! dialog-event state-atom))))]
+           (if (Platform/isFxApplicationThread)
+             (show!)
+             (Platform/runLater show!))))
+       (when (and (= events/edit-flow-open etype) (:edit-flow shell))
+         (let [show! (fn []
+                       (edit-flow-dialog/show! (:edit-flow shell)
+                                               (fn [dialog-event]
+                                                 (dispatch-map-event! dialog-event state-atom))))]
            (if (Platform/isFxApplicationThread)
              (show!)
              (Platform/runLater show!))))

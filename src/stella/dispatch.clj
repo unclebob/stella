@@ -60,7 +60,17 @@
                                (cmd/apply-edit-stock-on-shell! shell (:draft event))
                                shell))
    events/edit-stock-cancel (fn [shell _]
-                              (cmd/cancel-edit-stock-on-shell! shell))})
+                              (cmd/cancel-edit-stock-on-shell! shell))
+   events/edit-flow-open (fn [shell event]
+                           (if (:flow-name event)
+                             (cmd/open-edit-flow-on-shell! shell (:flow-name event))
+                             shell))
+   events/edit-flow-apply (fn [shell event]
+                            (if (:draft event)
+                              (cmd/apply-edit-flow-on-shell! shell (:draft event))
+                              shell))
+   events/edit-flow-cancel (fn [shell _]
+                             (cmd/cancel-edit-flow-on-shell! shell))})
 
 (defn diagram-event?
   [event-type]
