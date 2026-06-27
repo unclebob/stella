@@ -488,6 +488,18 @@
       diagram)
     diagram))
 
+(defn apply-flow-edit
+  [diagram flow-name {:keys [name rate]}]
+  (let [after-name (if (= name flow-name)
+                     diagram
+                     (set-flow-name diagram flow-name name))]
+    (if (and (not= name flow-name) (= after-name diagram))
+      diagram
+      (let [target (if (= after-name diagram) flow-name name)]
+        (if (parseable-number? rate)
+          (set-flow-rate after-name target rate)
+          after-name)))))
+
 (defn flow-count
   [diagram]
   (count (:flows diagram)))
