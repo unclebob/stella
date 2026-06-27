@@ -49,6 +49,14 @@
                       (:children desc))]
     (is (= 1 (count lines)))))
 
+(deftest flow-canvas-labels-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-stock! "Stock1" 100 100)
+                    (cmd/fixture-stock! "Stock2" 300 200)
+                    (cmd/fixture-flow! "Flow1" "Stock1" "Stock2"))]
+    (is (= {:name "Flow1" :rate "0"}
+           (canvas/flow-canvas-labels diagram "Flow1")))))
+
 (deftest diagram-overlay-text-test
   (let [diagram (-> (cmd/default-diagram! nil)
                     (cmd/fixture-stock! "Stock1" 100 100)

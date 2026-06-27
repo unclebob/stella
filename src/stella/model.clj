@@ -150,16 +150,16 @@
          (or (nil? max-value)
              (<= num (numeric-value max-value))))))
 
-(defn- rename-stock-endpoint
-  [endpoint old-name new-name]
-  (if (and (= :stock (:kind endpoint)) (= old-name (:id endpoint)))
+(defn- rename-endpoint-id
+  [endpoint kind old-name new-name]
+  (if (and (= kind (:kind endpoint)) (= old-name (:id endpoint)))
     (assoc endpoint :id new-name)
     endpoint))
 
 (defn- rename-stock-endpoints
   [diagram old-name new-name]
   (let [rename (fn [endpoint]
-                 (rename-stock-endpoint endpoint old-name new-name))
+                 (rename-endpoint-id endpoint :stock old-name new-name))
         update-item (fn [item]
                       (-> item
                           (update :from rename)
@@ -421,16 +421,10 @@
   [diagram name]
   (flow-attribute diagram name :rate))
 
-(defn- rename-flow-endpoint
-  [endpoint old-name new-name]
-  (if (and (= :flow (:kind endpoint)) (= old-name (:id endpoint)))
-    (assoc endpoint :id new-name)
-    endpoint))
-
 (defn- rename-flow-endpoints
   [diagram old-name new-name]
   (let [rename (fn [endpoint]
-                 (rename-flow-endpoint endpoint old-name new-name))
+                 (rename-endpoint-id endpoint :flow old-name new-name))
         update-connector (fn [connector]
                            (-> connector
                                (update :from rename)
@@ -440,14 +434,17 @@
                                             {}
                                             %))))
 
+(defn- flow-rename-blocked?
+  [diagram old-name new-name]
+  (or (not (seq (str new-name)))
+      (= old-name new-name)
+      (not (flow-exists? diagram old-name))
+      (flow-exists? diagram new-name)))
+
 (defn set-flow-name
   [diagram old-name new-name]
-  (cond
-    (not (seq (str new-name))) diagram
-    (= old-name new-name) diagram
-    (not (flow-exists? diagram old-name)) diagram
-    (flow-exists? diagram new-name) diagram
-    :else
+  (if (flow-rename-blocked? diagram old-name new-name)
+    diagram
     (let [[id _] (flow-entry-by-name diagram old-name)]
       (-> diagram
           (assoc-in [:flows id :name] new-name)
