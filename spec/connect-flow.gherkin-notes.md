@@ -30,8 +30,10 @@ CljFX: palette **Flow** → `arm-flow-placement!`. Click stock → `select-flow-
 
 ## Canvas rendering
 
-- Directed pipe from source stock boundary to destination stock boundary.
-- User-visible label: flow name (`Flow1`) and rate (`0`).
+- **Pipe** from source endpoint anchor to destination endpoint anchor (thick tubular appearance, not a thin line).
+- Direction visible at the destination end (arrowhead or equivalent).
+- Visually distinct from connector arrows (thin, `#666`, 1px stroke).
+- User-visible labels: flow name (`Flow1`) and rate (`0`), centered on the pipe.
 - Hit-test index: `[:flow "Flow1"]` for QA.
 
 ## Step handler summary

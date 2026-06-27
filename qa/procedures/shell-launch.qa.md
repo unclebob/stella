@@ -8,7 +8,7 @@ Verify the user can launch Stella and see the main window with a standard menu b
 ## Preconditions
 
 - Display available (headed UI).
-- Run via `bb qa` or the documented QA launch command.
+- Run via `bb qa` or the QA launch command defined in `qa/procedures/qa-auto-close.qa.md`.
 
 ## Procedure
 
