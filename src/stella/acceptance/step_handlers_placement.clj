@@ -95,6 +95,48 @@
             (when-not (= [x y] pos)
               (support/fail! (str "stock " name " at " pos " expected [" x " " y "]")))
             world))}
+   {:pattern #"^stock <([A-Za-z0-9_]+)> should be at position (\d+) (\d+)$"
+    :fn (fn [world [_ name-param x-str y-str] example]
+          (let [name (support/require-value example name-param)
+                x (support/parse-int x-str "x")
+                y (support/parse-int y-str "y")
+                pos (model/stock-position (support/diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (support/fail! (str "stock " name " at " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^I move stock <([A-Za-z0-9_]+)> to <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (support/require-value example name-param)
+                x (support/parse-int (support/require-value example x-param) x-param)
+                y (support/parse-int (support/require-value example y-param) y-param)]
+            (update world :diagram #(cmd/move-stock! % name x y))))}
+   {:pattern #"^I move stock ([A-Za-z0-9]+) to <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name x-param y-param] example]
+          (let [x (support/parse-int (support/require-value example x-param) x-param)
+                y (support/parse-int (support/require-value example y-param) y-param)]
+            (update world :diagram #(cmd/move-stock! % name x y))))}
+   {:pattern #"^I move stock ([A-Za-z0-9]+) to (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (update world :diagram #(cmd/move-stock! % name
+                                                   (support/parse-int x-str "x")
+                                                   (support/parse-int y-str "y"))))}
+   {:pattern #"^stock <([A-Za-z0-9_]+)> canvas position should be <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (support/require-value example name-param)
+                x (support/parse-int (support/require-value example x-param) x-param)
+                y (support/parse-int (support/require-value example y-param) y-param)
+                pos (canvas/stock-canvas-position (support/diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (support/fail! (str "stock " name " canvas position " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^stock ([A-Za-z0-9]+) canvas position should be (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (let [x (support/parse-int x-str "x")
+                y (support/parse-int y-str "y")
+                pos (canvas/stock-canvas-position (support/diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (support/fail! (str "stock " name " canvas position " pos " expected [" x " " y "]")))
+            world))}
    {:pattern #"^stock <([A-Za-z0-9_]+)> initial value should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param value-param] example]
           (let [name (support/require-value example name-param)
@@ -259,6 +301,11 @@
           (when-not (zero? (model/stock-count (support/diagram-from world)))
             (support/fail! "expected diagram stock count 0"))
           world)}
+   {:pattern #"^the diagram stock count should be 1$"
+    :fn (fn [world _ _]
+          (when-not (= 1 (model/stock-count (support/diagram-from world)))
+            (support/fail! (str "stock count " (model/stock-count (support/diagram-from world)) " expected 1")))
+          world)}
    {:pattern #"^the stock placement tool should be disarmed$"
     :fn (fn [world _ _]
           (when-not (model/placement-disarmed? (support/diagram-from world))
@@ -359,6 +406,12 @@
                 from (support/require-value example from-param)
                 to (support/require-value example to-param)
                 endpoints (model/flow-endpoints (support/diagram-from world) flow)]
+            (when-not (= [from to] endpoints)
+              (support/fail! (str "flow " flow " endpoints " endpoints " expected [" from " " to "]")))
+            world))}
+   {:pattern #"^flow ([A-Za-z0-9]+) should run from stock ([A-Za-z0-9]+) to stock ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ flow from to] _]
+          (let [endpoints (model/flow-endpoints (support/diagram-from world) flow)]
             (when-not (= [from to] endpoints)
               (support/fail! (str "flow " flow " endpoints " endpoints " expected [" from " " to "]")))
             world))}
@@ -474,5 +527,5 @@
   ])
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-27T10:14:53.456305-05:00", :module-hash "-1918848835", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1666922602"} {:id "def/placement-handlers", :kind "def", :line 7, :end-line 474, :hash "55219339"}]}
+;; {:version 1, :tested-at "2026-06-27T10:23:02.266141-05:00", :module-hash "-544100078", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1666922602"} {:id "def/placement-handlers", :kind "def", :line 7, :end-line 527, :hash "1841368671"}]}
 ;; clj-mutate-manifest-end

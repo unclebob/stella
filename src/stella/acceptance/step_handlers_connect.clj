@@ -132,6 +132,48 @@
             (when-not (= [x y] pos)
               (support/fail! (str "converter " name " at " pos " expected [" x " " y "]")))
             world))}
+   {:pattern #"^converter <([A-Za-z0-9_]+)> should be at position (\d+) (\d+)$"
+    :fn (fn [world [_ name-param x-str y-str] example]
+          (let [name (support/require-value example name-param)
+                x (support/parse-int x-str "x")
+                y (support/parse-int y-str "y")
+                pos (model/converter-position (support/diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (support/fail! (str "converter " name " at " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^I move converter <([A-Za-z0-9_]+)> to <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (support/require-value example name-param)
+                x (support/parse-int (support/require-value example x-param) x-param)
+                y (support/parse-int (support/require-value example y-param) y-param)]
+            (update world :diagram #(cmd/move-converter! % name x y))))}
+   {:pattern #"^I move converter ([A-Za-z0-9]+) to <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name x-param y-param] example]
+          (let [x (support/parse-int (support/require-value example x-param) x-param)
+                y (support/parse-int (support/require-value example y-param) y-param)]
+            (update world :diagram #(cmd/move-converter! % name x y))))}
+   {:pattern #"^I move converter ([A-Za-z0-9]+) to (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (update world :diagram #(cmd/move-converter! % name
+                                                       (support/parse-int x-str "x")
+                                                       (support/parse-int y-str "y"))))}
+   {:pattern #"^converter <([A-Za-z0-9_]+)> canvas position should be <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (support/require-value example name-param)
+                x (support/parse-int (support/require-value example x-param) x-param)
+                y (support/parse-int (support/require-value example y-param) y-param)
+                pos (canvas/converter-canvas-position (support/diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (support/fail! (str "converter " name " canvas position " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^converter ([A-Za-z0-9]+) canvas position should be (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (let [x (support/parse-int x-str "x")
+                y (support/parse-int y-str "y")
+                pos (canvas/converter-canvas-position (support/diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (support/fail! (str "converter " name " canvas position " pos " expected [" x " " y "]")))
+            world))}
    {:pattern #"^converter <([A-Za-z0-9_]+)> value should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param value-param] example]
           (let [name (support/require-value example name-param)
@@ -187,6 +229,11 @@
     :fn (fn [world _ _]
           (when-not (zero? (model/converter-count (support/diagram-from world)))
             (support/fail! "expected diagram converter count 0"))
+          world)}
+   {:pattern #"^the diagram converter count should be 1$"
+    :fn (fn [world _ _]
+          (when-not (= 1 (model/converter-count (support/diagram-from world)))
+            (support/fail! (str "converter count " (model/converter-count (support/diagram-from world)) " expected 1")))
           world)}
    {:pattern #"^the converter placement tool should be disarmed$"
     :fn (fn [world _ _]
@@ -351,5 +398,5 @@
   ])
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-27T10:19:12.531861-05:00", :module-hash "-584901200", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1285667419"} {:id "def/connect-handlers", :kind "def", :line 7, :end-line 351, :hash "766242081"}]}
+;; {:version 1, :tested-at "2026-06-27T10:23:14.746964-05:00", :module-hash "-492284581", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1285667419"} {:id "def/connect-handlers", :kind "def", :line 7, :end-line 398, :hash "-1865108"}]}
 ;; clj-mutate-manifest-end
