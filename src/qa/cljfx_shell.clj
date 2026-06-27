@@ -513,6 +513,65 @@
         (ui/quit-app! stage)
         (pass! "drag-stock" "Quit requested")))))
 
+(defn- wait-for-element-gone!
+  [^Stage stage kind name & {:keys [attempts] :or {attempts 20}}]
+  (loop [n attempts]
+    (if (ui/element-visible? stage kind name)
+      (when (pos? n)
+        (Thread/sleep 100)
+        (recur (dec n)))
+      true)))
+
+(defn- run-delete-selection! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (place-two-stocks! stage)
+      (ui/click-palette! stage "Flow")
+      (ui/click-element! stage :stock "Stock1")
+      (ui/click-element! stage :stock "Stock2")
+      (when-not (ui/wait-for-element! stage :flow "Flow1" :attempts 20)
+        (fail! "Flow1 did not appear"))
+      (pass! "delete-selection" "Flow1 connects Stock1 to Stock2")
+      (ui/click-element! stage :stock "Stock1")
+      (when-not (ui/element-selected? stage :stock "Stock1")
+        (fail! "Stock1 not selected before delete"))
+      (ui/press-delete! stage)
+      (when-not (wait-for-element-gone! stage :stock "Stock1")
+        (fail! "Stock1 still visible after delete"))
+      (when-not (wait-for-element-gone! stage :flow "Flow1")
+        (fail! "Flow1 still visible after stock delete cascade"))
+      (when-not (ui/wait-for-element! stage :stock "Stock2")
+        (fail! "Stock2 missing after delete"))
+      (pass! "delete-selection" "Delete removes selected stock and attached flow")
+      (ui/click-palette! stage "Converter")
+      (ui/click-in-region! stage :canvas [-60 100])
+      (when-not (ui/wait-for-element! stage :converter "Converter1" :attempts 20)
+        (fail! "Converter1 did not appear"))
+      (ui/click-palette! stage "Connector")
+      (ui/click-element! stage :stock "Stock2")
+      (ui/click-element! stage :converter "Converter1")
+      (when-not (ui/wait-for-element! stage :connector "Connector1" :attempts 20)
+        (fail! "Connector1 did not appear"))
+      (pass! "delete-selection" "Connector1 links Stock2 to Converter1")
+      (ui/click-element! stage :converter "Converter1")
+      (when-not (ui/element-selected? stage :converter "Converter1")
+        (fail! "Converter1 not selected before backspace"))
+      (ui/press-backspace! stage)
+      (when-not (wait-for-element-gone! stage :converter "Converter1")
+        (fail! "Converter1 still visible after backspace"))
+      (when-not (wait-for-element-gone! stage :connector "Connector1")
+        (fail! "Connector1 still visible after converter delete cascade"))
+      (when-not (ui/wait-for-element! stage :stock "Stock2")
+        (fail! "Stock2 missing after converter delete"))
+      (pass! "delete-selection" "Backspace removes converter and attached connector")
+      (ui/click-palette! stage "Flow")
+      (ui/press-delete! stage)
+      (when-not (ui/wait-for-element! stage :stock "Stock2")
+        (fail! "Stock2 deleted while placement armed"))
+      (pass! "delete-selection" "Delete ignored while placement armed")
+      (ui/quit-app! stage)
+      (pass! "delete-selection" "Quit requested"))))
+
 (defn- run-select-objects! []
   (with-app! {}
     (fn [^Stage stage]
@@ -633,7 +692,8 @@
    "edit-converter" run-edit-converter!
    "drag-stock" run-drag-stock!
    "drag-converter" run-drag-converter!
-   "select-objects" run-select-objects!})
+   "select-objects" run-select-objects!
+   "delete-selection" run-delete-selection!})
 
 (defn -main [& args]
   (let [{:keys [qa-seconds args]} (qa-args/parse-qa-flag args)

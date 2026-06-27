@@ -53,3 +53,5 @@
 (def marquee-drag-end ::marquee-drag-end)
 
 (def clear-selection ::clear-selection)
+
+(def scene-key-pressed ::scene-key-pressed)

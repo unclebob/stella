@@ -108,9 +108,23 @@
    events/marquee-drag-end (fn [shell event]
                              (cmd/end-marquee-drag-on-shell! shell event))
    events/clear-selection (fn [shell event]
-                            (if (= :ESCAPE (:key-code event))
+                            (if (= :Esc (:key-code event))
                               (cmd/clear-selection-on-shell! shell)
-                              shell))})
+                              shell))
+   events/scene-key-pressed (fn [shell event]
+                              (cond
+                                (= :Esc (:key-code event))
+                                (cmd/clear-selection-on-shell! shell)
+
+                                (#{:Delete :Backspace} (:key-code event))
+                                (if (and (= :idle (get-in shell [:diagram :placement-mode]))
+                                         (not (:edit-stock shell))
+                                         (not (:edit-flow shell))
+                                         (not (:edit-converter shell)))
+                                  (cmd/delete-selection-on-shell! shell)
+                                  shell)
+
+                                :else shell))})
 
 (defn diagram-event?
   [event-type]

@@ -71,7 +71,7 @@
       (and (:from-canvas event) (not (:canvas-coordinates event)))
       (assoc :canvas-coordinates (click-coordinates event)))
 
-    (= events/clear-selection (event-type event))
+    (#{events/clear-selection events/scene-key-pressed} (event-type event))
     (if-let [^KeyEvent key (:fx/event event)]
       (assoc event :key-code (keyword (.getName (.getCode key))))
       event)

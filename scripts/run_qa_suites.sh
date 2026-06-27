@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 
 suites=(qa-auto-close shell-launch shell-menus shell-about shell-resize shell-quit
         place-stock connect-flow cloud-endpoints connectors edit-stock edit-flow edit-converter
-        drag-stock drag-converter select-objects)
+        drag-stock drag-converter select-objects delete-selection)
 
 for suite in "${suites[@]}"; do
   echo "Running QA suite: ${suite}"

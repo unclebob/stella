@@ -395,18 +395,30 @@
           end (resolve-position end-position center)]
       (synthesize-marquee-select! stage (:x start) (:y start) (:x end) (:y end)))))
 
-(defn press-escape!
-  [^Stage stage]
+(defn- press-key!
+  [^Stage stage key-code]
   (when-let [center (hit-test/region-center stage :canvas)]
     (robot-click! (:x center) (:y center))
     (Thread/sleep 50))
   (let [^Robot robot (Robot.)]
-    (.keyPress robot KeyCode/ESCAPE)
-    (.keyRelease robot KeyCode/ESCAPE)
+    (.keyPress robot key-code)
+    (.keyRelease robot key-code)
     (Thread/sleep 100))
-  (when-not (model/nothing-selected? (:diagram @app/*state))
-    (app/dispatch-map-event! {:event events/clear-selection :key-code :ESCAPE})
-    (Thread/sleep 100)))
+  (app/dispatch-map-event! {:event events/scene-key-pressed
+                            :key-code (keyword (.getName key-code))})
+  (Thread/sleep 100))
+
+(defn press-escape!
+  [^Stage stage]
+  (press-key! stage KeyCode/ESCAPE))
+
+(defn press-delete!
+  [^Stage stage]
+  (press-key! stage KeyCode/DELETE))
+
+(defn press-backspace!
+  [^Stage stage]
+  (press-key! stage KeyCode/BACK_SPACE))
 
 (defn element-selected?
   [_stage kind name]

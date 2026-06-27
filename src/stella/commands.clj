@@ -163,6 +163,10 @@
   [shell]
   (update shell :diagram clear-selection!))
 
+(defn delete-selection-on-shell!
+  [shell]
+  (update shell :diagram delete-selection!))
+
 (defn start-marquee-drag-on-shell!
   [shell {:keys [canvas-coordinates]}]
   (if (and (= :idle (get-in shell [:diagram :placement-mode]))
