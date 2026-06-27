@@ -130,6 +130,10 @@
            first
            stock-icon-labels))
 
+(defn stock-canvas-position
+  [diagram stock-name]
+  (model/stock-position diagram stock-name))
+
 (defn flow-icon-labels
   [{:keys [name rate]}]
   {:name name
