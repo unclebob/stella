@@ -77,6 +77,52 @@
       (dissoc shell :stock-drag))
     shell))
 
+(defn move-converter!
+  [diagram name x y]
+  (model/move-converter diagram name x y))
+
+(defn move-converter-on-shell!
+  [shell name x y]
+  (update shell :diagram #(move-converter! % name x y)))
+
+(defn- resolve-converter-drag-name
+  [shell {:keys [converter-name canvas-coordinates]}]
+  (or converter-name
+      (when canvas-coordinates
+        (let [[cx cy] canvas-coordinates]
+          (model/converter-at-canvas-point (:diagram shell) cx cy)))))
+
+(defn start-converter-drag-on-shell!
+  [shell event]
+  (let [converter-name (resolve-converter-drag-name shell event)
+        scene-coordinates (:scene-coordinates event)]
+    (if (and (= :idle (get-in shell [:diagram :placement-mode]))
+             converter-name
+             scene-coordinates
+             (model/converter-exists? (:diagram shell) converter-name))
+      (let [[x y] (model/converter-position (:diagram shell) converter-name)
+            [sx sy] scene-coordinates]
+        (assoc shell :converter-drag {:name converter-name
+                                      :start-x x
+                                      :start-y y
+                                      :press-scene-x sx
+                                      :press-scene-y sy}))
+      shell)))
+
+(defn end-converter-drag-on-shell!
+  [shell {:keys [scene-coordinates]}]
+  (if-let [drag (:converter-drag shell)]
+    (if scene-coordinates
+      (let [converter-name (:name drag)
+            [rx ry] scene-coordinates
+            new-x (+ (:start-x drag) (- rx (:press-scene-x drag)))
+            new-y (+ (:start-y drag) (- ry (:press-scene-y drag)))]
+        (-> shell
+            (move-converter-on-shell! converter-name new-x new-y)
+            (dissoc :converter-drag)))
+      (dissoc shell :converter-drag))
+    shell))
+
 (defn set-stock-name!
   [diagram old-name new-name]
   (model/set-stock-name diagram old-name new-name))

@@ -484,6 +484,57 @@
         (ui/quit-app! stage)
         (pass! "drag-stock" "Quit requested")))))
 
+(defn- run-drag-converter! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (ui/click-palette! stage "Converter")
+      (ui/click-in-region! stage :canvas :center)
+      (when-not (ui/wait-for-element! stage :converter "Converter1" :attempts 20)
+        (fail! "Converter1 did not appear"))
+      (let [initial-bounds (ui/element-bounds stage :converter "Converter1")]
+        (ui/drag-element! stage :converter "Converter1" :canvas [100 80])
+        (when-not (ui/wait-for-bounds-change! stage :converter "Converter1" initial-bounds :attempts 20)
+          (fail! "Converter1 bounds did not change after drag"))
+        (when-not (ui/element-visible? stage :converter "Converter1")
+          (fail! "Converter1 not visible after drag"))
+        (when-not (= 1 (ui/diagram-converter-count stage))
+          (fail! "Expected exactly one converter after drag"))
+        (pass! "drag-converter" "Converter1 dragged to new position")
+        (place-two-stocks! stage)
+        (ui/click-palette! stage "Flow")
+        (ui/click-element! stage :stock "Stock1")
+        (ui/click-element! stage :stock "Stock2")
+        (assert-flow! stage "Flow1" "Stock1" "Stock2" :show-name? false)
+        (ui/click-palette! stage "Connector")
+        (ui/click-element! stage :converter "Converter1")
+        (ui/click-element! stage :flow "Flow1")
+        (when-not (ui/wait-for-element! stage :connector "Connector1" :attempts 20)
+          (fail! "Connector1 did not appear"))
+        (pass! "drag-converter" "Connector1 links Converter1 to Flow1")
+        (ui/drag-element! stage :converter "Converter1" :canvas [-40 120])
+        (Thread/sleep 300)
+        (when-not (ui/element-visible? stage :connector "Connector1")
+          (fail! "Connector1 missing after Converter1 drag"))
+        (when-not (ui/connector-directed? stage :converter "Converter1" :flow "Flow1")
+          (fail! "Connector1 not directed from Converter1 to Flow1 after drag"))
+        (pass! "drag-converter" "Connector follows dragged Converter1")
+        (ui/click-palette! stage "Converter")
+        (ui/click-in-region! stage :canvas [220 60])
+        (when-not (ui/wait-for-element! stage :converter "Converter2" :attempts 20)
+          (fail! "Converter2 did not appear"))
+        (when-not (ui/element-visible? stage :converter "Converter2")
+          (fail! "Converter2 not visible"))
+        (pass! "drag-converter" "Converter2 placed separately")
+        (ui/click-palette! stage "Converter")
+        (let [conv2-before (ui/element-bounds stage :converter "Converter2")]
+          (ui/drag-element! stage :converter "Converter2" :canvas :center)
+          (Thread/sleep 300)
+          (when-not (ui/bounds-unchanged? stage :converter "Converter2" conv2-before)
+            (fail! "Converter2 moved while placement tool armed"))
+          (pass! "drag-converter" "Drag disabled while placement armed"))
+        (ui/quit-app! stage)
+        (pass! "drag-converter" "Quit requested")))))
+
 (def ^:private suites
   {"shell-launch" run-shell-launch!
    "shell-menus" run-shell-menus!
@@ -497,7 +548,8 @@
    "edit-stock" run-edit-stock!
    "edit-flow" run-edit-flow!
    "edit-converter" run-edit-converter!
-   "drag-stock" run-drag-stock!})
+   "drag-stock" run-drag-stock!
+   "drag-converter" run-drag-converter!})
 
 (defn -main [& args]
   (let [{:keys [qa-seconds args]} (qa-args/parse-qa-flag args)

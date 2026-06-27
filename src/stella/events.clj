@@ -41,3 +41,7 @@
 (def stock-drag-start ::stock-drag-start)
 
 (def stock-drag-end ::stock-drag-end)
+
+(def converter-drag-start ::converter-drag-start)
+
+(def converter-drag-end ::converter-drag-end)

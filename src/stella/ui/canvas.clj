@@ -139,6 +139,10 @@
   [diagram stock-name]
   (model/stock-position diagram stock-name))
 
+(defn converter-canvas-position
+  [diagram converter-name]
+  (model/converter-position diagram converter-name))
+
 (defn flow-icon-labels
   [{:keys [name rate]}]
   {:name name
@@ -212,6 +216,9 @@
                        :text name}]}
     (model/endpoint-clickable? diagram :converter)
     (assoc :on-mouse-clicked (endpoint-click :converter name))
+    (= :idle (:placement-mode diagram))
+    (assoc :on-mouse-pressed {:event events/converter-drag-start :converter-name name}
+           :on-mouse-released {:event events/converter-drag-end :converter-name name})
     :always
     (assoc :on-context-menu-requested
            {:event events/edit-converter-open :converter-name name})))
