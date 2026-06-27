@@ -7,6 +7,46 @@
   [kind name]
   {:event events/endpoint-click :endpoint-kind kind :endpoint-name name})
 
+(def ^:private flow-pipe-stroke-width 8)
+(def ^:private connector-stroke-width 1)
+
+(defn- unit-vector
+  [dx dy]
+  (let [len (Math/sqrt (+ (* dx dx) (* dy dy)))]
+    (if (zero? len)
+      [0.0 0.0]
+      [(/ dx len) (/ dy len)])))
+
+(defn- flow-arrowhead
+  [tip-x tip-y base-x base-y]
+  (let [[ux uy] (unit-vector (- tip-x base-x) (- tip-y base-y))
+        half 6.0
+        perp-x (- uy)
+        perp-y ux
+        left-x (+ base-x (* perp-x half))
+        left-y (+ base-y (* perp-y half))
+        right-x (- base-x (* perp-x half))
+        right-y (- base-y (* perp-y half))]
+    {:fx/type :polygon
+     :points [tip-x tip-y left-x left-y right-x right-y]
+     :fill "#333"}))
+
+(defn- flow-pipe-body
+  [start-x start-y end-x end-y]
+  (let [[ux uy] (unit-vector (- end-x start-x) (- end-y start-y))
+        arrow-size 12.0
+        pipe-end-x (- end-x (* ux arrow-size))
+        pipe-end-y (- end-y (* uy arrow-size))]
+    {:line {:fx/type :line
+            :start-x start-x
+            :start-y start-y
+            :end-x pipe-end-x
+            :end-y pipe-end-y
+            :stroke "#333"
+            :stroke-width flow-pipe-stroke-width
+            :stroke-line-cap :round}
+     :arrow (flow-arrowhead end-x end-y pipe-end-x pipe-end-y)}))
+
 (defn- flow-desc
   [diagram {:keys [name rate from to]}]
   (when-let [from-pos (model/endpoint-position diagram from)]
@@ -14,16 +54,12 @@
       (let [[start-x start-y] (model/endpoint-anchor from-pos (:kind from) :right)
             [end-x end-y] (model/endpoint-anchor to-pos (:kind to) :left)
             mid-x (/ (+ start-x end-x) 2.0)
-            mid-y (/ (+ start-y end-y) 2.0)]
+            mid-y (/ (+ start-y end-y) 2.0)
+            {:keys [line arrow]} (flow-pipe-body start-x start-y end-x end-y)]
         (cond-> {:fx/type :group
                  :id (str "flow-" name)
-                 :children [{:fx/type :line
-                             :start-x start-x
-                             :start-y start-y
-                             :end-x end-x
-                             :end-y end-y
-                             :stroke "#333"
-                             :stroke-width 2}
+                 :children [line
+                            arrow
                             {:fx/type :v-box
                              :layout-x (- mid-x 30)
                              :layout-y (- mid-y 20)
@@ -49,7 +85,7 @@
                      :end-x end-x
                      :end-y end-y
                      :stroke "#666"
-                     :stroke-width 1}
+                     :stroke-width connector-stroke-width}
                     {:fx/type :label
                      :layout-x (- mid-x 30)
                      :layout-y (- mid-y 10)
