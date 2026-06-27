@@ -216,6 +216,9 @@
                        :text name}]}
     (model/endpoint-clickable? diagram :converter)
     (assoc :on-mouse-clicked (endpoint-click :converter name))
+    (= :idle (:placement-mode diagram))
+    (assoc :on-mouse-pressed {:event events/converter-drag-start :converter-name name}
+           :on-mouse-released {:event events/converter-drag-end :converter-name name})
     :always
     (assoc :on-context-menu-requested
            {:event events/edit-converter-open :converter-name name})))

@@ -82,9 +82,19 @@
    events/edit-converter-cancel (fn [shell _]
                                   (cmd/cancel-edit-converter-on-shell! shell))
    events/stock-drag-start (fn [shell event]
-                            (cmd/start-stock-drag-on-shell! shell event))
+                            (let [shell (cmd/start-stock-drag-on-shell! shell event)]
+                              (if (:stock-drag shell)
+                                shell
+                                (cmd/start-converter-drag-on-shell! shell event))))
    events/stock-drag-end (fn [shell event]
-                           (cmd/end-stock-drag-on-shell! shell event))})
+                           (cond
+                             (:stock-drag shell) (cmd/end-stock-drag-on-shell! shell event)
+                             (:converter-drag shell) (cmd/end-converter-drag-on-shell! shell event)
+                             :else shell))
+   events/converter-drag-start (fn [shell event]
+                                 (cmd/start-converter-drag-on-shell! shell event))
+   events/converter-drag-end (fn [shell event]
+                               (cmd/end-converter-drag-on-shell! shell event))})
 
 (defn diagram-event?
   [event-type]
