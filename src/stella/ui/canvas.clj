@@ -115,6 +115,10 @@
                                             (model/converters diagram)))]
     {:name name}))
 
+(defn converter-canvas-position
+  [diagram converter-name]
+  (model/converter-position diagram converter-name))
+
 (def ^:private bound-label-style "-fx-font-size: 9px;")
 
 (defn stock-icon-labels
