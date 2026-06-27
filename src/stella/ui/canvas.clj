@@ -37,15 +37,15 @@
         arrow-size 12.0
         pipe-end-x (- end-x (* ux arrow-size))
         pipe-end-y (- end-y (* uy arrow-size))]
-    {:line {:fx/type :line
-            :start-x start-x
-            :start-y start-y
-            :end-x pipe-end-x
-            :end-y pipe-end-y
-            :stroke "#333"
-            :stroke-width flow-pipe-stroke-width
-            :stroke-line-cap :round}
-     :arrow (flow-arrowhead end-x end-y pipe-end-x pipe-end-y)}))
+    [{:fx/type :line
+      :start-x start-x
+      :start-y start-y
+      :end-x pipe-end-x
+      :end-y pipe-end-y
+      :stroke "#333"
+      :stroke-width flow-pipe-stroke-width
+      :stroke-line-cap :round}
+     (flow-arrowhead end-x end-y pipe-end-x pipe-end-y)]))
 
 (defn- flow-desc
   [diagram {:keys [name rate from to]}]
@@ -55,18 +55,18 @@
             [end-x end-y] (model/endpoint-anchor to-pos (:kind to) :left)
             mid-x (/ (+ start-x end-x) 2.0)
             mid-y (/ (+ start-y end-y) 2.0)
-            {:keys [line arrow]} (flow-pipe-body start-x start-y end-x end-y)]
+            [line arrow] (flow-pipe-body start-x start-y end-x end-y)]
         (cond-> {:fx/type :group
                  :fx/key (str "flow-" name)
                  :id (str "flow-" name)
-                 :children [line
-                            arrow
-                            {:fx/type :vbox
-                             :layout-x (- mid-x 30)
-                             :layout-y (- mid-y 20)
-                             :spacing 2
-                             :children [{:fx/type :label :text name}
-                                        {:fx/type :label :text (str rate)}]}]}
+                 :children (filterv map? [line
+                                          arrow
+                                          {:fx/type :vbox
+                                           :layout-x (- mid-x 30)
+                                           :layout-y (- mid-y 20)
+                                           :spacing 2
+                                           :children [{:fx/type :label :text name}
+                                                      {:fx/type :label :text (str rate)}]}])}
           (model/endpoint-clickable? diagram :flow)
           (assoc :on-mouse-clicked (endpoint-click :flow name))
           :always
@@ -93,11 +93,12 @@
             [end-x end-y] (model/endpoint-anchor to-pos (:kind to) :left)
             mid-x (/ (+ start-x end-x) 2.0)
             mid-y (/ (+ start-y end-y) 2.0)
-            label-children (into [{:fx/type :label :text name :style connector-label-style}]
-                                 (when (seq formula)
-                                   [{:fx/type :label
-                                     :text formula
-                                     :style connector-formula-style}]))]
+            label-children (filterv map?
+                                    (into [{:fx/type :label :text name :style connector-label-style}]
+                                          (when (seq formula)
+                                            [{:fx/type :label
+                                              :text formula
+                                              :style connector-formula-style}])))]
         {:fx/type :group
          :fx/key (str "connector-" name)
          :id (str "connector-" name)
@@ -164,25 +165,26 @@
 (defn- stock-desc
   [diagram {:keys [name x y] :as stock}]
   (let [{:keys [name min max]} (stock-icon-labels stock)
-        children (into [{:fx/type :rectangle
-                         :width 80
-                         :height 50
-                         :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
-                        {:fx/type :label
-                         :layout-x 20
-                         :layout-y 14
-                         :text name}
-                        {:fx/type :label
-                         :layout-x 4
-                         :layout-y 36
-                         :text min
-                         :style bound-label-style}]
-                       (when max
-                         [{:fx/type :label
-                           :layout-x 52
-                           :layout-y 36
-                           :text max
-                           :style bound-label-style}]))]
+        children (filterv map?
+                          (into [{:fx/type :rectangle
+                                  :width 80
+                                  :height 50
+                                  :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
+                                 {:fx/type :label
+                                  :layout-x 20
+                                  :layout-y 14
+                                  :text name}
+                                 {:fx/type :label
+                                  :layout-x 4
+                                  :layout-y 36
+                                  :text min
+                                  :style bound-label-style}]
+                                (when max
+                                  [{:fx/type :label
+                                    :layout-x 52
+                                    :layout-y 36
+                                    :text max
+                                    :style bound-label-style}])))]
     (cond-> {:fx/type :group
              :fx/key (str "stock-" name)
              :id (str "stock-" name)
@@ -282,8 +284,8 @@
         diagram-nodes (into connector-nodes
                             (concat flow-nodes source-nodes sink-nodes
                                     converter-nodes stock-nodes))
-        children (into [(canvas-background)] diagram-nodes)]
-    (cond-> {:fx/type :stack-pane
+        children (into [(canvas-background)] (filterv map? diagram-nodes))]
+    (cond-> {:fx/type :pane
              :id "canvas"
              :on-mouse-clicked {:event events/canvas-click}
              :children children}

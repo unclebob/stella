@@ -104,6 +104,7 @@
   [shell action]
   (cond
     (= action :quit) (cmd/quit! shell)
+    (= action :window-close) shell
     (= action :show-about) (cmd/show-about! shell)
     :else shell))
 

@@ -12,7 +12,7 @@
 (defn- platform-exit! []
   (if (= "true" (System/getProperty "stella.qa.soft-exit"))
     (System/exit 0)
-    (Platform/exit)))
+    (Platform/runLater #(Platform/exit))))
 
 (def ^:private effect-runners
   {:platform-exit platform-exit!

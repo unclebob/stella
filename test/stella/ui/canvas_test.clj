@@ -8,7 +8,7 @@
 (deftest canvas-description-test
   (let [shell (model/default-shell)
         desc (canvas/canvas-desc shell)]
-    (is (= :stack-pane (:fx/type desc)))
+    (is (= :pane (:fx/type desc)))
     (is (= "canvas" (:id desc)))
     (is (= {:event events/canvas-click} (:on-mouse-clicked desc)))))
 

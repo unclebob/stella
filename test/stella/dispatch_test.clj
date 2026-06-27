@@ -17,12 +17,15 @@
 (deftest apply-action-test
   (let [shell (model/default-shell)]
     (is (false? (:showing (dispatch/apply-action shell :quit))))
+    (is (= shell (dispatch/apply-action shell :window-close)))
     (is (:about-visible (dispatch/apply-action shell :show-about)))
     (is (= shell (dispatch/apply-action shell :stella.test/unknown)))))
 
 (deftest process-event-test
   (is (= {:action :quit :effect :platform-exit}
          (dispatch/process-event {:event events/quit})))
+  (is (= {:action :window-close :effect :platform-exit}
+         (dispatch/process-event {:event events/window-close})))
   (is (nil? (dispatch/process-event {:event :stella.ui/unknown}))))
 
 (deftest diagram-event-test

@@ -2,6 +2,8 @@
 
 (def quit ::quit)
 
+(def window-close ::window-close)
+
 (def show-about ::show-about)
 
 (def arm-stock ::arm-stock)

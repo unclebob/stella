@@ -19,7 +19,7 @@
    :height (qa-dimension "stella.qa.height" 768)
    :min-width 640
    :min-height 480
-   :on-close-request {:event events/quit}
+   :on-close-request {:event events/window-close}
    :scene {:fx/type :scene
            :root {:fx/type :border-pane
                   :top (menu/menu-bar-desc shell)
