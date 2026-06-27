@@ -19,3 +19,9 @@
 (def canvas-click ::canvas-click)
 
 (def endpoint-click ::endpoint-click)
+
+(def edit-stock-open ::edit-stock-open)
+
+(def edit-stock-apply ::edit-stock-apply)
+
+(def edit-stock-cancel ::edit-stock-cancel)
