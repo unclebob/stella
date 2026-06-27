@@ -370,6 +370,12 @@
             (when-not (= rate actual)
               (support/fail! (str "flow " flow " rate " actual " expected " rate)))
             world))}
+   {:pattern #"^flow ([A-Za-z0-9]+) rate should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ flow rate] _]
+          (let [actual (model/flow-rate (support/diagram-from world) flow)]
+            (when-not (= rate actual)
+              (support/fail! (str "flow " flow " rate " actual " expected " rate)))
+            world))}
    {:pattern #"^flow <([A-Za-z0-9_]+)> rate should be 0$"
     :fn (fn [world [_ flow-param] example]
           (let [flow (support/require-value example flow-param)
@@ -377,10 +383,20 @@
             (when-not (= "0" actual)
               (support/fail! (str "flow " flow " rate " actual " expected 0")))
             world))}
+   {:pattern #"^flow ([A-Za-z0-9]+) rate should be 0$"
+    :fn (fn [world [_ flow] _]
+          (let [actual (model/flow-rate (support/diagram-from world) flow)]
+            (when-not (= "0" actual)
+              (support/fail! (str "flow " flow " rate " actual " expected 0")))
+            world))}
    {:pattern #"^I set flow <([A-Za-z0-9_]+)> name to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param new-name-param] example]
           (let [name (support/require-value example name-param)
                 new-name (support/require-value example new-name-param)]
+            (support/apply-diagram-edit world #(cmd/set-flow-name! % name new-name))))}
+   {:pattern #"^I set flow ([A-Za-z0-9]+) name to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name new-name-param] example]
+          (let [new-name (support/require-value example new-name-param)]
             (support/apply-diagram-edit world #(cmd/set-flow-name! % name new-name))))}
    {:pattern #"^I set flow ([A-Za-z0-9]+) name to ([A-Za-z0-9]+)$"
     :fn (fn [world [_ name new-name] _]
@@ -390,6 +406,13 @@
           (let [name (support/require-value example name-param)
                 rate (support/require-value example rate-param)]
             (support/apply-diagram-edit world #(cmd/set-flow-rate! % name rate))))}
+   {:pattern #"^I set flow ([A-Za-z0-9]+) rate to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name rate-param] example]
+          (let [rate (support/require-value example rate-param)]
+            (support/apply-diagram-edit world #(cmd/set-flow-rate! % name rate))))}
+   {:pattern #"^I set flow ([A-Za-z0-9]+) rate to ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name rate] _]
+          (support/apply-diagram-edit world #(cmd/set-flow-rate! % name rate)))}
    {:pattern #"^the flow edit should be rejected$"
     :fn (fn [world _ _]
           (when-not (:last-edit-rejected? world)
@@ -400,11 +423,17 @@
           (let [name (support/require-value example name-param)
                 text (support/require-value example text-param)]
             (support/assert-flow-canvas-label world name :name text)))}
+   {:pattern #"^flow ([A-Za-z0-9]+) canvas name should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name text] _]
+          (support/assert-flow-canvas-label world name :name text))}
    {:pattern #"^flow <([A-Za-z0-9_]+)> canvas rate should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param rate-param] example]
           (let [name (support/require-value example name-param)
                 rate (support/require-value example rate-param)]
             (support/assert-flow-canvas-label world name :rate rate)))}
+   {:pattern #"^flow ([A-Za-z0-9]+) canvas rate should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name rate] _]
+          (support/assert-flow-canvas-label world name :rate rate))}
    {:pattern #"^the diagram flow count should be 0$"
     :fn (fn [world _ _]
           (when-not (zero? (model/flow-count (support/diagram-from world)))
@@ -443,3 +472,7 @@
               (support/fail! (str "flow " flow " to mismatch")))
             world))}
   ])
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-27T10:14:53.456305-05:00", :module-hash "-1918848835", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1666922602"} {:id "def/placement-handlers", :kind "def", :line 7, :end-line 474, :hash "55219339"}]}
+;; clj-mutate-manifest-end

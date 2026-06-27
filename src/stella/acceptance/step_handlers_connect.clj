@@ -257,3 +257,7 @@
             (support/fail! "expected connector placement tool disarmed"))
           world)}
   ])
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-27T10:13:46.687905-05:00", :module-hash "1584066463", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1285667419"} {:id "def/connect-handlers", :kind "def", :line 7, :end-line 259, :hash "1029774666"}]}
+;; clj-mutate-manifest-end
