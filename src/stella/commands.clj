@@ -91,6 +91,14 @@
   [diagram flow-name from-stock to-stock]
   (model/fixture-flow diagram flow-name from-stock to-stock))
 
+(defn set-flow-name!
+  [diagram old-name new-name]
+  (model/set-flow-name diagram old-name new-name))
+
+(defn set-flow-rate!
+  [diagram name rate]
+  (model/set-flow-rate diagram name rate))
+
 (defn arm-converter-placement!
   [diagram]
   (model/arm-converter-placement diagram))
