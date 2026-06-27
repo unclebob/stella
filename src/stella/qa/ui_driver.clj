@@ -4,7 +4,8 @@
             [stella.app :as app]
             [stella.events :as events]
             [stella.fx.nodes :as fx-nodes]
-            [stella.qa.hit-test :as hit-test])
+            [stella.qa.hit-test :as hit-test]
+            [stella.ui.canvas :as canvas])
   (:import [javafx.event ActionEvent EventHandler]
            [javafx.geometry Bounds]
            [javafx.scene Node Parent]
@@ -107,29 +108,41 @@
   (or (boolean (dialog-stage "Edit Stock"))
       (boolean (fx-nodes/find-by-id-in-windows "edit-stock-name"))))
 
+(defn- edit-flow-dialog-open? []
+  (or (boolean (dialog-stage "Edit Flow"))
+      (boolean (fx-nodes/find-by-id-in-windows "edit-flow-name"))))
+
 (defn wait-for-dialog! [title & {:keys [attempts] :or {attempts 20}}]
   (loop [n attempts]
     (if (case title
           "Edit Stock" (edit-stock-dialog-open?)
+          "Edit Flow" (edit-flow-dialog-open?)
           (boolean (dialog-stage title)))
       true
       (when (pos? n)
         (Thread/sleep 100)
         (recur (dec n))))))
 
-(defn- edit-stock-field-id [field-label]
+(defn- dialog-field-id [field-label]
   (case field-label
-    "Name" "edit-stock-name"
-    "Initial value" "edit-stock-initial"
-    "Minimum" "edit-stock-min"
-    "Maximum" "edit-stock-max"
+    "Name" #{"edit-stock-name" "edit-flow-name"}
+    "Initial value" #{"edit-stock-initial"}
+    "Minimum" #{"edit-stock-min"}
+    "Maximum" #{"edit-stock-max"}
+    "Rate" #{"edit-flow-rate"}
     nil))
 
 (defn type-into-dialog-field! [field-label text]
-  (when-let [id (edit-stock-field-id field-label)]
-    (when-let [^TextField field (fx-nodes/find-by-id-in-windows id)]
+  (when-let [ids (dialog-field-id field-label)]
+    (when-let [^TextField field (some fx-nodes/find-by-id-in-windows ids)]
       (.setText field text)
       (Thread/sleep 100))))
+
+(defn clear-dialog-field! [field-label]
+  (type-into-dialog-field! field-label ""))
+
+(defn flow-pipe-thicker-than-connector? [_stage]
+  (> canvas/flow-pipe-stroke-width canvas/connector-stroke-width))
 
 (defn- palette-pane [^Stage stage]
   (when-let [root (some-> stage .getScene .getRoot)]
@@ -225,6 +238,8 @@
         (Thread/sleep 100)
         (when (and (= kind :stock) (not (:edit-stock @app/*state)))
           (app/dispatch-map-event! {:event events/edit-stock-open :stock-name name}))
+        (when (and (= kind :flow) (not (:edit-flow @app/*state)))
+          (app/dispatch-map-event! {:event events/edit-flow-open :flow-name name}))
         (Thread/sleep 250)))))
 
 (defn click-element!

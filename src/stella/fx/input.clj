@@ -26,6 +26,11 @@
    :min-value (field-text "edit-stock-min")
    :max-value (field-text "edit-stock-max")})
 
+(defn- read-edit-flow-draft
+  []
+  {:name (field-text "edit-flow-name")
+   :rate (field-text "edit-flow-rate")})
+
 (defn enrich-event
   "Adds derived fields to platform events before dispatch."
   [event]
@@ -36,6 +41,10 @@
     (and (= events/edit-stock-apply (event-type event))
          (not (:draft event)))
     (assoc event :draft (read-edit-stock-draft))
+
+    (and (= events/edit-flow-apply (event-type event))
+         (not (:draft event)))
+    (assoc event :draft (read-edit-flow-draft))
 
     :else event))
 

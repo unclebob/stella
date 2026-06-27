@@ -25,3 +25,9 @@
 (def edit-stock-apply ::edit-stock-apply)
 
 (def edit-stock-cancel ::edit-stock-cancel)
+
+(def edit-flow-open ::edit-flow-open)
+
+(def edit-flow-apply ::edit-flow-apply)
+
+(def edit-flow-cancel ::edit-flow-cancel)
