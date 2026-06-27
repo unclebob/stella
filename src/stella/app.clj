@@ -2,10 +2,13 @@
   (:require [cljfx.api :as fx]
             [stella.commands :as cmd]
             [stella.dispatch :as dispatch]
+            [stella.events :as events]
+            [stella.fx.edit-stock-dialog :as edit-stock-dialog]
             [stella.fx.effects :as fx-effects]
             [stella.fx.input :as fx-input]
             [stella.fx.overlay :as fx-overlay]
-            [stella.ui.root :as root]))
+            [stella.ui.root :as root])
+  (:import [javafx.application Platform]))
 
 (defonce *state
   (atom (cmd/default-shell! nil)))
@@ -14,10 +17,20 @@
   ([event] (dispatch-map-event! event *state))
   ([event state-atom]
    (let [event (fx-input/enrich-event event)
+         etype (dispatch/event-type event)
          effect (dispatch/event-effect event)]
      (let [shell (swap! state-atom dispatch/apply-event event)]
-       (when (dispatch/diagram-event? (dispatch/event-type event))
+       (when (or (dispatch/diagram-event? etype)
+                 (= events/edit-stock-apply etype))
          (fx-overlay/sync-diagram-overlay! (:diagram shell)))
+       (when (and (= events/edit-stock-open etype) (:edit-stock shell))
+         (let [show! (fn []
+                       (edit-stock-dialog/show! (:edit-stock shell)
+                                                (fn [dialog-event]
+                                                  (dispatch-map-event! dialog-event state-atom))))]
+           (if (Platform/isFxApplicationThread)
+             (show!)
+             (Platform/runLater show!))))
        (when effect (fx-effects/run-effect effect))))))
 
 (defonce ^:private renderer

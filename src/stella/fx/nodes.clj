@@ -1,5 +1,6 @@
 (ns stella.fx.nodes
-  (:import [javafx.scene Node Parent]))
+  (:import [javafx.scene Node Parent]
+           [javafx.stage Stage Window]))
 
 (defn find-by-id
   [^Node node id]
@@ -16,3 +17,10 @@
     (instance? Parent node)
     (some #(find-child % pred) (.getChildrenUnmodifiable ^Parent node))
     :else nil))
+
+(defn find-by-id-in-windows
+  [id]
+  (some (fn [^Window w]
+          (when (instance? Stage w)
+            (some-> w .getScene .getRoot (find-by-id id))))
+        (Window/getWindows)))

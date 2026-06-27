@@ -156,6 +156,12 @@
             (when-not (= "0" actual)
               (support/fail! (str "stock " name " value " actual " expected 0")))
             world))}
+   {:pattern #"^stock ([A-Za-z0-9]+) initial value should be (\d+)$"
+    :fn (fn [world [_ name value] _]
+          (let [actual (model/stock-initial-value (support/diagram-from world) name)]
+            (when-not (= value actual)
+              (support/fail! (str "stock " name " value " actual " expected " value)))
+            world))}
    {:pattern #"^I set stock <([A-Za-z0-9_]+)> name to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param new-name-param] example]
           (let [name (support/require-value example name-param)
@@ -164,20 +170,42 @@
    {:pattern #"^I set stock ([A-Za-z0-9]+) name to ([A-Za-z0-9]+)$"
     :fn (fn [world [_ name new-name] _]
           (support/apply-diagram-edit world #(cmd/set-stock-name! % name new-name)))}
+   {:pattern #"^I set stock ([A-Za-z0-9]+) name to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name new-name-param] example]
+          (let [new-name (support/require-value example new-name-param)]
+            (support/apply-diagram-edit world #(cmd/set-stock-name! % name new-name))))}
    {:pattern #"^I set stock <([A-Za-z0-9_]+)> initial value to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param value-param] example]
           (let [name (support/require-value example name-param)
                 value (support/require-value example value-param)]
             (support/apply-diagram-edit world #(cmd/set-stock-initial-value! % name value))))}
+   {:pattern #"^I set stock ([A-Za-z0-9]+) initial value to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name value-param] example]
+          (let [value (support/require-value example value-param)]
+            (support/apply-diagram-edit world #(cmd/set-stock-initial-value! % name value))))}
+   {:pattern #"^I set stock ([A-Za-z0-9]+) initial value to (\d+)$"
+    :fn (fn [world [_ name value] _]
+          (support/apply-diagram-edit world #(cmd/set-stock-initial-value! % name value)))}
    {:pattern #"^I set stock <([A-Za-z0-9_]+)> minimum to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param min-param] example]
           (let [name (support/require-value example name-param)
                 min-value (support/require-value example min-param)]
             (support/apply-diagram-edit world #(cmd/set-stock-min! % name min-value))))}
+   {:pattern #"^I set stock ([A-Za-z0-9]+) minimum to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name min-param] example]
+          (let [min-value (support/require-value example min-param)]
+            (support/apply-diagram-edit world #(cmd/set-stock-min! % name min-value))))}
+   {:pattern #"^I set stock ([A-Za-z0-9]+) minimum to (\d+)$"
+    :fn (fn [world [_ name min-value] _]
+          (support/apply-diagram-edit world #(cmd/set-stock-min! % name min-value)))}
    {:pattern #"^I set stock <([A-Za-z0-9_]+)> maximum to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param max-param] example]
           (let [name (support/require-value example name-param)
                 max-value (support/require-value example max-param)]
+            (support/apply-diagram-edit world #(cmd/set-stock-max! % name max-value))))}
+   {:pattern #"^I set stock ([A-Za-z0-9]+) maximum to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name max-param] example]
+          (let [max-value (support/require-value example max-param)]
             (support/apply-diagram-edit world #(cmd/set-stock-max! % name max-value))))}
    {:pattern #"^I set stock ([A-Za-z0-9]+) maximum to (\d+)$"
     :fn (fn [world [_ name max-value] _]
@@ -197,11 +225,23 @@
             (when-not (= min-value actual)
               (support/fail! (str "stock " name " minimum " actual " expected " min-value)))
             world))}
+   {:pattern #"^stock ([A-Za-z0-9]+) minimum should be (\d+)$"
+    :fn (fn [world [_ name min-value] _]
+          (let [actual (model/stock-min-value (support/diagram-from world) name)]
+            (when-not (= min-value actual)
+              (support/fail! (str "stock " name " minimum " actual " expected " min-value)))
+            world))}
    {:pattern #"^stock <([A-Za-z0-9_]+)> maximum should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param max-param] example]
           (let [name (support/require-value example name-param)
                 max-value (support/require-value example max-param)
                 actual (model/stock-max-value (support/diagram-from world) name)]
+            (when-not (= max-value actual)
+              (support/fail! (str "stock " name " maximum " actual " expected " max-value)))
+            world))}
+   {:pattern #"^stock ([A-Za-z0-9]+) maximum should be (\d+)$"
+    :fn (fn [world [_ name max-value] _]
+          (let [actual (model/stock-max-value (support/diagram-from world) name)]
             (when-not (= max-value actual)
               (support/fail! (str "stock " name " maximum " actual " expected " max-value)))
             world))}
@@ -220,16 +260,25 @@
           (let [name (support/require-value example name-param)
                 text (support/require-value example text-param)]
             (support/assert-stock-canvas-label world name :name text)))}
+   {:pattern #"^stock ([A-Za-z0-9]+) canvas name should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name text] _]
+          (support/assert-stock-canvas-label world name :name text))}
    {:pattern #"^stock <([A-Za-z0-9_]+)> canvas minimum should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param min-param] example]
           (let [name (support/require-value example name-param)
                 min-value (support/require-value example min-param)]
             (support/assert-stock-canvas-label world name :min min-value)))}
+   {:pattern #"^stock ([A-Za-z0-9]+) canvas minimum should be (\d+)$"
+    :fn (fn [world [_ name min-value] _]
+          (support/assert-stock-canvas-label world name :min min-value))}
    {:pattern #"^stock <([A-Za-z0-9_]+)> canvas maximum should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param max-param] example]
           (let [name (support/require-value example name-param)
                 max-value (support/require-value example max-param)]
             (support/assert-stock-canvas-label world name :max max-value)))}
+   {:pattern #"^stock ([A-Za-z0-9]+) canvas maximum should be (\d+)$"
+    :fn (fn [world [_ name max-value] _]
+          (support/assert-stock-canvas-label world name :max max-value))}
    {:pattern #"^stock ([A-Za-z0-9]+) should display no maximum on canvas$"
     :fn (fn [world [_ name] _]
           (let [labels (canvas/stock-canvas-labels (support/diagram-from world) name)]

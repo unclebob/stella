@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=0db3f918852850c261c1f08b38a031d1ad31ebcd1774e18223e699782395dcbc
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-06-27T15:10:40.967818Z","feature_name":"Edit stock","feature_path":"features/model/edit-stock.feature","background_hash":"4c8c970e459ede1586e22cc3c60bafe2567086a820d4b039615fd7372d58ffd4","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Rename stock","scenario_hash":"649f5374fe8936effea8818a85315f16d71937b0bb8226deab10f4855283df05","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-06-27T15:10:40.967818Z"},{"index":1,"name":"Edit stock initial value","scenario_hash":"5ff4d4f1e1a700643ace129c1e150a3d39d9cdc58e0229ecf7865490066409be","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-06-27T15:10:40.967818Z"},{"index":2,"name":"Set stock value bounds","scenario_hash":"3702ef324370a912e575ebc2c5f7af9bd58053675b22f03473306433c51a9507","mutation_count":2,"result":{"Total":2,"Killed":2,"Survived":0,"Errors":0},"tested_at":"2026-06-27T15:10:40.967818Z"}]}
+# acceptance-mutation-manifest-end
+
 Feature: Edit stock
 
 Background:
@@ -5,36 +10,36 @@ Background:
 
 # edit-stock-01
 Scenario Outline: Rename stock
-  When I set stock <name> name to <new_name>
-  Then the diagram should contain stock <new_name>
-  And stock <new_name> canvas name should be <new_name>
-  And stock <new_name> initial value should be 0
+  When I set stock Stock1 name to <new_name>
+  Then the diagram should contain stock Cats
+  And stock Cats canvas name should be Cats
+  And stock Cats initial value should be 0
 
   Examples:
-    | name   | new_name |
-    | Stock1 | Cats     |
+    | new_name |
+    | Cats     |
 
 # edit-stock-02
 Scenario Outline: Edit stock initial value
-  When I set stock <name> initial value to <value>
-  Then stock <name> initial value should be <value>
+  When I set stock Stock1 initial value to <value>
+  Then stock Stock1 initial value should be 25
 
   Examples:
-    | name   | value |
-    | Stock1 | 25    |
+    | value |
+    | 25    |
 
 # edit-stock-03
 Scenario Outline: Set stock value bounds
-  When I set stock <name> minimum to <min>
-  And I set stock <name> maximum to <max>
-  Then stock <name> minimum should be <min>
-  And stock <name> maximum should be <max>
-  And stock <name> canvas minimum should be <min>
-  And stock <name> canvas maximum should be <max>
+  When I set stock Stock1 minimum to <min>
+  And I set stock Stock1 maximum to <max>
+  Then stock Stock1 minimum should be 0
+  And stock Stock1 maximum should be 100
+  And stock Stock1 canvas minimum should be 0
+  And stock Stock1 canvas maximum should be 100
 
   Examples:
-    | name   | min | max |
-    | Stock1 | 0   | 100 |
+    | min | max |
+    | 0   | 100 |
 
 # edit-stock-04
 Scenario: Clear stock maximum bound
@@ -52,23 +57,17 @@ Scenario: Reject duplicate stock name
   And the diagram should contain stock Stock2
 
 # edit-stock-06
-Scenario Outline: Reject initial value below minimum
-  When I set stock <name> minimum to <min>
-  And I set stock <name> initial value to <value>
+Scenario: Reject initial value below minimum
+  When I set stock Stock1 minimum to 11
+  And I set stock Stock1 initial value to 10
   Then the stock edit should be rejected
-  And stock <name> initial value should be 0
-
-  Examples:
-    | name   | min | value |
-    | Stock1 | 10  | 5     |
+  And stock Stock1 minimum should be 11
+  And stock Stock1 initial value should be 0
 
 # edit-stock-07
-Scenario Outline: Reject initial value above maximum
-  When I set stock <name> maximum to <max>
-  And I set stock <name> initial value to <value>
+Scenario: Reject initial value above maximum
+  When I set stock Stock1 maximum to 39
+  And I set stock Stock1 initial value to 40
   Then the stock edit should be rejected
-  And stock <name> initial value should be 0
-
-  Examples:
-    | name   | max | value |
-    | Stock1 | 40  | 50    |
+  And stock Stock1 maximum should be 39
+  And stock Stock1 initial value should be 0

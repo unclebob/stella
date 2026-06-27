@@ -270,6 +270,65 @@
       (ui/quit-app! stage)
       (pass! "connectors" "Quit requested"))))
 
+(defn- run-edit-stock! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (when-not (ui/region-bounds stage :canvas)
+        (fail! "Canvas region :canvas is not visible"))
+      (pass! "edit-stock" "Canvas region is visible")
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas :center)
+      (when-not (ui/wait-for-element! stage :stock "Stock1")
+        (fail! "Stock1 did not appear"))
+      (when-not (ui/element-shows? stage :stock "Stock1" "Stock1")
+        (fail! "Stock1 name not visible"))
+      (when-not (ui/element-shows? stage :stock "Stock1" "0")
+        (fail! "Stock1 minimum not visible"))
+      (ui/right-click-element! stage :stock "Stock1")
+      (when-not (ui/wait-for-dialog! "Edit Stock" :attempts 50)
+        (fail! "Edit Stock dialog did not appear"))
+      (ui/type-into-dialog-field! "Name" "Cats")
+      (ui/click-ok-on-dialog! "Edit Stock")
+      (when-not (ui/wait-for-element! stage :stock "Cats")
+        (fail! "Cats did not appear after rename"))
+      (when-not (ui/element-shows? stage :stock "Cats" "Cats")
+        (fail! "Cats name not visible"))
+      (when-not (ui/element-shows? stage :stock "Cats" "0")
+        (fail! "Cats minimum not visible"))
+      (pass! "edit-stock" "Stock renamed to Cats")
+      (ui/right-click-element! stage :stock "Cats")
+      (when-not (ui/wait-for-dialog! "Edit Stock")
+        (fail! "Edit Stock dialog did not reappear"))
+      (ui/type-into-dialog-field! "Initial value" "25")
+      (ui/type-into-dialog-field! "Minimum" "5")
+      (ui/type-into-dialog-field! "Maximum" "100")
+      (ui/click-ok-on-dialog! "Edit Stock")
+      (when-not (ui/element-shows? stage :stock "Cats" "Cats")
+        (fail! "Cats name missing after bounds edit"))
+      (when-not (ui/element-shows? stage :stock "Cats" "5")
+        (fail! "Cats minimum not visible after edit"))
+      (when-not (ui/element-shows? stage :stock "Cats" "100")
+        (fail! "Cats maximum not visible after edit"))
+      (when-not (ui/element-not-shows? stage :stock "Cats" "25")
+        (fail! "Initial value 25 shown on icon"))
+      (pass! "edit-stock" "Cats bounds updated; initial value not on icon")
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas [120 40])
+      (when-not (ui/wait-for-element! stage :stock "Stock2")
+        (fail! "Stock2 did not appear"))
+      (ui/right-click-element! stage :stock "Cats")
+      (when-not (ui/wait-for-dialog! "Edit Stock")
+        (fail! "Edit Stock dialog missing for duplicate rename"))
+      (ui/type-into-dialog-field! "Name" "Stock2")
+      (ui/click-ok-on-dialog! "Edit Stock")
+      (when-not (ui/element-visible? stage :stock "Cats")
+        (fail! "Cats disappeared after rejected duplicate rename"))
+      (when-not (ui/element-visible? stage :stock "Stock2")
+        (fail! "Stock2 missing after rejected duplicate rename"))
+      (pass! "edit-stock" "Duplicate rename rejected")
+      (ui/quit-app! stage)
+      (pass! "edit-stock" "Quit requested"))))
+
 (def ^:private suites
   {"shell-launch" run-shell-launch!
    "shell-menus" run-shell-menus!
@@ -279,7 +338,8 @@
    "place-stock" run-place-stock!
    "connect-flow" run-connect-flow!
    "cloud-endpoints" run-cloud-endpoints!
-   "connectors" run-connectors!})
+   "connectors" run-connectors!
+   "edit-stock" run-edit-stock!})
 
 (defn -main [& args]
   (when-not (first args)

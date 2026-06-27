@@ -184,10 +184,13 @@
              :layout-y y
              :children children}
       (model/endpoint-clickable? diagram :stock)
-      (assoc :on-mouse-clicked (endpoint-click :stock name)))))
+      (assoc :on-mouse-clicked (endpoint-click :stock name))
+      :always
+      (assoc :on-context-menu-requested
+             {:event events/edit-stock-open :stock-name name}))))
 
 (defn- converter-desc
-  [diagram {:keys [name x y]}]
+  [diagram {:keys [name x y value]}]
   (cond-> {:fx/type :group
            :id (str "converter-" name)
            :layout-x x
@@ -197,10 +200,12 @@
                        :center-y 25
                        :radius 25
                        :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
-                      {:fx/type :label
-                       :layout-x 8
-                       :layout-y 18
-                       :text name}]}
+                      {:fx/type :v-box
+                       :layout-x 5
+                       :layout-y 12
+                       :spacing 2
+                       :children [{:fx/type :label :text name}
+                                  {:fx/type :label :text value}]}]}
     (model/endpoint-clickable? diagram :converter)
     (assoc :on-mouse-clicked (endpoint-click :converter name))))
 
@@ -229,8 +234,10 @@
 
 (defn diagram-overlay-text
   [diagram]
-  (->> [(overlay-segment (map (fn [{:keys [name initial-value]}]
-                                 (str name " " initial-value))
+  (->> [(overlay-segment (map (fn [{:keys [name min-value max-value]}]
+                                 (str name " "
+                                      (or min-value "0")
+                                      (when max-value (str " " max-value))))
                                (model/stocks diagram)))
         (overlay-segment (map (fn [{:keys [name rate]}] (str name " " rate))
                               (model/flows diagram)))
@@ -272,5 +279,5 @@
   (canvas-stack shell))
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-26T18:02:22.398105-05:00", :module-hash "236193478", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "477415667"} {:id "defn-/endpoint-click", :kind "defn-", :line 6, :end-line 8, :hash "-1042549141"} {:id "defn-/flow-desc", :kind "defn-", :line 10, :end-line 34, :hash "-1620991121"} {:id "defn-/connector-desc", :kind "defn-", :line 36, :end-line 57, :hash "1129973901"} {:id "defn-/stock-desc", :kind "defn-", :line 59, :end-line 76, :hash "-839302979"} {:id "defn-/converter-desc", :kind "defn-", :line 78, :end-line 96, :hash "111892878"} {:id "defn-/cloud-desc", :kind "defn-", :line 98, :end-line 115, :hash "274228855"} {:id "defn-/overlay-segment", :kind "defn-", :line 117, :end-line 119, :hash "-1910896273"} {:id "defn/diagram-overlay-text", :kind "defn", :line 121, :end-line 134, :hash "1103884749"} {:id "defn-/canvas-background", :kind "defn-", :line 136, :end-line 141, :hash "538381286"} {:id "defn/canvas-stack", :kind "defn", :line 143, :end-line 159, :hash "1465581755"} {:id "defn/canvas-desc", :kind "defn", :line 161, :end-line 163, :hash "-772167057"}]}
+;; {:version 1, :tested-at "2026-06-27T10:09:07.436563-05:00", :module-hash "183018444", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "477415667"} {:id "defn-/endpoint-click", :kind "defn-", :line 6, :end-line 8, :hash "-1042549141"} {:id "defn-/flow-desc", :kind "defn-", :line 10, :end-line 34, :hash "2017261255"} {:id "defn-/connector-desc", :kind "defn-", :line 36, :end-line 57, :hash "1129973901"} {:id "def/bound-label-style", :kind "def", :line 59, :end-line 59, :hash "-2104208887"} {:id "defn/stock-icon-labels", :kind "defn", :line 61, :end-line 65, :hash "-2139438638"} {:id "defn/stock-canvas-labels", :kind "defn", :line 67, :end-line 72, :hash "-667198372"} {:id "defn-/stock-desc", :kind "defn-", :line 74, :end-line 102, :hash "-1787538790"} {:id "defn-/converter-desc", :kind "defn-", :line 104, :end-line 122, :hash "359382606"} {:id "defn-/cloud-desc", :kind "defn-", :line 124, :end-line 141, :hash "273299004"} {:id "defn-/overlay-segment", :kind "defn-", :line 143, :end-line 145, :hash "-1910896273"} {:id "defn/diagram-overlay-text", :kind "defn", :line 147, :end-line 160, :hash "1103884749"} {:id "defn-/canvas-background", :kind "defn-", :line 162, :end-line 167, :hash "538381286"} {:id "defn/canvas-stack", :kind "defn", :line 169, :end-line 185, :hash "327550181"} {:id "defn/canvas-desc", :kind "defn", :line 187, :end-line 189, :hash "-772167057"}]}
 ;; clj-mutate-manifest-end

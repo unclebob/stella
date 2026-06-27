@@ -234,6 +234,34 @@
     (assoc-in diagram [:stocks id :max-value] nil)
     diagram))
 
+(defn apply-stock-edit
+  [diagram stock-name {:keys [name initial-value min-value max-value]}]
+  (let [after-name (if (= name stock-name)
+                     diagram
+                     (set-stock-name diagram stock-name name))]
+    (if (and (not= name stock-name) (= after-name diagram))
+      diagram
+      (let [target (if (= after-name diagram) stock-name name)
+            prior-min (stock-min-value after-name target)
+            after-min (set-stock-min after-name target min-value)]
+        (if (and (not= (str min-value) (str prior-min))
+                 (= (stock-min-value after-min target) prior-min))
+          after-name
+          (let [prior-max (stock-max-value after-min target)
+                after-max (if (seq (str max-value))
+                            (set-stock-max after-min target max-value)
+                            (clear-stock-max after-min target))]
+            (if (and (seq (str max-value))
+                     (not= (str max-value) (str prior-max))
+                     (= (stock-max-value after-max target) prior-max))
+              after-min
+              (let [prior-init (stock-initial-value after-max target)
+                    after-init (set-stock-initial-value after-max target initial-value)]
+                (if (and (not= (str initial-value) (str prior-init))
+                         (= (stock-initial-value after-init target) prior-init))
+                  after-max
+                  after-init)))))))))
+
 (defn placement-disarmed?
   [diagram]
   (= :idle (:placement-mode diagram)))
