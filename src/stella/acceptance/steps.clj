@@ -49,6 +49,10 @@
   [world]
   (or (:diagram world) (model/default-diagram)))
 
+(defn- selection-kind
+  [kind-str]
+  (keyword kind-str))
+
 (defn- apply-diagram-edit
   [world op]
   (let [before (diagram-from world)
@@ -881,6 +885,75 @@
     :fn (fn [world _ _]
           (when-not (model/connector-placement-disarmed? (diagram-from world))
             (fail! "expected connector placement tool disarmed"))
+          world)}
+   {:pattern #"^I click select <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ kind-param name-param] example]
+          (let [kind (selection-kind (require-value example kind-param))
+                name (require-value example name-param)]
+            (update world :diagram #(cmd/click-select! % kind name))))}
+   {:pattern #"^I click select (stock|converter|flow|connector|source|sink) ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ kind name] _]
+          (update world :diagram #(cmd/click-select! % (selection-kind kind) name)))}
+   {:pattern #"^I shift click select <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ kind-param name-param] example]
+          (let [kind (selection-kind (require-value example kind-param))
+                name (require-value example name-param)]
+            (update world :diagram #(cmd/shift-click-select! % kind name))))}
+   {:pattern #"^I shift click select (stock|converter|flow|connector|source|sink) ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ kind name] _]
+          (update world :diagram #(cmd/shift-click-select! % (selection-kind kind) name)))}
+   {:pattern #"^I marquee select from <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)> to <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ x1-param y1-param x2-param y2-param] example]
+          (let [x1 (parse-int (require-value example x1-param) x1-param)
+                y1 (parse-int (require-value example y1-param) y1-param)
+                x2 (parse-int (require-value example x2-param) x2-param)
+                y2 (parse-int (require-value example y2-param) y2-param)]
+            (update world :diagram #(cmd/marquee-select! % x1 y1 x2 y2))))}
+   {:pattern #"^I clear the selection$"
+    :fn (fn [world _ _]
+          (update world :diagram cmd/clear-selection!))}
+   {:pattern #"^<([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)> should be selected$"
+    :fn (fn [world [_ kind-param name-param] example]
+          (let [kind (selection-kind (require-value example kind-param))
+                name (require-value example name-param)]
+            (when-not (model/selected? (diagram-from world) kind name)
+              (fail! (str kind " " name " not selected")))
+            world))}
+   {:pattern #"^(stock|converter|flow|connector|source|sink) ([A-Za-z0-9]+) should be selected$"
+    :fn (fn [world [_ kind name] _]
+          (when-not (model/selected? (diagram-from world) (selection-kind kind) name)
+            (fail! (str kind " " name " not selected")))
+          world)}
+   {:pattern #"^<([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)> should not be selected$"
+    :fn (fn [world [_ kind-param name-param] example]
+          (let [kind (selection-kind (require-value example kind-param))
+                name (require-value example name-param)]
+            (when (model/selected? (diagram-from world) kind name)
+              (fail! (str kind " " name " should not be selected")))
+            world))}
+   {:pattern #"^(stock|converter|flow|connector|source|sink) ([A-Za-z0-9]+) should not be selected$"
+    :fn (fn [world [_ kind name] _]
+          (when (model/selected? (diagram-from world) (selection-kind kind) name)
+            (fail! (str kind " " name " should not be selected")))
+          world)}
+   {:pattern #"^the selection count should be <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ count-param] example]
+          (let [count (parse-int (require-value example count-param) count-param)
+                actual (model/selection-count (diagram-from world))]
+            (when-not (= count actual)
+              (fail! (str "selection count " actual " expected " count)))
+            world))}
+   {:pattern #"^the selection count should be (\d+)$"
+    :fn (fn [world [_ count-str] _]
+          (let [count (parse-int count-str "count")
+                actual (model/selection-count (diagram-from world))]
+            (when-not (= count actual)
+              (fail! (str "selection count " actual " expected " count)))
+            world))}
+   {:pattern #"^nothing should be selected$"
+    :fn (fn [world _ _]
+          (when-not (model/nothing-selected? (diagram-from world))
+            (fail! (str "selection count " (model/selection-count (diagram-from world)) " expected 0")))
           world)}])
 
 (defn dispatch-step
