@@ -715,10 +715,27 @@
       diagram)
     diagram))
 
+(defn- fixture-connector-endpoints
+  [diagram connector-name from-kind from-name to-kind to-name]
+  (let [num (num-from-name "Connector" connector-name)
+        id (keyword (str "connector-" num))]
+    (-> diagram
+        (assoc-in [:connectors id]
+                  {:name connector-name
+                   :from (endpoint-ref from-kind from-name)
+                   :to (endpoint-ref to-kind to-name)
+                   :formula ""})
+        (update :next-connector-num #(max % (inc num))))))
+
 (defn fixture-connector
   [diagram connector-name from-converter to-flow]
-  (fixture-endpoint-link diagram "Connector" :next-connector-num "connector-" :connectors
-                         connector-name :converter from-converter :flow to-flow {:formula ""}))
+  (fixture-connector-endpoints diagram connector-name
+                               :converter from-converter :flow to-flow))
+
+(defn fixture-stock-connector
+  [diagram connector-name from-stock to-converter]
+  (fixture-connector-endpoints diagram connector-name
+                               :stock from-stock :converter to-converter))
 
 (defn connector-count
   [diagram]
@@ -902,3 +919,64 @@
 (defn clear-selection
   [diagram]
   (assoc diagram :selection #{}))
+
+(defn- links-referencing-ref
+  [diagram collection ref]
+  (into #{}
+        (keep (fn [[_ {:keys [name from to]}]]
+                (when (or (= from ref) (= to ref))
+                  (object-ref (if (= collection :flows) :flow :connector) name)))
+              (get diagram collection))))
+
+(defn- cascade-additions-for-ref
+  [diagram ref]
+  (case (:kind ref)
+    :stock (into (links-referencing-ref diagram :flows ref)
+                 (links-referencing-ref diagram :connectors ref))
+    (:source :sink) (links-referencing-ref diagram :flows ref)
+    :flow (links-referencing-ref diagram :connectors ref)
+    :converter (links-referencing-ref diagram :connectors ref)
+    :connector #{}
+    #{}))
+
+(defn- expand-delete-set
+  [diagram refs]
+  (loop [current refs]
+    (let [additions (into #{} (mapcat #(cascade-additions-for-ref diagram %) current))
+          expanded (into current additions)]
+      (if (= expanded current)
+        expanded
+        (recur expanded)))))
+
+(defn- remove-object-ref
+  [diagram {:keys [kind id]}]
+  (case kind
+    :stock (if-let [[object-id _] (stock-entry-by-name diagram id)]
+             (update diagram :stocks dissoc object-id)
+             diagram)
+    :flow (if-let [[object-id _] (flow-entry-by-name diagram id)]
+            (update diagram :flows dissoc object-id)
+            diagram)
+    :converter (if-let [[object-id _] (converter-entry-by-name diagram id)]
+                 (update diagram :converters dissoc object-id)
+                 diagram)
+    :connector (if-let [[object-id _] (connector-entry-by-name diagram id)]
+                 (update diagram :connectors dissoc object-id)
+                 diagram)
+    :source (if-let [[object-id _] (source-entry-by-name diagram id)]
+              (update diagram :sources dissoc object-id)
+              diagram)
+    :sink (if-let [[object-id _] (sink-entry-by-name diagram id)]
+             (update diagram :sinks dissoc object-id)
+             diagram)
+    diagram))
+
+(defn delete-selection
+  [diagram]
+  (if (and (placement-disarmed? diagram)
+           (seq (:selection diagram #{})))
+    (let [to-delete (expand-delete-set diagram (:selection diagram))]
+      (reduce remove-object-ref
+              (assoc diagram :selection #{})
+              to-delete))
+    diagram))

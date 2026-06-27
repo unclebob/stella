@@ -115,6 +115,17 @@
           (when-not (model/converter-exists? (support/diagram-from world) name)
             (support/fail! (str "diagram missing converter " name)))
           world)}
+   {:pattern #"^the diagram should not contain converter <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (support/require-value example name-param)]
+            (when (model/converter-exists? (support/diagram-from world) name)
+              (support/fail! (str "diagram still contains converter " name)))
+            world))}
+   {:pattern #"^the diagram should not contain converter ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name] _]
+          (when (model/converter-exists? (support/diagram-from world) name)
+            (support/fail! (str "diagram still contains converter " name)))
+          world)}
    {:pattern #"^converter <([A-Za-z0-9_]+)> should be at position <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param x-param y-param] example]
           (let [name (support/require-value example name-param)
@@ -271,6 +282,17 @@
             (when-not (model/connector-exists? (support/diagram-from world) name)
               (support/fail! (str "diagram missing connector " name)))
             world))}
+   {:pattern #"^the diagram should not contain connector <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (support/require-value example name-param)]
+            (when (model/connector-exists? (support/diagram-from world) name)
+              (support/fail! (str "diagram still contains connector " name)))
+            world))}
+   {:pattern #"^the diagram should not contain connector ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name] _]
+          (when (model/connector-exists? (support/diagram-from world) name)
+            (support/fail! (str "diagram still contains connector " name)))
+          world)}
    {:pattern #"^connector <([A-Za-z0-9_]+)> runs from converter <([A-Za-z0-9_]+)> to flow <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ connector-param from-param to-param] example]
           (let [connector (support/require-value example connector-param)
@@ -282,6 +304,17 @@
     :fn (fn [world [_ connector from to] _]
           (let [diagram (support/diagram-from world)]
             (assoc world :diagram (cmd/fixture-connector! diagram connector from to))))}
+   {:pattern #"^connector <([A-Za-z0-9_]+)> runs from stock <([A-Za-z0-9_]+)> to converter <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ connector-param from-param to-param] example]
+          (let [connector (support/require-value example connector-param)
+                from (support/require-value example from-param)
+                to (support/require-value example to-param)
+                diagram (support/diagram-from world)]
+            (assoc world :diagram (cmd/fixture-stock-connector! diagram connector from to))))}
+   {:pattern #"^connector ([A-Za-z0-9]+) runs from stock ([A-Za-z0-9]+) to converter ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ connector from to] _]
+          (let [diagram (support/diagram-from world)]
+            (assoc world :diagram (cmd/fixture-stock-connector! diagram connector from to))))}
    {:pattern #"^connector <([A-Za-z0-9_]+)> formula should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ connector-param formula-param] example]
           (let [connector (support/require-value example connector-param)
