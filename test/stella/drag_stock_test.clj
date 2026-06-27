@@ -34,3 +34,8 @@
   (let [before (diagram-with-stock)
         after (cmd/move-stock! before "Missing" 1 2)]
     (is (= before after))))
+
+(deftest stock-at-canvas-point-test
+  (let [diagram (diagram-with-stock)]
+    (is (= "Stock1" (model/stock-at-canvas-point diagram 120 120)))
+    (is (nil? (model/stock-at-canvas-point diagram 0 0)))))

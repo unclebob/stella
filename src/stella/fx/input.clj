@@ -14,6 +14,11 @@
   (when-let [^MouseEvent mouse (:fx/event event)]
     [(int (.getX mouse)) (int (.getY mouse))]))
 
+(defn- scene-coordinates
+  [event]
+  (when-let [^MouseEvent mouse (:fx/event event)]
+    [(int (.getSceneX mouse)) (int (.getSceneY mouse))]))
+
 (defn- field-text
   [id]
   (when-let [^TextField field (fx-nodes/find-by-id-in-windows id)]
@@ -42,6 +47,13 @@
   (cond
     (= events/canvas-click (event-type event))
     (assoc event :coordinates (click-coordinates event))
+
+    (#{events/stock-drag-start events/stock-drag-end} (event-type event))
+    (cond-> event
+      (not (:scene-coordinates event))
+      (assoc :scene-coordinates (scene-coordinates event))
+      (and (:from-canvas event) (not (:canvas-coordinates event)))
+      (assoc :canvas-coordinates (click-coordinates event)))
 
     (and (= events/edit-stock-apply (event-type event))
          (not (:draft event)))

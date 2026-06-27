@@ -158,6 +158,11 @@
                 x (support/parse-int (support/require-value example x-param) x-param)
                 y (support/parse-int (support/require-value example y-param) y-param)]
             (update world :diagram #(cmd/move-converter! % name x y))))}
+   {:pattern #"^I move converter ([A-Za-z0-9]+) to <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name x-param y-param] example]
+          (let [x (support/parse-int (support/require-value example x-param) x-param)
+                y (support/parse-int (support/require-value example y-param) y-param)]
+            (update world :diagram #(cmd/move-converter! % name x y))))}
    {:pattern #"^I move converter ([A-Za-z0-9]+) to (\d+) (\d+)$"
     :fn (fn [world [_ name x-str y-str] _]
           (update world :diagram #(cmd/move-converter! % name
@@ -168,6 +173,14 @@
           (let [name (support/require-value example name-param)
                 x (support/parse-int (support/require-value example x-param) x-param)
                 y (support/parse-int (support/require-value example y-param) y-param)
+                pos (canvas/converter-canvas-position (support/diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (support/fail! (str "converter " name " canvas position " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^converter ([A-Za-z0-9]+) canvas position should be (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (let [x (support/parse-int x-str "x")
+                y (support/parse-int y-str "y")
                 pos (canvas/converter-canvas-position (support/diagram-from world) name)]
             (when-not (= [x y] pos)
               (support/fail! (str "converter " name " canvas position " pos " expected [" x " " y "]")))
