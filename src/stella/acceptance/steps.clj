@@ -175,6 +175,17 @@
           (when-not (model/stock-exists? (diagram-from world) name)
             (fail! (str "diagram missing stock " name)))
           world)}
+   {:pattern #"^the diagram should not contain stock <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (when (model/stock-exists? (diagram-from world) name)
+              (fail! (str "diagram still contains stock " name)))
+            world))}
+   {:pattern #"^the diagram should not contain stock ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name] _]
+          (when (model/stock-exists? (diagram-from world) name)
+            (fail! (str "diagram still contains stock " name)))
+          world)}
    {:pattern #"^stock <([A-Za-z0-9_]+)> should be at position <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param x-param y-param] example]
           (let [name (require-value example name-param)
@@ -341,6 +352,11 @@
           (when-not (= 1 (model/stock-count (diagram-from world)))
             (fail! (str "stock count " (model/stock-count (diagram-from world)) " expected 1")))
           world)}
+   {:pattern #"^the diagram stock count should be 2$"
+    :fn (fn [world _ _]
+          (when-not (= 2 (model/stock-count (diagram-from world)))
+            (fail! (str "stock count " (model/stock-count (diagram-from world)) " expected 2")))
+          world)}
    {:pattern #"^the stock placement tool should be disarmed$"
     :fn (fn [world _ _]
           (when-not (model/placement-disarmed? (diagram-from world))
@@ -434,6 +450,17 @@
     :fn (fn [world [_ flow] _]
           (when-not (model/flow-exists? (diagram-from world) flow)
             (fail! (str "diagram missing flow " flow)))
+          world)}
+   {:pattern #"^the diagram should not contain flow <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ flow-param] example]
+          (let [flow (require-value example flow-param)]
+            (when (model/flow-exists? (diagram-from world) flow)
+              (fail! (str "diagram still contains flow " flow)))
+            world))}
+   {:pattern #"^the diagram should not contain flow ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ flow] _]
+          (when (model/flow-exists? (diagram-from world) flow)
+            (fail! (str "diagram still contains flow " flow)))
           world)}
    {:pattern #"^flow <([A-Za-z0-9_]+)> should run from stock <([A-Za-z0-9_]+)> to stock <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ flow-param from-param to-param] example]
@@ -639,6 +666,17 @@
           (when-not (model/converter-exists? (diagram-from world) name)
             (fail! (str "diagram missing converter " name)))
           world)}
+   {:pattern #"^the diagram should not contain converter <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (when (model/converter-exists? (diagram-from world) name)
+              (fail! (str "diagram still contains converter " name)))
+            world))}
+   {:pattern #"^the diagram should not contain converter ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name] _]
+          (when (model/converter-exists? (diagram-from world) name)
+            (fail! (str "diagram still contains converter " name)))
+          world)}
    {:pattern #"^converter <([A-Za-z0-9_]+)> should be at position <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param x-param y-param] example]
           (let [name (require-value example name-param)
@@ -800,12 +838,34 @@
     :fn (fn [world [_ connector from to] _]
           (let [diagram (diagram-from world)]
             (assoc world :diagram (cmd/fixture-connector! diagram connector from to))))}
+   {:pattern #"^connector <([A-Za-z0-9_]+)> runs from stock <([A-Za-z0-9_]+)> to converter <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ connector-param from-param to-param] example]
+          (let [connector (require-value example connector-param)
+                from (require-value example from-param)
+                to (require-value example to-param)
+                diagram (diagram-from world)]
+            (assoc world :diagram (cmd/fixture-stock-connector! diagram connector from to))))}
+   {:pattern #"^connector ([A-Za-z0-9]+) runs from stock ([A-Za-z0-9]+) to converter ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ connector from to] _]
+          (let [diagram (diagram-from world)]
+            (assoc world :diagram (cmd/fixture-stock-connector! diagram connector from to))))}
    {:pattern #"^the diagram should contain connector <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param] example]
           (let [name (require-value example name-param)]
             (when-not (model/connector-exists? (diagram-from world) name)
               (fail! (str "diagram missing connector " name)))
             world))}
+   {:pattern #"^the diagram should not contain connector <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (require-value example name-param)]
+            (when (model/connector-exists? (diagram-from world) name)
+              (fail! (str "diagram still contains connector " name)))
+            world))}
+   {:pattern #"^the diagram should not contain connector ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name] _]
+          (when (model/connector-exists? (diagram-from world) name)
+            (fail! (str "diagram still contains connector " name)))
+          world)}
    {:pattern #"^connector <([A-Za-z0-9_]+)> formula should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ connector-param formula-param] example]
           (let [connector (require-value example connector-param)
@@ -912,6 +972,9 @@
    {:pattern #"^I clear the selection$"
     :fn (fn [world _ _]
           (update world :diagram cmd/clear-selection!))}
+   {:pattern #"^I delete the selection$"
+    :fn (fn [world _ _]
+          (update world :diagram cmd/delete-selection!))}
    {:pattern #"^<([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)> should be selected$"
     :fn (fn [world [_ kind-param name-param] example]
           (let [kind (selection-kind (require-value example kind-param))
