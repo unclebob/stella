@@ -35,6 +35,10 @@
   [diagram name x y]
   (model/move-stock diagram name x y))
 
+(defn move-converter!
+  [diagram name x y]
+  (model/move-converter diagram name x y))
+
 (defn set-stock-name!
   [diagram old-name new-name]
   (model/set-stock-name diagram old-name new-name))

@@ -652,6 +652,35 @@
             (when-not (= [x y] pos)
               (fail! (str "converter " name " at " pos " expected [" x " " y "]")))
             world))}
+   {:pattern #"^converter <([A-Za-z0-9_]+)> should be at position (\d+) (\d+)$"
+    :fn (fn [world [_ name-param x-str y-str] example]
+          (let [name (require-value example name-param)
+                x (parse-int x-str "x")
+                y (parse-int y-str "y")
+                pos (model/converter-position (diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (fail! (str "converter " name " at " pos " expected [" x " " y "]")))
+            world))}
+   {:pattern #"^I move converter <([A-Za-z0-9_]+)> to <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (require-value example name-param)
+                x (parse-int (require-value example x-param) x-param)
+                y (parse-int (require-value example y-param) y-param)]
+            (update world :diagram #(cmd/move-converter! % name x y))))}
+   {:pattern #"^I move converter ([A-Za-z0-9]+) to (\d+) (\d+)$"
+    :fn (fn [world [_ name x-str y-str] _]
+          (update world :diagram #(cmd/move-converter! % name
+                                                       (parse-int x-str "x")
+                                                       (parse-int y-str "y"))))}
+   {:pattern #"^converter <([A-Za-z0-9_]+)> canvas position should be <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param x-param y-param] example]
+          (let [name (require-value example name-param)
+                x (parse-int (require-value example x-param) x-param)
+                y (parse-int (require-value example y-param) y-param)
+                pos (canvas/converter-canvas-position (diagram-from world) name)]
+            (when-not (= [x y] pos)
+              (fail! (str "converter " name " canvas position " pos " expected [" x " " y "]")))
+            world))}
    {:pattern #"^converter <([A-Za-z0-9_]+)> value should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param value-param] example]
           (let [name (require-value example name-param)
@@ -696,6 +725,11 @@
     :fn (fn [world _ _]
           (when-not (zero? (model/converter-count (diagram-from world)))
             (fail! "expected diagram converter count 0"))
+          world)}
+   {:pattern #"^the diagram converter count should be 1$"
+    :fn (fn [world _ _]
+          (when-not (= 1 (model/converter-count (diagram-from world)))
+            (fail! (str "converter count " (model/converter-count (diagram-from world)) " expected 1")))
           world)}
    {:pattern #"^the converter placement tool should be disarmed$"
     :fn (fn [world _ _]
