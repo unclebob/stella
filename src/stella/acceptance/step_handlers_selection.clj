@@ -37,6 +37,9 @@
    {:pattern #"^I clear the selection$"
     :fn (fn [world _ _]
           (update world :diagram cmd/clear-selection!))}
+   {:pattern #"^I delete the selection$"
+    :fn (fn [world _ _]
+          (update world :diagram cmd/delete-selection!))}
    {:pattern #"^<([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)> should be selected$"
     :fn (fn [world [_ kind-param name-param] example]
           (let [kind (support/selection-kind (support/require-value example kind-param))
