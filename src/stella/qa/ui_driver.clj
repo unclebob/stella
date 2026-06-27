@@ -273,6 +273,24 @@
                                   :scene-coordinates release-scene})
         (Thread/sleep 200)))))
 
+(defn- synthesize-converter-drag!
+  [^Stage stage element-name _start-screen-x _start-screen-y end-screen-x end-screen-y]
+  (when-let [^Node canvas (hit-test/region-node stage :canvas)]
+    (when-let [[cx cy] (model/converter-position (:diagram @app/*state) element-name)]
+      (let [press-cx (+ cx (/ model/converter-icon-size 2))
+            press-cy (+ cy (/ model/converter-icon-size 2))
+            [release-cx release-cy] (screen-to-canvas-local canvas end-screen-x end-screen-y)
+            press-scene (canvas-local-to-scene canvas press-cx press-cy)
+            release-scene (canvas-local-to-scene canvas release-cx release-cy)]
+        (app/dispatch-map-event! {:event events/converter-drag-start
+                                  :converter-name element-name
+                                  :scene-coordinates press-scene})
+        (Thread/sleep 50)
+        (app/dispatch-map-event! {:event events/converter-drag-end
+                                  :converter-name element-name
+                                  :scene-coordinates release-scene})
+        (Thread/sleep 200)))))
+
 (defn drag-element!
   [^Stage stage kind element-name region & [position]]
   (when-let [diagram (:diagram @app/*state)]
@@ -281,8 +299,9 @@
         (let [start-x (+ (:x bounds) (/ (:width bounds) 2.0))
               start-y (+ (:y bounds) (/ (:height bounds) 2.0))
               {:keys [x y]} (resolve-position position region-center)]
-          (if (= kind :stock)
-            (synthesize-stock-drag! stage element-name start-x start-y x y)
+          (case kind
+            :stock (synthesize-stock-drag! stage element-name start-x start-y x y)
+            :converter (synthesize-converter-drag! stage element-name start-x start-y x y)
             (robot-drag! start-x start-y x y)))))))
 
 (defn click-in-region!
@@ -414,6 +433,10 @@
 (defn diagram-stock-count
   [_stage]
   (count (:stocks (:diagram @app/*state))))
+
+(defn diagram-converter-count
+  [_stage]
+  (count (:converters (:diagram @app/*state))))
 
 (defn- element-icon-labels
   [^Stage stage kind element-name]

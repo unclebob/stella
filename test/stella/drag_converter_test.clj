@@ -37,3 +37,8 @@
   (let [before (diagram-with-converter)
         after (cmd/move-converter! before "Missing" 1 2)]
     (is (= before after))))
+
+(deftest converter-at-canvas-point-test
+  (let [diagram (diagram-with-converter)]
+    (is (= "Converter1" (model/converter-at-canvas-point diagram 120 270)))
+    (is (nil? (model/converter-at-canvas-point diagram 0 0)))))

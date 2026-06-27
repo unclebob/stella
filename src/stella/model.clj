@@ -655,6 +655,17 @@
   (when-let [[_ converter] (converter-entry-by-name diagram name)]
     [(:x converter) (:y converter)]))
 
+(def converter-icon-size 50)
+
+(defn converter-at-canvas-point
+  "Returns the converter name whose icon contains canvas-local point [x y], or nil."
+  [diagram cx cy]
+  (some (fn [{:keys [name x y]}]
+          (when (and (<= x cx (+ x converter-icon-size))
+                     (<= y cy (+ y converter-icon-size)))
+            name))
+        (vals (:converters diagram))))
+
 (defn move-converter
   [diagram name x y]
   (if-let [[id converter] (converter-entry-by-name diagram name)]
