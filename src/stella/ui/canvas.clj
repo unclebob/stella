@@ -69,14 +69,31 @@
           (model/endpoint-clickable? diagram :flow)
           (assoc :on-mouse-clicked (endpoint-click :flow name)))))))
 
+(def ^:private connector-label-style "-fx-font-size: 10px;")
+(def ^:private connector-formula-style "-fx-font-size: 9px;")
+
+(defn connector-canvas-labels
+  [diagram connector-name]
+  (when-let [connector (first (filter #(= connector-name (:name %))
+                                      (model/connectors diagram)))]
+    (when (and (model/endpoint-position diagram (:from connector))
+               (model/endpoint-position diagram (:to connector)))
+      (cond-> {:name (:name connector)}
+        (seq (:formula connector)) (assoc :formula (:formula connector))))))
+
 (defn- connector-desc
-  [diagram {:keys [name from to]}]
+  [diagram {:keys [name from to formula]}]
   (when-let [from-pos (model/endpoint-position diagram from)]
     (when-let [to-pos (model/endpoint-position diagram to)]
       (let [[start-x start-y] (model/endpoint-anchor from-pos (:kind from) :right)
             [end-x end-y] (model/endpoint-anchor to-pos (:kind to) :left)
             mid-x (/ (+ start-x end-x) 2.0)
-            mid-y (/ (+ start-y end-y) 2.0)]
+            mid-y (/ (+ start-y end-y) 2.0)
+            label-children (into [{:fx/type :label :text name :style connector-label-style}]
+                                 (when (seq formula)
+                                   [{:fx/type :label
+                                     :text formula
+                                     :style connector-formula-style}]))]
         {:fx/type :group
          :id (str "connector-" name)
          :children [{:fx/type :line
@@ -86,11 +103,17 @@
                      :end-y end-y
                      :stroke "#666"
                      :stroke-width connector-stroke-width}
-                    {:fx/type :label
+                    {:fx/type :v-box
                      :layout-x (- mid-x 30)
-                     :layout-y (- mid-y 10)
-                     :text name
-                     :style "-fx-font-size: 10px;"}]}))))
+                     :layout-y (- mid-y 15)
+                     :spacing 2
+                     :children label-children}]}))))
+
+(defn converter-canvas-labels
+  [diagram converter-name]
+  (when-let [{:keys [name]} (first (filter #(= converter-name (:name %))
+                                            (model/converters diagram)))]
+    {:name name}))
 
 (def ^:private bound-label-style "-fx-font-size: 9px;")
 
@@ -156,7 +179,7 @@
       (assoc :on-mouse-clicked (endpoint-click :stock name)))))
 
 (defn- converter-desc
-  [diagram {:keys [name value x y]}]
+  [diagram {:keys [name x y]}]
   (cond-> {:fx/type :group
            :id (str "converter-" name)
            :layout-x x
@@ -166,12 +189,10 @@
                        :center-y 25
                        :radius 25
                        :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
-                      {:fx/type :v-box
-                       :layout-x 5
-                       :layout-y 12
-                       :spacing 2
-                       :children [{:fx/type :label :text name}
-                                  {:fx/type :label :text value}]}]}
+                      {:fx/type :label
+                       :layout-x 8
+                       :layout-y 18
+                       :text name}]}
     (model/endpoint-clickable? diagram :converter)
     (assoc :on-mouse-clicked (endpoint-click :converter name))))
 

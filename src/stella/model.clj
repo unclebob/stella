@@ -173,16 +173,16 @@
                                        {}
                                        %)))))
 
-(defn- stock-rename-blocked?
-  [diagram old-name new-name]
+(defn- rename-blocked?
+  [exists? diagram old-name new-name]
   (or (not (seq (str new-name)))
       (= old-name new-name)
-      (not (stock-exists? diagram old-name))
-      (stock-exists? diagram new-name)))
+      (not (exists? diagram old-name))
+      (exists? diagram new-name)))
 
 (defn set-stock-name
   [diagram old-name new-name]
-  (if (stock-rename-blocked? diagram old-name new-name)
+  (if (rename-blocked? stock-exists? diagram old-name new-name)
     diagram
     (let [[id _] (stock-entry-by-name diagram old-name)]
       (-> diagram
@@ -421,34 +421,21 @@
   [diagram name]
   (flow-attribute diagram name :rate))
 
-(defn- rename-flow-endpoints
-  [diagram old-name new-name]
-  (let [rename (fn [endpoint]
-                 (rename-endpoint-id endpoint :flow old-name new-name))
-        update-connector (fn [connector]
-                           (-> connector
-                               (update :from rename)
-                               (update :to rename)))]
-    (update diagram :connectors #(reduce-kv (fn [m id connector]
-                                              (assoc m id (update-connector connector)))
-                                            {}
-                                            %))))
-
-(defn- flow-rename-blocked?
-  [diagram old-name new-name]
-  (or (not (seq (str new-name)))
-      (= old-name new-name)
-      (not (flow-exists? diagram old-name))
-      (flow-exists? diagram new-name)))
+(defn- rename-endpoints-in-connectors
+  [diagram kind old-name new-name]
+  (let [rename #(rename-endpoint-id % kind old-name new-name)
+        update-link #(-> % (update :from rename) (update :to rename))]
+    (update diagram :connectors
+            #(reduce-kv (fn [m id link] (assoc m id (update-link link))) {} %))))
 
 (defn set-flow-name
   [diagram old-name new-name]
-  (if (flow-rename-blocked? diagram old-name new-name)
+  (if (rename-blocked? flow-exists? diagram old-name new-name)
     diagram
     (let [[id _] (flow-entry-by-name diagram old-name)]
       (-> diagram
           (assoc-in [:flows id :name] new-name)
-          (rename-flow-endpoints old-name new-name)))))
+          (rename-endpoints-in-connectors :flow old-name new-name)))))
 
 (defn- parseable-number?
   [value]
@@ -474,16 +461,26 @@
   [diagram]
   (vals (:flows diagram)))
 
+(defn- fixture-named-link
+  [diagram name-prefix counter-key id-prefix collection name attrs]
+  (let [num (num-from-name name-prefix name)
+        id (keyword (str id-prefix num))]
+    (-> diagram
+        (assoc-in [collection id] (assoc attrs :name name))
+        (update counter-key #(max % (inc num))))))
+
+(defn- fixture-endpoint-link
+  [diagram name-prefix counter-key id-prefix collection name
+   from-kind from-id to-kind to-id extra-attrs]
+  (fixture-named-link diagram name-prefix counter-key id-prefix collection name
+                      (merge {:from (endpoint-ref from-kind from-id)
+                              :to (endpoint-ref to-kind to-id)}
+                             extra-attrs)))
+
 (defn fixture-flow
   [diagram flow-name from-stock to-stock]
-  (let [num (num-from-name "Flow" flow-name)
-        id (keyword (str "flow-" num))]
-    (-> diagram
-        (assoc-in [:flows id] {:name flow-name
-                               :from (endpoint-ref :stock from-stock)
-                               :to (endpoint-ref :stock to-stock)
-                               :rate "0"})
-        (update :next-flow-num #(max % (inc num))))))
+  (fixture-endpoint-link diagram "Flow" :next-flow-num "flow-" :flows flow-name
+                         :stock from-stock :stock to-stock {:rate "0"}))
 
 (defn- valid-flow-pair?
   [from to]
@@ -493,15 +490,26 @@
     [:stock :sink] true
     false))
 
+(defn- create-collection-link!
+  [diagram {:keys [collection counter name-prefix id-prefix item draft-key]} from to]
+  (let [num (get diagram counter)
+        name (str name-prefix num)
+        id (keyword (str id-prefix num))]
+    (-> diagram
+        (assoc-in [collection id] (assoc item :name name :from from :to to))
+        (assoc :placement-mode :idle draft-key nil)
+        (update counter inc))))
+
 (defn- create-flow!
   [diagram from to]
-  (let [num (:next-flow-num diagram)
-        name (str "Flow" num)
-        id (keyword (str "flow-" num))]
-    (-> diagram
-        (assoc-in [:flows id] {:name name :from from :to to :rate "0"})
-        (assoc :placement-mode :idle :flow-draft nil)
-        (update :next-flow-num inc))))
+  (create-collection-link!
+   diagram {:collection :flows
+            :counter :next-flow-num
+            :name-prefix "Flow"
+            :id-prefix "flow-"
+            :item {:rate "0"}
+            :draft-key :flow-draft}
+   from to))
 
 (defn- arm-link-placement
   [diagram mode draft-key]
@@ -664,6 +672,41 @@
   [diagram name]
   (connector-attribute diagram name :to))
 
+(defn connector-formula
+  [diagram name]
+  (connector-attribute diagram name :formula))
+
+(defn set-converter-name
+  [diagram old-name new-name]
+  (if (rename-blocked? converter-exists? diagram old-name new-name)
+    diagram
+    (let [[id _] (converter-entry-by-name diagram old-name)]
+      (-> diagram
+          (assoc-in [:converters id :name] new-name)
+          (rename-endpoints-in-connectors :converter old-name new-name)))))
+
+(defn- converter-to-flow-connector-id
+  [diagram converter-name]
+  (some (fn [[id {:keys [from to]}]]
+          (when (and (= :converter (:kind from))
+                     (= converter-name (:id from))
+                     (= :flow (:kind to)))
+            id))
+        (:connectors diagram)))
+
+(defn set-converter-formula
+  [diagram converter-name formula]
+  (if (seq (str formula))
+    (if-let [id (converter-to-flow-connector-id diagram converter-name)]
+      (assoc-in diagram [:connectors id :formula] (str formula))
+      diagram)
+    diagram))
+
+(defn fixture-connector
+  [diagram connector-name from-converter to-flow]
+  (fixture-endpoint-link diagram "Connector" :next-connector-num "connector-" :connectors
+                         connector-name :converter from-converter :flow to-flow {:formula ""}))
+
 (defn connector-count
   [diagram]
   (count (:connectors diagram)))
@@ -681,13 +724,14 @@
 
 (defn- create-connector!
   [diagram from to]
-  (let [num (:next-connector-num diagram)
-        name (str "Connector" num)
-        id (keyword (str "connector-" num))]
-    (-> diagram
-        (assoc-in [:connectors id] {:name name :from from :to to})
-        (assoc :placement-mode :idle :connector-draft nil)
-        (update :next-connector-num inc))))
+  (create-collection-link!
+   diagram {:collection :connectors
+            :counter :next-connector-num
+            :name-prefix "Connector"
+            :id-prefix "connector-"
+            :item {:formula ""}
+            :draft-key :connector-draft}
+   from to))
 
 (defn arm-connector-placement
   [diagram]
