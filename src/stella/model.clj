@@ -117,20 +117,22 @@
   (when-let [[_ stock] (stock-entry-by-name diagram name)]
     [(:x stock) (:y stock)]))
 
+(defn- stock-field
+  [diagram name key]
+  (when-let [[_ stock] (stock-entry-by-name diagram name)]
+    (get stock key)))
+
 (defn stock-initial-value
   [diagram name]
-  (when-let [[_ stock] (stock-entry-by-name diagram name)]
-    (:initial-value stock)))
+  (stock-field diagram name :initial-value))
 
 (defn stock-min-value
   [diagram name]
-  (when-let [[_ stock] (stock-entry-by-name diagram name)]
-    (:min-value stock)))
+  (stock-field diagram name :min-value))
 
 (defn stock-max-value
   [diagram name]
-  (when-let [[_ stock] (stock-entry-by-name diagram name)]
-    (:max-value stock)))
+  (stock-field diagram name :max-value))
 
 (defn stock-named?
   [diagram name]
@@ -171,14 +173,17 @@
                                        {}
                                        %)))))
 
+(defn- stock-rename-blocked?
+  [diagram old-name new-name]
+  (or (not (seq (str new-name)))
+      (= old-name new-name)
+      (not (stock-exists? diagram old-name))
+      (stock-exists? diagram new-name)))
+
 (defn set-stock-name
   [diagram old-name new-name]
-  (cond
-    (not (seq (str new-name))) diagram
-    (= old-name new-name) diagram
-    (not (stock-exists? diagram old-name)) diagram
-    (stock-exists? diagram new-name) diagram
-    :else
+  (if (stock-rename-blocked? diagram old-name new-name)
+    diagram
     (let [[id _] (stock-entry-by-name diagram old-name)]
       (-> diagram
           (assoc-in [:stocks id :name] new-name)
@@ -192,25 +197,29 @@
       diagram)
     diagram))
 
+(defn- set-stock-bound
+  [diagram name bound-key value valid?]
+  (if-let [[id stock] (stock-entry-by-name diagram name)]
+    (if (valid? stock value)
+      (assoc-in diagram [:stocks id bound-key] (str value))
+      diagram)
+    diagram))
+
 (defn set-stock-min
   [diagram name min-value]
-  (if-let [[id stock] (stock-entry-by-name diagram name)]
-    (let [min-num (numeric-value min-value)
-          max-num (when-let [max-v (:max-value stock)] (numeric-value max-v))]
-      (if (or (nil? max-num) (<= min-num max-num))
-        (assoc-in diagram [:stocks id :min-value] (str min-value))
-        diagram))
-    diagram))
+  (set-stock-bound diagram name :min-value min-value
+                   (fn [stock value]
+                     (let [min-num (numeric-value value)
+                           max-num (when-let [max-v (:max-value stock)]
+                                     (numeric-value max-v))]
+                       (or (nil? max-num) (<= min-num max-num))))))
 
 (defn set-stock-max
   [diagram name max-value]
-  (if-let [[id stock] (stock-entry-by-name diagram name)]
-    (let [max-num (numeric-value max-value)
-          min-num (numeric-value (:min-value stock "0"))]
-      (if (>= max-num min-num)
-        (assoc-in diagram [:stocks id :max-value] (str max-value))
-        diagram))
-    diagram))
+  (set-stock-bound diagram name :max-value max-value
+                   (fn [stock value]
+                     (>= (numeric-value value)
+                         (numeric-value (:min-value stock "0"))))))
 
 (defn clear-stock-max
   [diagram name]
