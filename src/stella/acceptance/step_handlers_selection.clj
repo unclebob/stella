@@ -83,3 +83,7 @@
           (when-not (model/nothing-selected? (support/diagram-from world))
             (support/fail! (str "selection count " (model/selection-count (support/diagram-from world)) " expected 0")))
           world)}])
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-27T10:27:26.162075-05:00", :module-hash "-1021746358", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 4, :hash "-1671017090"} {:id "def/selection-handlers", :kind "def", :line 6, :end-line 85, :hash "-829439538"}]}
+;; clj-mutate-manifest-end

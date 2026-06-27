@@ -554,5 +554,5 @@
   ])
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-27T10:23:02.266141-05:00", :module-hash "-544100078", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1666922602"} {:id "def/placement-handlers", :kind "def", :line 7, :end-line 527, :hash "1841368671"}]}
+;; {:version 1, :tested-at "2026-06-27T10:27:42.679169-05:00", :module-hash "606313202", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1666922602"} {:id "def/placement-handlers", :kind "def", :line 7, :end-line 554, :hash "-1744849629"}]}
 ;; clj-mutate-manifest-end
