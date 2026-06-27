@@ -21,12 +21,13 @@ Verify the user can connect two stocks with a flow using two semantic stock clic
 7. Wait until element `:flow "Flow1"` is visible (timeout 2 seconds).
 8. Assert element `:flow "Flow1"` shows `Flow1`.
 9. Assert element `:flow "Flow1"` shows `0`.
-10. Assert flow `Flow1` is directed from stock `Stock1` toward stock `Stock2` (visible arrow or ordered endpoint labels).
-11. Quit the application using `File` → `Quit`.
+10. Assert flow `Flow1` is directed from stock `Stock1` toward stock `Stock2` (visible arrowhead or ordered endpoint labels).
+11. Assert flow `Flow1` renders as a thick pipe, visibly wider than any connector arrow on the diagram.
+12. Quit the application using `File` → `Quit`.
 
 ## Pass criteria
 
 - Flow requires palette arm plus two stock clicks (source then destination).
 - Flow shows name and rate `0`.
-- Direction from `Stock1` to `Stock2` is user-visible.
+- Flow renders as a thick pipe; direction from `Stock1` to `Stock2` is user-visible.
 - No project API used.

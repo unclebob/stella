@@ -29,20 +29,21 @@ Verify the user can right-click a placed flow (same gesture as **Edit Stock**), 
 15. Wait until element `:flow "Drain"` is visible (timeout 2 seconds).
 16. Assert element `:flow "Drain"` shows `Drain`.
 17. Assert element `:flow "Drain"` shows `5`.
-18. Create a second flow: click palette `Flow`, click `:stock "Stock2"`, click `:stock "Stock1"`.
-19. Wait until element `:flow "Flow2"` is visible (timeout 2 seconds).
-20. Right-click element `:flow "Drain"`.
-21. Wait until dialog titled `Edit Flow` is visible (timeout 2 seconds).
-22. Type `Flow2` into dialog field `Name`.
-23. Click `OK` on the `Edit Flow` dialog.
-24. Assert element `:flow "Drain"` is still visible (duplicate rename rejected).
-25. Assert element `:flow "Flow2"` is visible.
-26. Right-click element `:flow "Drain"`.
-27. Wait until dialog titled `Edit Flow` is visible (timeout 2 seconds).
-28. Clear dialog field `Rate` (empty value).
-29. Click `OK` on the `Edit Flow` dialog.
-30. Assert element `:flow "Drain"` shows `5` (empty rate rejected).
-31. Quit the application using `File` → `Quit`.
+18. Assert element `:flow "Drain"` renders as a thick pipe (visibly wider than connector arrows).
+19. Create a second flow: click palette `Flow`, click `:stock "Stock2"`, click `:stock "Stock1"`.
+20. Wait until element `:flow "Flow2"` is visible (timeout 2 seconds).
+21. Right-click element `:flow "Drain"`.
+22. Wait until dialog titled `Edit Flow` is visible (timeout 2 seconds).
+23. Type `Flow2` into dialog field `Name`.
+24. Click `OK` on the `Edit Flow` dialog.
+25. Assert element `:flow "Drain"` is still visible (duplicate rename rejected).
+26. Assert element `:flow "Flow2"` is visible.
+27. Right-click element `:flow "Drain"`.
+28. Wait until dialog titled `Edit Flow` is visible (timeout 2 seconds).
+29. Clear dialog field `Rate` (empty value).
+30. Click `OK` on the `Edit Flow` dialog.
+31. Assert element `:flow "Drain"` shows `5` (empty rate rejected).
+32. Quit the application using `File` → `Quit`.
 
 ## Pass criteria
 

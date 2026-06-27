@@ -23,7 +23,8 @@ Consistent with `edit-stock`: right-click on canvas opens a modal dialog; `OK` c
 | Name rules | Non-empty, unique among flows |
 | Rate rules | Non-empty numeric string (parseable as a number) |
 | Rate meaning | Constant flow rate; no connector required |
-| Canvas display | Flow name and rate labels on the pipe (existing layout) |
+| Flow rendering | **Pipe** — thick tubular link between endpoints; visibly distinct from thin connector arrows |
+| Canvas display | Name and rate labels on the pipe |
 | Flow rename | Updates connector endpoint refs that target the flow by name |
 | Rejected edits | Dialog stays open; field values unchanged on canvas |
 
@@ -55,7 +56,7 @@ No new keys. Flow remains:
 | `stella.model` | `set-flow-name`, `set-flow-rate`, `rename-flow-endpoints` (connectors referencing `:kind :flow`) |
 | `stella.commands` | `set-flow-name!`, `set-flow-rate!` |
 | `stella.ui.edit-flow-dialog` | Modal dialog with labeled fields and OK/Cancel |
-| `stella.ui.canvas` | Right-click on flow opens edit dialog |
+| `stella.ui.canvas` | Render flows as pipes; right-click on flow opens edit dialog |
 | `stella.dispatch` | Dialog OK commits through commands; Cancel dismisses |
 | `stella.acceptance` | Step handlers for `features/model/edit-flow.feature` |
 | `stella.qa.ui-driver` | Reuse `right-click-element!`, `type-into-dialog-field!`, `click-ok-on-dialog!` |
