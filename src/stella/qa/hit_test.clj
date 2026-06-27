@@ -71,7 +71,10 @@
 
 (defn visible-text
   [^Stage stage]
-  (set (label-texts (.getRoot (.getScene stage)))))
+  (when-let [root (some-> stage .getScene .getRoot)]
+    (set (concat (label-texts root)
+                 (when-let [canvas (fx-nodes/find-by-id root "canvas")]
+                   (label-texts canvas))))))
 
 (defn- find-label-node
   [^Node node text]

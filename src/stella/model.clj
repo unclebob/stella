@@ -767,6 +767,24 @@
                    :formula ""})
         (update :next-connector-num #(max % (inc num))))))
 
+(defn converter-connector-formula
+  [diagram converter-name]
+  (when-let [id (converter-to-flow-connector-id diagram converter-name)]
+    (get-in diagram [:connectors id :formula] "")))
+
+(defn apply-converter-edit
+  [diagram converter-name {:keys [name formula]}]
+  (let [after-name (if (= name converter-name)
+                     diagram
+                     (set-converter-name diagram converter-name name))]
+    (if (and (not= name converter-name) (= after-name diagram))
+      diagram
+      (let [target (if (= after-name diagram) converter-name name)
+            prior-formula (or (converter-connector-formula after-name target) "")]
+        (if (= (str formula) (str prior-formula))
+          after-name
+          (set-converter-formula after-name target formula))))))
+
 (defn fixture-connector
   [diagram connector-name from-converter to-flow]
   (fixture-connector-endpoints diagram connector-name

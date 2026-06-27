@@ -31,3 +31,9 @@
 (def edit-flow-apply ::edit-flow-apply)
 
 (def edit-flow-cancel ::edit-flow-cancel)
+
+(def edit-converter-open ::edit-converter-open)
+
+(def edit-converter-apply ::edit-converter-apply)
+
+(def edit-converter-cancel ::edit-converter-cancel)
