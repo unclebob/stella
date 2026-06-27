@@ -78,6 +78,17 @@
           (when-not (model/stock-exists? (support/diagram-from world) name)
             (support/fail! (str "diagram missing stock " name)))
           world)}
+   {:pattern #"^the diagram should not contain stock <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param] example]
+          (let [name (support/require-value example name-param)]
+            (when (model/stock-exists? (support/diagram-from world) name)
+              (support/fail! (str "diagram still contains stock " name)))
+            world))}
+   {:pattern #"^the diagram should not contain stock ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name] _]
+          (when (model/stock-exists? (support/diagram-from world) name)
+            (support/fail! (str "diagram still contains stock " name)))
+          world)}
    {:pattern #"^stock <([A-Za-z0-9_]+)> should be at position <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param x-param y-param] example]
           (let [name (support/require-value example name-param)
@@ -306,6 +317,11 @@
           (when-not (= 1 (model/stock-count (support/diagram-from world)))
             (support/fail! (str "stock count " (model/stock-count (support/diagram-from world)) " expected 1")))
           world)}
+   {:pattern #"^the diagram stock count should be 2$"
+    :fn (fn [world _ _]
+          (when-not (= 2 (model/stock-count (support/diagram-from world)))
+            (support/fail! (str "stock count " (model/stock-count (support/diagram-from world)) " expected 2")))
+          world)}
    {:pattern #"^the stock placement tool should be disarmed$"
     :fn (fn [world _ _]
           (when-not (model/placement-disarmed? (support/diagram-from world))
@@ -399,6 +415,17 @@
     :fn (fn [world [_ flow] _]
           (when-not (model/flow-exists? (support/diagram-from world) flow)
             (support/fail! (str "diagram missing flow " flow)))
+          world)}
+   {:pattern #"^the diagram should not contain flow <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ flow-param] example]
+          (let [flow (support/require-value example flow-param)]
+            (when (model/flow-exists? (support/diagram-from world) flow)
+              (support/fail! (str "diagram still contains flow " flow)))
+            world))}
+   {:pattern #"^the diagram should not contain flow ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ flow] _]
+          (when (model/flow-exists? (support/diagram-from world) flow)
+            (support/fail! (str "diagram still contains flow " flow)))
           world)}
    {:pattern #"^flow <([A-Za-z0-9_]+)> should run from stock <([A-Za-z0-9_]+)> to stock <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ flow-param from-param to-param] example]
@@ -527,5 +554,5 @@
   ])
 
 ;; clj-mutate-manifest-begin
-;; {:version 1, :tested-at "2026-06-27T10:23:02.266141-05:00", :module-hash "-544100078", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1666922602"} {:id "def/placement-handlers", :kind "def", :line 7, :end-line 527, :hash "1841368671"}]}
+;; {:version 1, :tested-at "2026-06-27T10:27:42.679169-05:00", :module-hash "606313202", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1666922602"} {:id "def/placement-handlers", :kind "def", :line 7, :end-line 554, :hash "-1744849629"}]}
 ;; clj-mutate-manifest-end

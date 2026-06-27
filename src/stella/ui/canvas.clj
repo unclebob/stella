@@ -7,6 +7,26 @@
   [kind name]
   {:event events/endpoint-click :endpoint-kind kind :endpoint-name name})
 
+(defn- selection-click
+  [kind name]
+  {:event events/selection-click :object-kind kind :object-name name})
+
+(def ^:private selection-outline-style
+  "-fx-fill: transparent; -fx-stroke: #888; -fx-stroke-width: 2;")
+
+(defn- with-selection-outline
+  [diagram kind name width height children]
+  (if (model/selected? diagram kind name)
+    (into [{:fx/type :rectangle
+            :width (+ width 4)
+            :height (+ height 4)
+            :layout-x -2
+            :layout-y -2
+            :mouse-transparent true
+            :style selection-outline-style}]
+          children)
+    children))
+
 (def flow-pipe-stroke-width 8)
 (def connector-stroke-width 1)
 
@@ -164,25 +184,26 @@
 (defn- stock-desc
   [diagram {:keys [name x y] :as stock}]
   (let [{:keys [name min max]} (stock-icon-labels stock)
-        children (into [{:fx/type :rectangle
-                         :width 80
-                         :height 50
-                         :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
-                        {:fx/type :label
-                         :layout-x 20
-                         :layout-y 14
-                         :text name}
-                        {:fx/type :label
-                         :layout-x 4
-                         :layout-y 36
-                         :text min
-                         :style bound-label-style}]
-                       (when max
-                         [{:fx/type :label
-                           :layout-x 52
-                           :layout-y 36
-                           :text max
-                           :style bound-label-style}]))]
+        body (into [{:fx/type :rectangle
+                     :width 80
+                     :height 50
+                     :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
+                    {:fx/type :label
+                     :layout-x 20
+                     :layout-y 14
+                     :text name}
+                    {:fx/type :label
+                     :layout-x 4
+                     :layout-y 36
+                     :text min
+                     :style bound-label-style}]
+                   (when max
+                     [{:fx/type :label
+                       :layout-x 52
+                       :layout-y 36
+                       :text max
+                       :style bound-label-style}]))
+        children (with-selection-outline diagram :stock name 80 50 body)]
     (cond-> {:fx/type :group
              :fx/key (str "stock-" name)
              :id (str "stock-" name)
@@ -192,7 +213,8 @@
       (model/endpoint-clickable? diagram :stock)
       (assoc :on-mouse-clicked (endpoint-click :stock name))
       (= :idle (:placement-mode diagram))
-      (assoc :on-mouse-pressed {:event events/stock-drag-start :stock-name name}
+      (assoc :on-mouse-clicked (selection-click :stock name)
+             :on-mouse-pressed {:event events/stock-drag-start :stock-name name}
              :on-mouse-released {:event events/stock-drag-end :stock-name name})
       :always
       (assoc :on-context-menu-requested
@@ -200,28 +222,32 @@
 
 (defn- converter-desc
   [diagram {:keys [name x y]}]
-  (cond-> {:fx/type :group
-           :fx/key (str "converter-" name)
-           :id (str "converter-" name)
-           :layout-x x
-           :layout-y y
-           :children [{:fx/type :circle
-                       :center-x 25
-                       :center-y 25
-                       :radius 25
-                       :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
-                      {:fx/type :label
-                       :layout-x 8
-                       :layout-y 18
-                       :text name}]}
-    (model/endpoint-clickable? diagram :converter)
-    (assoc :on-mouse-clicked (endpoint-click :converter name))
-    (= :idle (:placement-mode diagram))
-    (assoc :on-mouse-pressed {:event events/converter-drag-start :converter-name name}
-           :on-mouse-released {:event events/converter-drag-end :converter-name name})
-    :always
-    (assoc :on-context-menu-requested
-           {:event events/edit-converter-open :converter-name name})))
+  (let [body (with-selection-outline
+              diagram :converter name 50 50
+              [{:fx/type :circle
+                :center-x 25
+                :center-y 25
+                :radius 25
+                :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
+               {:fx/type :label
+                :layout-x 8
+                :layout-y 18
+                :text name}])]
+    (cond-> {:fx/type :group
+             :fx/key (str "converter-" name)
+             :id (str "converter-" name)
+             :layout-x x
+             :layout-y y
+             :children body}
+      (model/endpoint-clickable? diagram :converter)
+      (assoc :on-mouse-clicked (endpoint-click :converter name))
+      (= :idle (:placement-mode diagram))
+      (assoc :on-mouse-clicked (selection-click :converter name)
+             :on-mouse-pressed {:event events/converter-drag-start :converter-name name}
+             :on-mouse-released {:event events/converter-drag-end :converter-name name})
+      :always
+      (assoc :on-context-menu-requested
+             {:event events/edit-converter-open :converter-name name}))))
 
 (defn- cloud-desc
   [diagram kind {:keys [name x y]}]
@@ -288,8 +314,8 @@
              :on-mouse-clicked {:event events/canvas-click}
              :children children}
       (= :idle (:placement-mode diagram))
-      (assoc :on-mouse-pressed {:event events/stock-drag-start :from-canvas true}
-             :on-mouse-released {:event events/stock-drag-end :from-canvas true}))))
+      (assoc :on-mouse-pressed {:event events/marquee-drag-start :from-canvas true}
+             :on-mouse-released {:event events/marquee-drag-end :from-canvas true}))))
 
 (defn canvas-desc
   [shell]

@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=924380c300bf6ad02046c164da4c5505230bfa46b88eb9dcb34c9cd643995fcb
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-06-27T15:28:49.872025Z","feature_name":"Delete selection","feature_path":"features/model/delete-selection.feature","background_hash":"000c135b9cc93370cc3c350f602528b0ca49d9548108f78d8be293c661e067f0","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 Feature: Delete selection
 
 Background:
