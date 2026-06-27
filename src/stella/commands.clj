@@ -55,6 +55,14 @@
   [diagram]
   (model/clear-selection diagram))
 
+(defn delete-selection!
+  [diagram]
+  (model/delete-selection diagram))
+
+(defn fixture-stock-connector!
+  [diagram connector-name from-stock to-converter]
+  (model/fixture-stock-connector diagram connector-name from-stock to-converter))
+
 (defn set-stock-name!
   [diagram old-name new-name]
   (model/set-stock-name diagram old-name new-name))
