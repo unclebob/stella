@@ -122,6 +122,12 @@
   (when-let [[_ stock] (stock-entry-by-name diagram name)]
     (get stock key)))
 
+(defn move-stock
+  [diagram name x y]
+  (if-let [[id stock] (stock-entry-by-name diagram name)]
+    (assoc-in diagram [:stocks id] (assoc stock :x x :y y))
+    diagram))
+
 (defn stock-initial-value
   [diagram name]
   (stock-field diagram name :initial-value))
