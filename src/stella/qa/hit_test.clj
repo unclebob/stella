@@ -8,8 +8,15 @@
            [javafx.scene.layout BorderPane Pane StackPane]
            [javafx.stage Stage]))
 
+(defn- find-canvas-node
+  [^Node root]
+  (or (fx-nodes/find-by-id root "canvas")
+      (fx-nodes/find-child root #(and (instance? Pane %)
+                                      (when-let [id (.getId ^Node %)]
+                                        (.startsWith id "canvas"))))))
+
 (defn- canvas-node [^Stage stage]
-  (or (some-> stage .getScene .getRoot (fx-nodes/find-by-id "canvas"))
+  (or (some-> stage .getScene .getRoot find-canvas-node)
       (when-let [root (some-> stage .getScene .getRoot)]
         (when (instance? BorderPane root)
           (let [center (.getCenter ^BorderPane root)]
@@ -73,7 +80,7 @@
   [^Stage stage]
   (when-let [root (some-> stage .getScene .getRoot)]
     (set (concat (label-texts root)
-                 (when-let [canvas (fx-nodes/find-by-id root "canvas")]
+                 (when-let [canvas (find-canvas-node root)]
                    (label-texts canvas))))))
 
 (defn- find-label-node

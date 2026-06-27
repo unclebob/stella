@@ -3,6 +3,7 @@
             [clojure.string :as str]
             [stella.app :as app]
             [stella.events :as events]
+            [stella.model :as model]
             [stella.fx.nodes :as fx-nodes]
             [stella.qa.hit-test :as hit-test]
             [stella.ui.canvas :as canvas])
@@ -181,6 +182,19 @@
     (.mouseRelease robot buttons)
     (Thread/sleep 100)))
 
+(defn- robot-drag!
+  [start-x start-y end-x end-y]
+  (let [^Robot robot (Robot.)
+        buttons (into-array MouseButton [MouseButton/PRIMARY])]
+    (.mouseMove robot start-x start-y)
+    (Thread/sleep 50)
+    (.mousePress robot buttons)
+    (Thread/sleep 50)
+    (.mouseMove robot end-x end-y)
+    (Thread/sleep 50)
+    (.mouseRelease robot buttons)
+    (Thread/sleep 200)))
+
 (defn- fire-context-menu!
   [^Node node screen-x screen-y]
   (when-let [^EventHandler handler (.getOnContextMenuRequested node)]
@@ -229,6 +243,47 @@
         ^EventHandler handler (.getOnMouseClicked node)]
     (when handler
       (.handle handler event))))
+
+(defn- screen-to-canvas-local
+  [^Node canvas screen-x screen-y]
+  (let [local (.screenToLocal canvas screen-x screen-y)]
+    [(int (.getX local)) (int (.getY local))]))
+
+(defn- canvas-local-to-scene
+  [^Node canvas canvas-x canvas-y]
+  (let [scene (.localToScene canvas (double canvas-x) (double canvas-y))]
+    [(int (.getX scene)) (int (.getY scene))]))
+
+(defn- synthesize-stock-drag!
+  [^Stage stage element-name _start-screen-x _start-screen-y end-screen-x end-screen-y]
+  (when-let [^Node canvas (hit-test/region-node stage :canvas)]
+    (when-let [[stock-x stock-y] (model/stock-position (:diagram @app/*state) element-name)]
+      (let [press-cx (+ stock-x (/ model/stock-icon-width 2))
+            press-cy (+ stock-y (/ model/stock-icon-height 2))
+            [release-cx release-cy] (screen-to-canvas-local canvas end-screen-x end-screen-y)
+            press-scene (canvas-local-to-scene canvas press-cx press-cy)
+            release-scene (canvas-local-to-scene canvas release-cx release-cy)]
+        (app/dispatch-map-event! {:event events/stock-drag-start
+                                  :from-canvas true
+                                  :canvas-coordinates [(int press-cx) (int press-cy)]
+                                  :scene-coordinates press-scene})
+        (Thread/sleep 50)
+        (app/dispatch-map-event! {:event events/stock-drag-end
+                                  :from-canvas true
+                                  :scene-coordinates release-scene})
+        (Thread/sleep 200)))))
+
+(defn drag-element!
+  [^Stage stage kind element-name region & [position]]
+  (when-let [diagram (:diagram @app/*state)]
+    (when-let [bounds (hit-test/element-bounds stage diagram kind element-name)]
+      (when-let [region-center (hit-test/region-center stage region)]
+        (let [start-x (+ (:x bounds) (/ (:width bounds) 2.0))
+              start-y (+ (:y bounds) (/ (:height bounds) 2.0))
+              {:keys [x y]} (resolve-position position region-center)]
+          (if (= kind :stock)
+            (synthesize-stock-drag! stage element-name start-x start-y x y)
+            (robot-drag! start-x start-y x y)))))))
 
 (defn click-in-region!
   [^Stage stage region & [position]]
@@ -332,6 +387,33 @@
       (when (pos? n)
         (Thread/sleep 100)
         (recur (dec n))))))
+
+(defn element-bounds
+  [^Stage stage kind name]
+  (hit-test/element-bounds stage (:diagram @app/*state) kind name))
+
+(defn- bounds-changed?
+  [before after]
+  (and before after
+       (or (> (Math/abs (- (:x after) (:x before))) 5)
+           (> (Math/abs (- (:y after) (:y before))) 5))))
+
+(defn wait-for-bounds-change!
+  [^Stage stage kind name initial-bounds & {:keys [attempts] :or {attempts 20}}]
+  (loop [n attempts]
+    (if (bounds-changed? initial-bounds (element-bounds stage kind name))
+      true
+      (when (pos? n)
+        (Thread/sleep 100)
+        (recur (dec n))))))
+
+(defn bounds-unchanged?
+  [^Stage stage kind name initial-bounds]
+  (not (bounds-changed? initial-bounds (element-bounds stage kind name))))
+
+(defn diagram-stock-count
+  [_stage]
+  (count (:stocks (:diagram @app/*state))))
 
 (defn- element-icon-labels
   [^Stage stage kind element-name]

@@ -57,6 +57,7 @@
             mid-y (/ (+ start-y end-y) 2.0)
             {:keys [line arrow]} (flow-pipe-body start-x start-y end-x end-y)]
         (cond-> {:fx/type :group
+                 :fx/key (str "flow-" name)
                  :id (str "flow-" name)
                  :children [line
                             arrow
@@ -98,6 +99,7 @@
                                      :text formula
                                      :style connector-formula-style}]))]
         {:fx/type :group
+         :fx/key (str "connector-" name)
          :id (str "connector-" name)
          :children [{:fx/type :line
                      :start-x start-x
@@ -182,12 +184,16 @@
                            :text max
                            :style bound-label-style}]))]
     (cond-> {:fx/type :group
+             :fx/key (str "stock-" name)
              :id (str "stock-" name)
              :layout-x x
              :layout-y y
              :children children}
       (model/endpoint-clickable? diagram :stock)
       (assoc :on-mouse-clicked (endpoint-click :stock name))
+      (= :idle (:placement-mode diagram))
+      (assoc :on-mouse-pressed {:event events/stock-drag-start :stock-name name}
+             :on-mouse-released {:event events/stock-drag-end :stock-name name})
       :always
       (assoc :on-context-menu-requested
              {:event events/edit-stock-open :stock-name name}))))
@@ -195,6 +201,7 @@
 (defn- converter-desc
   [diagram {:keys [name x y]}]
   (cond-> {:fx/type :group
+           :fx/key (str "converter-" name)
            :id (str "converter-" name)
            :layout-x x
            :layout-y y
@@ -216,6 +223,7 @@
 (defn- cloud-desc
   [diagram kind {:keys [name x y]}]
   (cond-> {:fx/type :group
+           :fx/key (str (clojure.core/name kind) "-" name)
            :id (str (clojure.core/name kind) "-" name)
            :layout-x x
            :layout-y y
@@ -272,10 +280,13 @@
                             (concat flow-nodes source-nodes sink-nodes
                                     converter-nodes stock-nodes))
         children (into [(canvas-background)] diagram-nodes)]
-    {:fx/type :stack-pane
-     :id "canvas"
-     :on-mouse-clicked {:event events/canvas-click}
-     :children children}))
+    (cond-> {:fx/type :stack-pane
+             :id "canvas"
+             :on-mouse-clicked {:event events/canvas-click}
+             :children children}
+      (= :idle (:placement-mode diagram))
+      (assoc :on-mouse-pressed {:event events/stock-drag-start :from-canvas true}
+             :on-mouse-released {:event events/stock-drag-end :from-canvas true}))))
 
 (defn canvas-desc
   [shell]

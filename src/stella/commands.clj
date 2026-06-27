@@ -35,6 +35,48 @@
   [diagram name x y]
   (model/move-stock diagram name x y))
 
+(defn move-stock-on-shell!
+  [shell name x y]
+  (update shell :diagram #(move-stock! % name x y)))
+
+(defn- resolve-stock-drag-name
+  [shell {:keys [stock-name canvas-coordinates]}]
+  (or stock-name
+      (when canvas-coordinates
+        (let [[cx cy] canvas-coordinates]
+          (model/stock-at-canvas-point (:diagram shell) cx cy)))))
+
+(defn start-stock-drag-on-shell!
+  [shell event]
+  (let [stock-name (resolve-stock-drag-name shell event)
+        scene-coordinates (:scene-coordinates event)]
+    (if (and (= :idle (get-in shell [:diagram :placement-mode]))
+             stock-name
+             scene-coordinates
+             (model/stock-exists? (:diagram shell) stock-name))
+      (let [[x y] (model/stock-position (:diagram shell) stock-name)
+            [sx sy] scene-coordinates]
+        (assoc shell :stock-drag {:name stock-name
+                                  :start-x x
+                                  :start-y y
+                                  :press-scene-x sx
+                                  :press-scene-y sy}))
+      shell)))
+
+(defn end-stock-drag-on-shell!
+  [shell {:keys [scene-coordinates]}]
+  (if-let [drag (:stock-drag shell)]
+    (if scene-coordinates
+      (let [stock-name (:name drag)
+            [rx ry] scene-coordinates
+            new-x (+ (:start-x drag) (- rx (:press-scene-x drag)))
+            new-y (+ (:start-y drag) (- ry (:press-scene-y drag)))]
+        (-> shell
+            (move-stock-on-shell! stock-name new-x new-y)
+            (dissoc :stock-drag)))
+      (dissoc shell :stock-drag))
+    shell))
+
 (defn move-converter!
   [diagram name x y]
   (model/move-converter diagram name x y))
