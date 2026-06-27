@@ -35,7 +35,13 @@ Gherkin does not use a select step; edits target flow by current name.
 
 ## Canvas rendering
 
-Flow pipe label (existing):
+Flows are **pipes**, not thin lines. A pipe is a thick tubular link from source endpoint anchor to destination endpoint anchor. Direction is visible at the destination end. Connectors remain thin directed arrows (`connectors` spec).
+
+| Element | Appearance |
+|---|---|
+| Pipe body | Thick, dark stroke; substantially wider than connector arrows |
+| Direction | Arrowhead or equivalent at destination end |
+| Labels | Name (top) and rate (bottom), centered on the pipe |
 
 | Label | Content |
 |---|---|
