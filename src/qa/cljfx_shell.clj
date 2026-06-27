@@ -38,6 +38,35 @@
       :ok nil
       (fail! "QA app session timed out"))))
 
+(defn- run-qa-auto-close! []
+  (when-not (= "5" (System/getProperty "stella.qa.auto-close-seconds"))
+    (fail! "qa-auto-close suite requires --qa 5"))
+  (let [started (promise)]
+    (fx/on-fx-thread
+      (try
+        (ui/launch-app!)
+        (deliver started :ok)
+        (catch Throwable t
+          (fail! (.getMessage t))
+          (deliver started :error))))
+    (case (deref started 30000 :timeout)
+      :ok nil
+      (fail! "Failed to launch Stella")))
+  (when-not (ui/wait-for-stage 50)
+    (fail! "Timed out waiting for Stella window"))
+  (when-not (= "Stella" (ui/window-title (ui/main-stage)))
+    (fail! (str "Window title is " (ui/window-title (ui/main-stage)))))
+  (pass! "qa-auto-close" "Window title is Stella")
+  (let [deadline (+ (System/currentTimeMillis) 10000)]
+    (loop []
+      (when (and (< (System/currentTimeMillis) deadline)
+                 (ui/main-stage))
+        (Thread/sleep 100)
+        (recur)))
+    (when (ui/main-stage)
+      (fail! "Stella window still visible after auto-close timeout")))
+  (pass! "qa-auto-close" "Application closed without manual quit"))
+
 (defn- run-shell-launch! []
   (with-app! {}
     (fn [^Stage stage]
@@ -536,7 +565,8 @@
         (pass! "drag-converter" "Quit requested")))))
 
 (def ^:private suites
-  {"shell-launch" run-shell-launch!
+  {"qa-auto-close" run-qa-auto-close!
+   "shell-launch" run-shell-launch!
    "shell-menus" run-shell-menus!
    "shell-about" run-shell-about!
    "shell-resize" run-shell-resize!
