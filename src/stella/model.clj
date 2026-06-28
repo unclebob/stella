@@ -647,7 +647,7 @@
   [diagram]
   (assoc diagram :flow-draft nil))
 
-(declare converter-exists?)
+(declare converter-exists? connector-exists?)
 
 (defn- endpoint-existence-checks
   []
@@ -655,6 +655,7 @@
    :sink sink-exists?
    :converter converter-exists?
    :flow flow-exists?
+   :connector connector-exists?
    :source source-exists?})
 
 (defn- endpoint-exists?
@@ -951,6 +952,19 @@
   [[mx1 my1 mx2 my2] [ox1 oy1 ox2 oy2]]
   (and (< mx1 ox2) (> mx2 ox1) (< my1 oy2) (> my2 oy1)))
 
+(defn- point-in-rect?
+  [[x1 y1 x2 y2] x y]
+  (and (<= x1 x x2)
+       (<= y1 y y2)))
+
+(defn- circle-intersects-rect?
+  [[x1 y1 x2 y2] cx cy radius]
+  (let [nearest-x (-> cx (max x1) (min x2))
+        nearest-y (-> cy (max y1) (min y2))]
+    (<= (+ (* (- cx nearest-x) (- cx nearest-x))
+           (* (- cy nearest-y) (- cy nearest-y)))
+        (* radius radius))))
+
 (defn- stock-bounds
   [{:keys [x y]}]
   [x y (+ x 80) (+ y 50)])
@@ -971,6 +985,105 @@
             [tx ty] (endpoint-anchor to-pos (:kind to) :left)]
         [(min fx tx) (- (min fy ty) padding)
          (max fx tx) (+ (max fy ty) padding)]))))
+
+(defn- point-segment-distance
+  [px py ax ay bx by]
+  (let [dx (- bx ax)
+        dy (- by ay)
+        length-squared (+ (* dx dx) (* dy dy))]
+    (if (zero? length-squared)
+      (Math/sqrt (+ (* (- px ax) (- px ax))
+                    (* (- py ay) (- py ay))))
+      (let [t (-> (/ (+ (* (- px ax) dx)
+                        (* (- py ay) dy))
+                     length-squared)
+                  (max 0.0)
+                  (min 1.0))
+            cx (+ ax (* t dx))
+            cy (+ ay (* t dy))]
+        (Math/sqrt (+ (* (- px cx) (- px cx))
+                      (* (- py cy) (- py cy))))))))
+
+(defn- endpoint-center
+  [[x y] kind]
+  (case kind
+    (:stock :source :sink) [(+ x 40.0) (+ y 25.0)]
+    :converter [(+ x 25.0) (+ y 25.0)]
+    :flow [x y]
+    [x y]))
+
+(defn- ellipse-boundary-point
+  [[cx cy] [tx ty] radius-x radius-y]
+  (let [dx (- tx cx)
+        dy (- ty cy)
+        scale (Math/sqrt (+ (/ (* dx dx) (* radius-x radius-x))
+                            (/ (* dy dy) (* radius-y radius-y))))]
+    (if (zero? scale)
+      [cx cy]
+      [(+ cx (/ dx scale)) (+ cy (/ dy scale))])))
+
+(defn- rectangle-boundary-point
+  [[cx cy] [tx ty] half-width half-height]
+  (let [dx (- tx cx)
+        dy (- ty cy)
+        scale (max (if (zero? half-width) 0.0 (/ (Math/abs dx) half-width))
+                   (if (zero? half-height) 0.0 (/ (Math/abs dy) half-height)))]
+    (if (zero? scale)
+      [cx cy]
+      [(+ cx (/ dx scale)) (+ cy (/ dy scale))])))
+
+(defn- endpoint-boundary-point
+  [pos kind target]
+  (let [center (endpoint-center pos kind)]
+    (case kind
+      :stock (rectangle-boundary-point center target 40.0 25.0)
+      (:source :sink) (ellipse-boundary-point center target 40.0 25.0)
+      :converter (ellipse-boundary-point center target 25.0 25.0)
+      :flow (ellipse-boundary-point center target 5.0 5.0)
+      center)))
+
+(defn- visible-link-endpoints
+  [from-pos from-kind to-pos to-kind]
+  (let [from-center (endpoint-center from-pos from-kind)
+        to-center (endpoint-center to-pos to-kind)]
+    [(endpoint-boundary-point from-pos from-kind to-center)
+     (endpoint-boundary-point to-pos to-kind from-center)]))
+
+(defn- point-near-link?
+  [diagram from to padding x y]
+  (when-let [from-pos (endpoint-position diagram from)]
+    (when-let [to-pos (endpoint-position diagram to)]
+      (let [[[fx fy] [tx ty]] (visible-link-endpoints from-pos (:kind from)
+                                                      to-pos (:kind to))]
+        (<= (point-segment-distance x y fx fy tx ty) padding)))))
+
+(defn- first-object-at
+  [objects]
+  (some identity objects))
+
+(defn object-at-canvas-point
+  [diagram x y]
+  (let [click-radius 5.0]
+    (first-object-at
+     (concat
+      (for [[_ {:keys [name] :as stock}] (:stocks diagram)
+            :when (circle-intersects-rect? (stock-bounds stock) x y click-radius)]
+        (object-ref :stock name))
+      (for [[_ {:keys [name] :as source}] (:sources diagram)
+            :when (circle-intersects-rect? (cloud-bounds source) x y click-radius)]
+        (object-ref :source name))
+      (for [[_ {:keys [name] :as sink}] (:sinks diagram)
+            :when (circle-intersects-rect? (cloud-bounds sink) x y click-radius)]
+        (object-ref :sink name))
+      (for [[_ {:keys [name from to]}] (:flows diagram)
+            :when (point-near-link? diagram from to (+ 5.0 click-radius) x y)]
+        (object-ref :flow name))
+      (for [[_ {:keys [name] :as converter}] (:converters diagram)
+            :when (circle-intersects-rect? (converter-bounds converter) x y click-radius)]
+        (object-ref :converter name))
+      (for [[_ {:keys [name from to]}] (:connectors diagram)
+            :when (point-near-link? diagram from to (+ 10.0 click-radius) x y)]
+        (object-ref :connector name))))))
 
 (defn- selectable-objects-with-bounds
   [diagram]
@@ -1004,11 +1117,16 @@
      (if (endpoint-exists? diagram kind name)
        (let [ref (object-ref kind name)
              selection (:selection diagram #{})]
-         (assoc diagram :selection
-                (if (contains? selection ref)
-                  (disj selection ref)
-                  #{ref})))
+         (if (= selection #{ref})
+           diagram
+           (assoc diagram :selection #{ref})))
        diagram))))
+
+(defn click-select-at
+  [diagram x y]
+  (if-let [{:keys [kind id]} (object-at-canvas-point diagram x y)]
+    (click-select diagram kind id)
+    diagram))
 
 (defn shift-click-select
   [diagram kind name]
@@ -1023,6 +1141,12 @@
                   (disj selection ref)
                   (conj selection ref))))
        diagram))))
+
+(defn shift-click-select-at
+  [diagram x y]
+  (if-let [{:keys [kind id]} (object-at-canvas-point diagram x y)]
+    (shift-click-select diagram kind id)
+    diagram))
 
 (defn marquee-select
   [diagram x1 y1 x2 y2]

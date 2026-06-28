@@ -25,12 +25,12 @@
                          :sink
                          "Sink1"))))
 
-(deftest click-select-toggle-off-test
+(deftest click-select-keeps-selection-test
   (let [diagram (-> (base-diagram)
                     (cmd/click-select! :stock "Stock1")
                     (cmd/click-select! :stock "Stock1"))]
-    (is (not (model/selected? diagram :stock "Stock1")))
-    (is (model/nothing-selected? diagram))))
+    (is (model/selected? diagram :stock "Stock1"))
+    (is (= 1 (model/selection-count diagram)))))
 
 (deftest click-select-replaces-selection-test
   (let [diagram (-> (base-diagram)

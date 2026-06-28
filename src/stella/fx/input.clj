@@ -1,7 +1,8 @@
 (ns stella.fx.input
   (:require [stella.events :as events]
             [stella.fx.nodes :as fx-nodes])
-  (:import [javafx.scene.control TextField]
+  (:import [javafx.scene Node]
+           [javafx.scene.control TextField]
            [javafx.scene.input KeyEvent MouseEvent]))
 
 (defn- event-type
@@ -13,6 +14,13 @@
   [event]
   (when-let [^MouseEvent mouse (:fx/event event)]
     [(int (.getX mouse)) (int (.getY mouse))]))
+
+(defn- canvas-coordinates
+  [event]
+  (when-let [^MouseEvent mouse (:fx/event event)]
+    (when-let [^Node canvas (fx-nodes/find-by-id-in-windows "canvas")]
+      (let [point (.sceneToLocal canvas (.getSceneX mouse) (.getSceneY mouse))]
+        [(int (.getX point)) (int (.getY point))]))))
 
 (defn- scene-coordinates
   [event]
@@ -50,7 +58,7 @@
   "Adds derived fields to platform events before dispatch."
   [event]
   (cond
-    (= events/canvas-click (event-type event))
+    (#{events/canvas-click events/canvas-move} (event-type event))
     (assoc event :coordinates (click-coordinates event))
 
     (#{events/stock-drag-start events/stock-drag events/stock-drag-end
@@ -65,9 +73,11 @@
     (= events/selection-click (event-type event))
     (cond-> event
       (nil? (:shift-key event))
-      (assoc :shift-key (boolean (shift-down? event))))
+      (assoc :shift-key (boolean (shift-down? event)))
+      (nil? (:canvas-coordinates event))
+      (assoc :canvas-coordinates (canvas-coordinates event)))
 
-    (#{events/marquee-drag-start events/marquee-drag-end} (event-type event))
+    (#{events/marquee-drag-start events/marquee-drag events/marquee-drag-end} (event-type event))
     (cond-> event
       (and (:from-canvas event) (not (:canvas-coordinates event)))
       (assoc :canvas-coordinates (click-coordinates event)))

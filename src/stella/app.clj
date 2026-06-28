@@ -127,10 +127,11 @@
 (defn- skip-debug-event?
   [event raw-event]
   (and (instance? MouseEvent raw-event)
-       (canvas-fallback-event? event)
-       (let [target (.getTarget ^MouseEvent raw-event)
-             path (node-path (if (instance? javafx.scene.Node target) target nil))]
-         (diagram-object-target? path))))
+       (or (= events/canvas-move (dispatch/event-type event))
+           (and (canvas-fallback-event? event)
+                (let [target (.getTarget ^MouseEvent raw-event)
+                      path (node-path (if (instance? javafx.scene.Node target) target nil))]
+                  (diagram-object-target? path))))))
 
 (defn- debug-log-event [event]
   (when (qa-args/debug?)
@@ -235,7 +236,8 @@
      (let [shell (swap! state-atom dispatch/apply-event event)]
        (when-let [id (animation-target-id before-shell shell event)]
          (fx-effects/pulse-node! id))
-       (when (or (dispatch/diagram-event? etype)
+       (when (or (and (dispatch/diagram-event? etype)
+                      (not= events/canvas-move etype))
                  (= events/edit-stock-apply etype)
                  (= events/edit-flow-apply etype)
                  (= events/edit-converter-apply etype))

@@ -20,6 +20,8 @@
 
 (def canvas-click ::canvas-click)
 
+(def canvas-move ::canvas-move)
+
 (def endpoint-click ::endpoint-click)
 
 (def edit-stock-open ::edit-stock-open)
@@ -61,6 +63,8 @@
 (def selection-click ::selection-click)
 
 (def marquee-drag-start ::marquee-drag-start)
+
+(def marquee-drag ::marquee-drag)
 
 (def marquee-drag-end ::marquee-drag-end)
 

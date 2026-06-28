@@ -25,7 +25,9 @@
   [shell [x y]]
   (if-let [place! (get canvas-place-commands (placement-mode shell))]
     (place! shell x y)
-    shell))
+    (if (= :idle (placement-mode shell))
+      (cmd/click-select-at-on-shell! shell x y)
+      shell)))
 
 (defn- diagram-shell-updaters
   []
@@ -51,6 +53,10 @@
                          (if-let [[x y] (:coordinates event)]
                            (place-on-canvas shell [x y])
                            shell))
+   events/canvas-move (fn [shell event]
+                        (if-let [coordinates (:coordinates event)]
+                          (cmd/update-canvas-preview-on-shell! shell coordinates)
+                          shell))
    events/edit-stock-open (fn [shell event]
                             (if (:stock-name event)
                               (cmd/open-edit-stock-on-shell! shell (:stock-name event))
@@ -109,15 +115,21 @@
    events/cloud-drag-end (fn [shell event]
                            (cmd/end-cloud-drag-on-shell! shell event))
    events/selection-click (fn [shell event]
-                            (if (:shift-key event)
-                              (cmd/shift-click-select-on-shell! shell
-                                                                (:object-kind event)
-                                                                (:object-name event))
-                              (cmd/click-select-on-shell! shell
-                                                          (:object-kind event)
-                                                          (:object-name event))))
+                            (if-let [[x y] (:canvas-coordinates event)]
+                              (if (:shift-key event)
+                                (cmd/shift-click-select-at-on-shell! shell x y)
+                                (cmd/click-select-at-on-shell! shell x y))
+                              (if (:shift-key event)
+                                (cmd/shift-click-select-on-shell! shell
+                                                                  (:object-kind event)
+                                                                  (:object-name event))
+                                (cmd/click-select-on-shell! shell
+                                                            (:object-kind event)
+                                                            (:object-name event)))))
    events/marquee-drag-start (fn [shell event]
                                (cmd/start-marquee-drag-on-shell! shell event))
+   events/marquee-drag (fn [shell event]
+                         (cmd/drag-marquee-on-shell! shell event))
    events/marquee-drag-end (fn [shell event]
                              (cmd/end-marquee-drag-on-shell! shell event))
    events/clear-selection (fn [shell event]
