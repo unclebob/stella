@@ -346,6 +346,20 @@
   (when-let [[_ sink] (sink-entry-by-name diagram name)]
     [(:x sink) (:y sink)]))
 
+(defn- move-cloud
+  [diagram collection entry-by-name name x y]
+  (if-let [[id cloud] (entry-by-name diagram name)]
+    (assoc-in diagram [collection id] (assoc cloud :x x :y y))
+    diagram))
+
+(defn move-source
+  [diagram name x y]
+  (move-cloud diagram :sources source-entry-by-name name x y))
+
+(defn move-sink
+  [diagram name x y]
+  (move-cloud diagram :sinks sink-entry-by-name name x y))
+
 (declare flow-midpoint converter-position)
 
 (defn- endpoint-position-resolvers
@@ -391,6 +405,32 @@
 (defn sinks
   [diagram]
   (vals (:sinks diagram)))
+
+(defn- cloud-at-canvas-point-in
+  [clouds cx cy]
+  (some (fn [{:keys [name x y]}]
+          (when (and (<= x cx (+ x 80))
+                     (<= y cy (+ y 50)))
+            name))
+        clouds))
+
+(defn source-at-canvas-point
+  "Returns the source name whose icon contains canvas-local point [x y], or nil."
+  [diagram cx cy]
+  (cloud-at-canvas-point-in (vals (:sources diagram)) cx cy))
+
+(defn sink-at-canvas-point
+  "Returns the sink name whose icon contains canvas-local point [x y], or nil."
+  [diagram cx cy]
+  (cloud-at-canvas-point-in (vals (:sinks diagram)) cx cy))
+
+(defn cloud-at-canvas-point
+  "Returns {:kind k :name n} for a source/sink at canvas-local point [x y], or nil."
+  [diagram cx cy]
+  (or (some->> (source-at-canvas-point diagram cx cy)
+               (hash-map :kind :source :name))
+      (some->> (sink-at-canvas-point diagram cx cy)
+               (hash-map :kind :sink :name))))
 
 (defn fixture-source
   [diagram name x y]

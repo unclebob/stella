@@ -4,7 +4,7 @@
 
 (defn edit-stock-overlay-desc
   [{:keys [name initial-value min-value max-value]}]
-  {:fx/type :vbox
+  {:fx/type :v-box
    :id "edit-stock-overlay"
    :style "-fx-background-color: white; -fx-padding: 16; -fx-border-color: #666; -fx-border-width: 1;"
    :spacing 12
@@ -22,7 +22,7 @@
                                        [1 "Initial value" "edit-stock-initial" initial-value]
                                        [2 "Minimum" "edit-stock-min" min-value]
                                        [3 "Maximum" "edit-stock-max" max-value]]))}
-              {:fx/type :hbox
+              {:fx/type :h-box
                :spacing 8
                :children [{:fx/type :button
                             :text "Cancel"

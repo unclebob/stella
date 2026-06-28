@@ -2,6 +2,8 @@
 
 (def quit ::quit)
 
+(def window-close ::window-close)
+
 (def show-about ::show-about)
 
 (def arm-stock ::arm-stock)
@@ -45,6 +47,10 @@
 (def converter-drag-start ::converter-drag-start)
 
 (def converter-drag-end ::converter-drag-end)
+
+(def cloud-drag-start ::cloud-drag-start)
+
+(def cloud-drag-end ::cloud-drag-end)
 
 (def selection-click ::selection-click)
 

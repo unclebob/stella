@@ -95,6 +95,10 @@
                                  (cmd/start-converter-drag-on-shell! shell event))
    events/converter-drag-end (fn [shell event]
                                (cmd/end-converter-drag-on-shell! shell event))
+   events/cloud-drag-start (fn [shell event]
+                             (cmd/start-cloud-drag-on-shell! shell event))
+   events/cloud-drag-end (fn [shell event]
+                           (cmd/end-cloud-drag-on-shell! shell event))
    events/selection-click (fn [shell event]
                             (if (:shift-key event)
                               (cmd/shift-click-select-on-shell! shell

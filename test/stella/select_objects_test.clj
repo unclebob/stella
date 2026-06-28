@@ -14,6 +14,17 @@
     (is (model/selected? diagram :stock "Stock1"))
     (is (= 1 (model/selection-count diagram)))))
 
+(deftest click-select-clouds-test
+  (let [diagram (-> (base-diagram)
+                    (cmd/fixture-source! "Source1" 50 150)
+                    (cmd/fixture-sink! "Sink1" 400 150))]
+    (is (model/selected? (cmd/click-select! diagram :source "Source1")
+                         :source
+                         "Source1"))
+    (is (model/selected? (cmd/click-select! diagram :sink "Sink1")
+                         :sink
+                         "Sink1"))))
+
 (deftest click-select-toggle-off-test
   (let [diagram (-> (base-diagram)
                     (cmd/click-select! :stock "Stock1")

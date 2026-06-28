@@ -17,6 +17,30 @@
     (is (model/sink-exists? diagram "Sink1"))
     (is (= [400 150] (model/sink-position diagram "Sink1")))))
 
+(deftest move-source-test
+  (let [diagram (-> (model/default-diagram)
+                    (model/fixture-source "Source1" 50 150)
+                    (model/move-source "Source1" 80 120))]
+    (is (= [80 120] (model/source-position diagram "Source1")))))
+
+(deftest move-sink-test
+  (let [diagram (-> (model/default-diagram)
+                    (model/fixture-sink "Sink1" 400 150)
+                    (model/move-sink "Sink1" 420 180))]
+    (is (= [420 180] (model/sink-position diagram "Sink1")))))
+
+(deftest cloud-at-canvas-point-test
+  (let [diagram (-> (model/default-diagram)
+                    (model/fixture-source "Source1" 50 150)
+                    (model/fixture-sink "Sink1" 400 150))]
+    (is (= "Source1" (model/source-at-canvas-point diagram 60 160)))
+    (is (= "Sink1" (model/sink-at-canvas-point diagram 410 160)))
+    (is (= {:kind :source :name "Source1"}
+           (model/cloud-at-canvas-point diagram 60 160)))
+    (is (= {:kind :sink :name "Sink1"}
+           (model/cloud-at-canvas-point diagram 410 160)))
+    (is (nil? (model/cloud-at-canvas-point diagram 0 0)))))
+
 (deftest source-to-stock-flow-test
   (let [diagram (-> (model/default-diagram)
                     (model/fixture-stock "Stock1" 200 150)

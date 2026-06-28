@@ -39,6 +39,21 @@
   [shell name x y]
   (update shell :diagram #(move-stock! % name x y)))
 
+(defn move-source!
+  [diagram name x y]
+  (model/move-source diagram name x y))
+
+(defn move-sink!
+  [diagram name x y]
+  (model/move-sink diagram name x y))
+
+(defn move-cloud-on-shell!
+  [shell kind name x y]
+  (case kind
+    :source (update shell :diagram #(move-source! % name x y))
+    :sink (update shell :diagram #(move-sink! % name x y))
+    shell))
+
 (defn- resolve-stock-drag-name
   [shell {:keys [stock-name canvas-coordinates]}]
   (or stock-name
@@ -75,6 +90,60 @@
             (move-stock-on-shell! stock-name new-x new-y)
             (dissoc :stock-drag)))
       (dissoc shell :stock-drag))
+    shell))
+
+(defn- resolve-cloud-drag-target
+  [shell {:keys [cloud-kind cloud-name canvas-coordinates]}]
+  (or (when (and cloud-kind cloud-name)
+        {:kind cloud-kind :name cloud-name})
+      (when canvas-coordinates
+        (let [[cx cy] canvas-coordinates]
+          (model/cloud-at-canvas-point (:diagram shell) cx cy)))))
+
+(defn- cloud-exists?
+  [diagram kind name]
+  (case kind
+    :source (model/source-exists? diagram name)
+    :sink (model/sink-exists? diagram name)
+    false))
+
+(defn- cloud-position
+  [diagram kind name]
+  (case kind
+    :source (model/source-position diagram name)
+    :sink (model/sink-position diagram name)
+    nil))
+
+(defn start-cloud-drag-on-shell!
+  [shell event]
+  (let [{:keys [kind name]} (resolve-cloud-drag-target shell event)
+        scene-coordinates (:scene-coordinates event)]
+    (if (and (= :idle (get-in shell [:diagram :placement-mode]))
+             kind
+             name
+             scene-coordinates
+             (cloud-exists? (:diagram shell) kind name))
+      (let [[x y] (cloud-position (:diagram shell) kind name)
+            [sx sy] scene-coordinates]
+        (assoc shell :cloud-drag {:kind kind
+                                  :name name
+                                  :start-x x
+                                  :start-y y
+                                  :press-scene-x sx
+                                  :press-scene-y sy}))
+      shell)))
+
+(defn end-cloud-drag-on-shell!
+  [shell {:keys [scene-coordinates]}]
+  (if-let [drag (:cloud-drag shell)]
+    (if scene-coordinates
+      (let [[rx ry] scene-coordinates
+            new-x (+ (:start-x drag) (- rx (:press-scene-x drag)))
+            new-y (+ (:start-y drag) (- ry (:press-scene-y drag)))]
+        (-> shell
+            (move-cloud-on-shell! (:kind drag) (:name drag) new-x new-y)
+            (dissoc :cloud-drag)))
+      (dissoc shell :cloud-drag))
     shell))
 
 (defn move-converter!
@@ -172,11 +241,13 @@
   (if (and (= :idle (get-in shell [:diagram :placement-mode]))
            canvas-coordinates
            (not (:stock-drag shell))
-           (not (:converter-drag shell)))
+           (not (:converter-drag shell))
+           (not (:cloud-drag shell)))
     (let [[cx cy] canvas-coordinates
           diagram (:diagram shell)]
       (if (or (model/stock-at-canvas-point diagram cx cy)
-              (model/converter-at-canvas-point diagram cx cy))
+              (model/converter-at-canvas-point diagram cx cy)
+              (model/cloud-at-canvas-point diagram cx cy))
         shell
         (assoc shell :marquee-drag {:start-x cx :start-y cy})))
     shell))

@@ -5,6 +5,10 @@
             [stella.model :as model]
             [stella.ui.canvas :as canvas]))
 
+(defn- descendant-types
+  [desc]
+  (tree-seq map? :children desc))
+
 (deftest canvas-description-test
   (let [shell (model/default-shell)
         desc (canvas/canvas-desc shell)]
@@ -36,6 +40,31 @@
     (is (= 2 (count clouds)))
     (is (= #{"source-Source1" "sink-Sink1"} (set (map :id clouds))))))
 
+(deftest canvas-clouds-select-and-drag-when-idle-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-source! "Source1" 50 80)
+                    (cmd/fixture-sink! "Sink1" 250 80))
+        shell (assoc (cmd/default-shell! nil) :diagram diagram)
+        desc (canvas/canvas-desc shell)
+        source (first (filter #(= "source-Source1" (:id %)) (:children desc)))
+        sink (first (filter #(= "sink-Sink1" (:id %)) (:children desc)))]
+    (is (= {:event events/selection-click
+            :object-kind :source
+            :object-name "Source1"}
+           (:on-mouse-clicked source)))
+    (is (= {:event events/cloud-drag-start
+            :cloud-kind :source
+            :cloud-name "Source1"}
+           (:on-mouse-pressed source)))
+    (is (= {:event events/selection-click
+            :object-kind :sink
+            :object-name "Sink1"}
+           (:on-mouse-clicked sink)))
+    (is (= {:event events/cloud-drag-end
+            :cloud-kind :sink
+            :cloud-name "Sink1"}
+           (:on-mouse-released sink)))))
+
 (deftest canvas-renders-flows-test
   (let [diagram (-> (cmd/default-diagram! nil)
                     (cmd/fixture-stock! "Stock1" 100 100)
@@ -44,13 +73,54 @@
         shell (assoc (cmd/default-shell! nil) :diagram diagram)
         desc (canvas/canvas-desc shell)
         flow (first (filter #(= "flow-Flow1" (:id %)) (:children desc)))
-        pipe-line (first (filter #(= :line (:fx/type %)) (:children flow)))
+        pipe-lines (filter #(= :line (:fx/type %)) (:children flow))
         arrowhead (first (filter #(= :polygon (:fx/type %)) (:children flow)))]
     (is (some? flow))
-    (is (>= (:stroke-width pipe-line) 6))
-    (is (some? arrowhead))
+    (is (= 2 (count pipe-lines)))
+    (is (every? #(>= (:stroke-width %) 8) pipe-lines))
+    (is (nil? arrowhead))
     (is (= {:name "Flow1" :rate "0"}
            (canvas/flow-canvas-labels diagram "Flow1")))))
+
+(deftest canvas-flows-select-when-idle-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-stock! "Stock1" 100 100)
+                    (cmd/fixture-stock! "Stock2" 300 200)
+                    (cmd/fixture-flow! "Flow1" "Stock1" "Stock2"))
+        shell (assoc (cmd/default-shell! nil) :diagram diagram)
+        flow (first (filter #(= "flow-Flow1" (:id %))
+                            (:children (canvas/canvas-desc shell))))]
+    (is (= {:event events/selection-click
+            :object-kind :flow
+            :object-name "Flow1"}
+           (:on-mouse-clicked flow)))))
+
+(deftest canvas-selected-flow-renders-highlight-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-stock! "Stock1" 100 100)
+                    (cmd/fixture-stock! "Stock2" 300 200)
+                    (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                    (cmd/click-select! :flow "Flow1"))
+        shell (assoc (cmd/default-shell! nil) :diagram diagram)
+        flow (first (filter #(= "flow-Flow1" (:id %))
+                            (:children (canvas/canvas-desc shell))))
+        pipe-lines (filter #(= :line (:fx/type %)) (:children flow))
+        highlight (first (filter #(= "#2f80ed" (:stroke %)) pipe-lines))]
+    (is (= 3 (count pipe-lines)))
+    (is (= 16 (:stroke-width highlight)))
+    (is (= 0.35 (:opacity highlight)))))
+
+(deftest canvas-uses-cljfx-layout-type-names-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-stock! "Stock1" 100 100)
+                    (cmd/fixture-stock! "Stock2" 300 200)
+                    (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                    (cmd/fixture-converter! "Converter1" 100 250)
+                    (cmd/fixture-connector! "Connector1" "Converter1" "Flow1"))
+        shell (assoc (cmd/default-shell! nil) :diagram diagram)
+        types (set (map :fx/type (descendant-types (canvas/canvas-desc shell))))]
+    (is (contains? types :v-box))
+    (is (not (contains? types :vbox)))))
 
 (deftest flow-canvas-labels-test
   (let [diagram (-> (cmd/default-diagram! nil)
@@ -93,7 +163,7 @@
                             first
                             :children
                             (filter #(= :line (:fx/type %)))
-                            first)
+                            last)
         connector-line (some->> (:children desc)
                                  (filter #(re-matches #"connector-.*" (:id %)))
                                  first

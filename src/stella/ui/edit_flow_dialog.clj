@@ -4,7 +4,7 @@
 
 (defn edit-flow-overlay-desc
   [{:keys [name rate]}]
-  {:fx/type :vbox
+  {:fx/type :v-box
    :id "edit-flow-overlay"
    :style "-fx-background-color: white; -fx-padding: 16; -fx-border-color: #666; -fx-border-width: 1;"
    :spacing 12
@@ -20,7 +20,7 @@
                                         (edit-dialog/labeled-field row label field-id text))
                                       [[0 "Name" "edit-flow-name" name]
                                        [1 "Rate" "edit-flow-rate" rate]]))}
-              {:fx/type :hbox
+              {:fx/type :h-box
                :spacing 8
                :children [{:fx/type :button
                             :text "Cancel"

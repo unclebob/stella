@@ -121,3 +121,16 @@
                                                  :endpoint-name "Flow1"})]
     (is (= {:kind :converter :id "Converter1"} (:from (:connector-draft (:diagram drafted)))))
     (is (model/connector-exists? (:diagram connected) "Connector1"))))
+
+(deftest apply-event-cloud-drag-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram #(model/fixture-source % "Source1" 50 150)))
+        dragging (dispatch/apply-event shell {:event events/cloud-drag-start
+                                              :cloud-kind :source
+                                              :cloud-name "Source1"
+                                              :scene-coordinates [60 160]})
+        dragged (dispatch/apply-event dragging {:event events/cloud-drag-end
+                                                :scene-coordinates [100 210]})]
+    (is (:cloud-drag dragging))
+    (is (= [90 200] (model/source-position (:diagram dragged) "Source1")))
+    (is (nil? (:cloud-drag dragged)))))
