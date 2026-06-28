@@ -182,14 +182,59 @@
 
         :else nil))))
 
+(defn- placed-object-animation-id
+  [before-shell after-shell event]
+  (when (= events/canvas-click (dispatch/event-type event))
+    (let [before-diagram (:diagram before-shell)
+          after-diagram (:diagram after-shell)]
+      (case (:placement-mode before-diagram)
+        :stock (when (< (:next-stock-num before-diagram)
+                        (:next-stock-num after-diagram))
+                 (str "stock-Stock" (dec (:next-stock-num after-diagram))))
+        :source (when (< (:next-source-num before-diagram)
+                         (:next-source-num after-diagram))
+                  (str "source-Source" (dec (:next-source-num after-diagram))))
+        :sink (when (< (:next-sink-num before-diagram)
+                       (:next-sink-num after-diagram))
+                (str "sink-Sink" (dec (:next-sink-num after-diagram))))
+        :converter (when (< (:next-converter-num before-diagram)
+                            (:next-converter-num after-diagram))
+                     (str "converter-Converter" (dec (:next-converter-num after-diagram))))
+        nil))))
+
+(defn- dropped-object-animation-id
+  [before-shell event]
+  (case (dispatch/event-type event)
+    events/stock-drag-end
+    (when-let [name (get-in before-shell [:stock-drag :name])]
+      (str "stock-" name))
+
+    events/converter-drag-end
+    (when-let [name (get-in before-shell [:converter-drag :name])]
+      (str "converter-" name))
+
+    events/cloud-drag-end
+    (when-let [{:keys [kind name]} (:cloud-drag before-shell)]
+      (str (clojure.core/name kind) "-" name))
+
+    nil))
+
+(defn- animation-target-id
+  [before-shell after-shell event]
+  (or (placed-object-animation-id before-shell after-shell event)
+      (dropped-object-animation-id before-shell event)))
+
 (defn dispatch-map-event!
   ([event] (dispatch-map-event! event *state))
   ([event state-atom]
    (debug-log-event event)
    (let [event (fx-input/enrich-event event)
          etype (dispatch/event-type event)
-         effect (dispatch/event-effect event)]
+         effect (dispatch/event-effect event)
+         before-shell @state-atom]
      (let [shell (swap! state-atom dispatch/apply-event event)]
+       (when-let [id (animation-target-id before-shell shell event)]
+         (fx-effects/pulse-node! id))
        (when (or (dispatch/diagram-event? etype)
                  (= events/edit-stock-apply etype)
                  (= events/edit-flow-apply etype)

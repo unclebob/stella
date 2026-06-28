@@ -270,6 +270,10 @@
                                   :canvas-coordinates [(int press-cx) (int press-cy)]
                                   :scene-coordinates press-scene})
         (Thread/sleep 50)
+        (app/dispatch-map-event! {:event events/stock-drag
+                                  :from-canvas true
+                                  :scene-coordinates release-scene})
+        (Thread/sleep 50)
         (app/dispatch-map-event! {:event events/stock-drag-end
                                   :from-canvas true
                                   :scene-coordinates release-scene})
@@ -287,6 +291,10 @@
         (app/dispatch-map-event! {:event events/converter-drag-start
                                   :converter-name element-name
                                   :scene-coordinates press-scene})
+        (Thread/sleep 50)
+        (app/dispatch-map-event! {:event events/converter-drag
+                                  :converter-name element-name
+                                  :scene-coordinates release-scene})
         (Thread/sleep 50)
         (app/dispatch-map-event! {:event events/converter-drag-end
                                   :converter-name element-name

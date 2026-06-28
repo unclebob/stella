@@ -78,18 +78,27 @@
                                   :press-scene-y sy}))
       shell)))
 
-(defn end-stock-drag-on-shell!
+(defn- stock-drag-position
+  [drag [rx ry]]
+  [(+ (:start-x drag) (- rx (:press-scene-x drag)))
+   (+ (:start-y drag) (- ry (:press-scene-y drag)))])
+
+(defn drag-stock-on-shell!
   [shell {:keys [scene-coordinates]}]
   (if-let [drag (:stock-drag shell)]
     (if scene-coordinates
       (let [stock-name (:name drag)
-            [rx ry] scene-coordinates
-            new-x (+ (:start-x drag) (- rx (:press-scene-x drag)))
-            new-y (+ (:start-y drag) (- ry (:press-scene-y drag)))]
-        (-> shell
-            (move-stock-on-shell! stock-name new-x new-y)
-            (dissoc :stock-drag)))
-      (dissoc shell :stock-drag))
+            [new-x new-y] (stock-drag-position drag scene-coordinates)]
+        (move-stock-on-shell! shell stock-name new-x new-y))
+      shell)
+    shell))
+
+(defn end-stock-drag-on-shell!
+  [shell event]
+  (if (:stock-drag shell)
+    (-> shell
+        (drag-stock-on-shell! event)
+        (dissoc :stock-drag))
     shell))
 
 (defn- resolve-cloud-drag-target
@@ -133,17 +142,26 @@
                                   :press-scene-y sy}))
       shell)))
 
-(defn end-cloud-drag-on-shell!
+(defn- cloud-drag-position
+  [drag [rx ry]]
+  [(+ (:start-x drag) (- rx (:press-scene-x drag)))
+   (+ (:start-y drag) (- ry (:press-scene-y drag)))])
+
+(defn drag-cloud-on-shell!
   [shell {:keys [scene-coordinates]}]
   (if-let [drag (:cloud-drag shell)]
     (if scene-coordinates
-      (let [[rx ry] scene-coordinates
-            new-x (+ (:start-x drag) (- rx (:press-scene-x drag)))
-            new-y (+ (:start-y drag) (- ry (:press-scene-y drag)))]
-        (-> shell
-            (move-cloud-on-shell! (:kind drag) (:name drag) new-x new-y)
-            (dissoc :cloud-drag)))
-      (dissoc shell :cloud-drag))
+      (let [[new-x new-y] (cloud-drag-position drag scene-coordinates)]
+        (move-cloud-on-shell! shell (:kind drag) (:name drag) new-x new-y))
+      shell)
+    shell))
+
+(defn end-cloud-drag-on-shell!
+  [shell event]
+  (if (:cloud-drag shell)
+    (-> shell
+        (drag-cloud-on-shell! event)
+        (dissoc :cloud-drag))
     shell))
 
 (defn move-converter!
@@ -178,18 +196,27 @@
                                       :press-scene-y sy}))
       shell)))
 
-(defn end-converter-drag-on-shell!
+(defn- converter-drag-position
+  [drag [rx ry]]
+  [(+ (:start-x drag) (- rx (:press-scene-x drag)))
+   (+ (:start-y drag) (- ry (:press-scene-y drag)))])
+
+(defn drag-converter-on-shell!
   [shell {:keys [scene-coordinates]}]
   (if-let [drag (:converter-drag shell)]
     (if scene-coordinates
       (let [converter-name (:name drag)
-            [rx ry] scene-coordinates
-            new-x (+ (:start-x drag) (- rx (:press-scene-x drag)))
-            new-y (+ (:start-y drag) (- ry (:press-scene-y drag)))]
-        (-> shell
-            (move-converter-on-shell! converter-name new-x new-y)
-            (dissoc :converter-drag)))
-      (dissoc shell :converter-drag))
+            [new-x new-y] (converter-drag-position drag scene-coordinates)]
+        (move-converter-on-shell! shell converter-name new-x new-y))
+      shell)
+    shell))
+
+(defn end-converter-drag-on-shell!
+  [shell event]
+  (if (:converter-drag shell)
+    (-> shell
+        (drag-converter-on-shell! event)
+        (dissoc :converter-drag))
     shell))
 
 (defn click-select!

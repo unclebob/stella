@@ -86,6 +86,11 @@
                               (if (:stock-drag shell)
                                 shell
                                 (cmd/start-converter-drag-on-shell! shell event))))
+   events/stock-drag (fn [shell event]
+                       (cond
+                         (:stock-drag shell) (cmd/drag-stock-on-shell! shell event)
+                         (:converter-drag shell) (cmd/drag-converter-on-shell! shell event)
+                         :else shell))
    events/stock-drag-end (fn [shell event]
                            (cond
                              (:stock-drag shell) (cmd/end-stock-drag-on-shell! shell event)
@@ -93,10 +98,14 @@
                              :else shell))
    events/converter-drag-start (fn [shell event]
                                  (cmd/start-converter-drag-on-shell! shell event))
+   events/converter-drag (fn [shell event]
+                           (cmd/drag-converter-on-shell! shell event))
    events/converter-drag-end (fn [shell event]
                                (cmd/end-converter-drag-on-shell! shell event))
    events/cloud-drag-start (fn [shell event]
                              (cmd/start-cloud-drag-on-shell! shell event))
+   events/cloud-drag (fn [shell event]
+                       (cmd/drag-cloud-on-shell! shell event))
    events/cloud-drag-end (fn [shell event]
                            (cmd/end-cloud-drag-on-shell! shell event))
    events/selection-click (fn [shell event]

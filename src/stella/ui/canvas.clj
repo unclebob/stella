@@ -29,6 +29,85 @@
 
 (def flow-pipe-stroke-width 8)
 (def connector-stroke-width 1)
+(def ^:private connector-arrow-size 8)
+(def ^:private flow-boundary-radius 5.0)
+
+(defn- endpoint-center
+  [[x y] kind]
+  (case kind
+    (:stock :source :sink) [(+ x 40.0) (+ y 25.0)]
+    :converter [(+ x 25.0) (+ y 25.0)]
+    :flow [x y]
+    [x y]))
+
+(defn- ellipse-boundary-point
+  [[cx cy] [tx ty] radius-x radius-y]
+  (let [dx (- tx cx)
+        dy (- ty cy)
+        scale (Math/sqrt (+ (/ (* dx dx) (* radius-x radius-x))
+                            (/ (* dy dy) (* radius-y radius-y))))]
+    (if (zero? scale)
+      [cx cy]
+      [(+ cx (/ dx scale)) (+ cy (/ dy scale))])))
+
+(defn- rectangle-boundary-point
+  [[cx cy] [tx ty] half-width half-height]
+  (let [dx (- tx cx)
+        dy (- ty cy)
+        scale (max (if (zero? half-width) 0.0 (/ (Math/abs dx) half-width))
+                   (if (zero? half-height) 0.0 (/ (Math/abs dy) half-height)))]
+    (if (zero? scale)
+      [cx cy]
+      [(+ cx (/ dx scale)) (+ cy (/ dy scale))])))
+
+(defn- endpoint-boundary-point
+  [pos kind target]
+  (let [center (endpoint-center pos kind)]
+    (case kind
+      :stock (rectangle-boundary-point center target 40.0 25.0)
+      (:source :sink) (ellipse-boundary-point center target 40.0 25.0)
+      :converter (ellipse-boundary-point center target 25.0 25.0)
+      :flow (ellipse-boundary-point center target flow-boundary-radius flow-boundary-radius)
+      center)))
+
+(defn- clipped-link-endpoints
+  [from-pos from-kind to-pos to-kind]
+  (let [from-center (endpoint-center from-pos from-kind)
+        to-center (endpoint-center to-pos to-kind)]
+    [(endpoint-boundary-point from-pos from-kind to-center)
+     (endpoint-boundary-point to-pos to-kind from-center)]))
+
+(defn- unit-vector
+  [from-x from-y to-x to-y]
+  (let [dx (- to-x from-x)
+        dy (- to-y from-y)
+        length (Math/sqrt (+ (* dx dx) (* dy dy)))]
+    (if (zero? length)
+      [0.0 0.0]
+      [(/ dx length) (/ dy length)])))
+
+(defn- connector-arrowhead
+  [start-x start-y end-x end-y]
+  (let [[ux uy] (unit-vector start-x start-y end-x end-y)
+        px (- uy)
+        py ux
+        base-x (- end-x (* ux connector-arrow-size))
+        base-y (- end-y (* uy connector-arrow-size))
+        wing (/ connector-arrow-size 2.0)]
+    [{:fx/type :line
+      :start-x end-x
+      :start-y end-y
+      :end-x (+ base-x (* px wing))
+      :end-y (+ base-y (* py wing))
+      :stroke "#666"
+      :stroke-width connector-stroke-width}
+     {:fx/type :line
+      :start-x end-x
+      :start-y end-y
+      :end-x (- base-x (* px wing))
+      :end-y (- base-y (* py wing))
+      :stroke "#666"
+      :stroke-width connector-stroke-width}]))
 
 (defn- flow-pipe-body
   [selected? start-x start-y end-x end-y]
@@ -64,8 +143,8 @@
   [diagram {:keys [name rate from to]}]
   (when-let [from-pos (model/endpoint-position diagram from)]
     (when-let [to-pos (model/endpoint-position diagram to)]
-      (let [[start-x start-y] (model/endpoint-anchor from-pos (:kind from) :right)
-            [end-x end-y] (model/endpoint-anchor to-pos (:kind to) :left)
+      (let [[[start-x start-y] [end-x end-y]]
+            (clipped-link-endpoints from-pos (:kind from) to-pos (:kind to))
             mid-x (/ (+ start-x end-x) 2.0)
             mid-y (/ (+ start-y end-y) 2.0)
             pipe (flow-pipe-body (model/selected? diagram :flow name)
@@ -104,8 +183,8 @@
   [diagram {:keys [name from to formula]}]
   (when-let [from-pos (model/endpoint-position diagram from)]
     (when-let [to-pos (model/endpoint-position diagram to)]
-      (let [[start-x start-y] (model/endpoint-anchor from-pos (:kind from) :right)
-            [end-x end-y] (model/endpoint-anchor to-pos (:kind to) :left)
+      (let [[[start-x start-y] [end-x end-y]]
+            (clipped-link-endpoints from-pos (:kind from) to-pos (:kind to))
             mid-x (/ (+ start-x end-x) 2.0)
             mid-y (/ (+ start-y end-y) 2.0)
             label-children (filterv map? (into [{:fx/type :label :text name :style connector-label-style}]
@@ -116,18 +195,19 @@
         {:fx/type :group
          :fx/key (str "connector-" name)
          :id (str "connector-" name)
-         :children [{:fx/type :line
-                     :start-x start-x
-                     :start-y start-y
-                     :end-x end-x
-                     :end-y end-y
-                     :stroke "#666"
-                     :stroke-width connector-stroke-width}
-                    {:fx/type :v-box
-                     :layout-x (- mid-x 30)
-                     :layout-y (- mid-y 15)
-                     :spacing 2
-                     :children label-children}]}))))
+         :children (into [{:fx/type :line
+                           :start-x start-x
+                           :start-y start-y
+                           :end-x end-x
+                           :end-y end-y
+                           :stroke "#666"
+                           :stroke-width connector-stroke-width}]
+                         (concat (connector-arrowhead start-x start-y end-x end-y)
+                                 [{:fx/type :v-box
+                                   :layout-x (- mid-x 30)
+                                   :layout-y (- mid-y 15)
+                                   :spacing 2
+                                   :children label-children}]))}))))
 
 (defn converter-canvas-labels
   [diagram converter-name]
@@ -210,6 +290,7 @@
       (= :idle (:placement-mode diagram))
       (assoc :on-mouse-clicked (selection-click :stock name)
              :on-mouse-pressed {:event events/stock-drag-start :stock-name name}
+             :on-mouse-dragged {:event events/stock-drag :stock-name name}
              :on-mouse-released {:event events/stock-drag-end :stock-name name})
       :always
       (assoc :on-context-menu-requested
@@ -239,6 +320,7 @@
       (= :idle (:placement-mode diagram))
       (assoc :on-mouse-clicked (selection-click :converter name)
              :on-mouse-pressed {:event events/converter-drag-start :converter-name name}
+             :on-mouse-dragged {:event events/converter-drag :converter-name name}
              :on-mouse-released {:event events/converter-drag-end :converter-name name})
       :always
       (assoc :on-context-menu-requested
@@ -269,6 +351,9 @@
       (= :idle (:placement-mode diagram))
       (assoc :on-mouse-clicked (selection-click kind name)
              :on-mouse-pressed {:event events/cloud-drag-start
+                                :cloud-kind kind
+                                :cloud-name name}
+             :on-mouse-dragged {:event events/cloud-drag
                                 :cloud-kind kind
                                 :cloud-name name}
              :on-mouse-released {:event events/cloud-drag-end

@@ -42,13 +42,19 @@
 
 (def stock-drag-start ::stock-drag-start)
 
+(def stock-drag ::stock-drag)
+
 (def stock-drag-end ::stock-drag-end)
 
 (def converter-drag-start ::converter-drag-start)
 
+(def converter-drag ::converter-drag)
+
 (def converter-drag-end ::converter-drag-end)
 
 (def cloud-drag-start ::cloud-drag-start)
+
+(def cloud-drag ::cloud-drag)
 
 (def cloud-drag-end ::cloud-drag-end)
 

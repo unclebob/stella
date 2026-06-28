@@ -53,9 +53,9 @@
     (= events/canvas-click (event-type event))
     (assoc event :coordinates (click-coordinates event))
 
-    (#{events/stock-drag-start events/stock-drag-end
-       events/converter-drag-start events/converter-drag-end
-       events/cloud-drag-start events/cloud-drag-end} (event-type event))
+    (#{events/stock-drag-start events/stock-drag events/stock-drag-end
+       events/converter-drag-start events/converter-drag events/converter-drag-end
+       events/cloud-drag-start events/cloud-drag events/cloud-drag-end} (event-type event))
     (cond-> event
       (not (:scene-coordinates event))
       (assoc :scene-coordinates (scene-coordinates event))

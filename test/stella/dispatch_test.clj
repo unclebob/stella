@@ -129,8 +129,51 @@
                                               :cloud-kind :source
                                               :cloud-name "Source1"
                                               :scene-coordinates [60 160]})
+        live-dragged (dispatch/apply-event dragging {:event events/cloud-drag
+                                                     :scene-coordinates [80 190]})
         dragged (dispatch/apply-event dragging {:event events/cloud-drag-end
                                                 :scene-coordinates [100 210]})]
     (is (:cloud-drag dragging))
+    (is (:cloud-drag live-dragged))
+    (is (= [70 180] (model/source-position (:diagram live-dragged) "Source1")))
     (is (= [90 200] (model/source-position (:diagram dragged) "Source1")))
     (is (nil? (:cloud-drag dragged)))))
+
+(deftest apply-event-stock-drag-rubber-bands-links-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 100 100)
+                                        (cmd/fixture-stock! "Stock2" 300 200)
+                                        (cmd/fixture-flow! "Flow1" "Stock1" "Stock2"))))
+        dragging (dispatch/apply-event shell {:event events/stock-drag-start
+                                              :stock-name "Stock1"
+                                              :scene-coordinates [140 125]})
+        live-dragged (dispatch/apply-event dragging {:event events/stock-drag
+                                                     :scene-coordinates [170 165]})
+        released (dispatch/apply-event live-dragged {:event events/stock-drag-end
+                                                     :scene-coordinates [180 175]})]
+    (is (:stock-drag live-dragged))
+    (is (= [130 140] (model/stock-position (:diagram live-dragged) "Stock1")))
+    (is (= [255.0 195.0] (model/flow-midpoint (:diagram live-dragged) "Flow1")))
+    (is (= [140 150] (model/stock-position (:diagram released) "Stock1")))
+    (is (nil? (:stock-drag released)))))
+
+(deftest apply-event-converter-drag-rubber-bands-connectors-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 200 150)
+                                        (cmd/fixture-stock! "Stock2" 350 150)
+                                        (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                                        (cmd/fixture-converter! "Converter1" 100 250)
+                                        (cmd/fixture-connector! "Connector1" "Converter1" "Flow1"))))
+        dragging (dispatch/apply-event shell {:event events/converter-drag-start
+                                              :converter-name "Converter1"
+                                              :scene-coordinates [125 275]})
+        live-dragged (dispatch/apply-event dragging {:event events/converter-drag
+                                                     :scene-coordinates [165 315]})
+        released (dispatch/apply-event live-dragged {:event events/converter-drag-end
+                                                     :scene-coordinates [175 325]})]
+    (is (:converter-drag live-dragged))
+    (is (= [140 290] (model/converter-position (:diagram live-dragged) "Converter1")))
+    (is (= [150 300] (model/converter-position (:diagram released) "Converter1")))
+    (is (nil? (:converter-drag released)))))
