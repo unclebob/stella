@@ -285,9 +285,16 @@
       (assoc :flow-draft nil)
       (assoc :connector-draft nil)))
 
+(defn- arm-placement-mode
+  [diagram mode]
+  (-> diagram
+      (assoc :placement-mode mode)
+      (assoc :flow-draft nil)
+      (assoc :connector-draft nil)))
+
 (defn arm-stock-placement
   [diagram]
-  (assoc diagram :placement-mode :stock))
+  (arm-placement-mode diagram :stock))
 
 (defn place-stock
   [diagram x y]
@@ -448,11 +455,11 @@
 
 (defn arm-source-placement
   [diagram]
-  (assoc diagram :placement-mode :source))
+  (arm-placement-mode diagram :source))
 
 (defn arm-sink-placement
   [diagram]
-  (assoc diagram :placement-mode :sink))
+  (arm-placement-mode diagram :sink))
 
 (defn- place-cloud
   [diagram mode collection next-key id-prefix label-prefix x y]
@@ -616,10 +623,8 @@
    from to))
 
 (defn- arm-link-placement
-  [diagram mode draft-key]
-  (-> diagram
-      (assoc :placement-mode mode)
-      (assoc draft-key nil)))
+  [diagram mode _draft-key]
+  (arm-placement-mode diagram mode))
 
 (defn arm-flow-placement
   [diagram]
@@ -738,7 +743,7 @@
 
 (defn arm-converter-placement
   [diagram]
-  (assoc diagram :placement-mode :converter))
+  (arm-placement-mode diagram :converter))
 
 (defn place-converter
   [diagram x y]

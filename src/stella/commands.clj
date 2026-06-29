@@ -25,7 +25,10 @@
 
 (defn update-canvas-preview-on-shell!
   [shell [x y]]
-  (assoc shell :canvas-preview {:x x :y y}))
+  (let [preview {:x x :y y}]
+    (if (= preview (:canvas-preview shell))
+      shell
+      (assoc shell :canvas-preview preview))))
 
 (defn- update-diagram-and-clear-preview
   [shell f]

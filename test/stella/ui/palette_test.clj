@@ -1,6 +1,8 @@
 (ns stella.ui.palette-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [cljfx.api :as fx]
+            [clojure.test :refer [deftest is]]
             [stella.commands :as cmd]
+            [stella.dispatch :as dispatch]
             [stella.events :as events]
             [stella.ui.palette :as palette]))
 
@@ -39,29 +41,29 @@
     (is (empty? (filter #(= :button (:fx/type %)) (descendant-types desc))))
     (is (= "palette-Stock" (:id stock)))
     (is (= ["Stock"] (label-texts stock)))
-    (is (= {:event events/arm-stock} (:on-mouse-clicked stock)))
+    (is (= {:event events/arm-stock} (:on-mouse-clicked (background stock))))
     (is (some #(= :rectangle (:fx/type %)) (:children stock)))
     (is (= ["Flow"] (label-texts flow)))
-    (is (= {:event events/arm-flow} (:on-mouse-clicked flow)))
+    (is (= {:event events/arm-flow} (:on-mouse-clicked (background flow))))
     (is (some #(= :polygon (:fx/type %)) (:children flow)))
     (is (some #(= :circle (:fx/type %)) (:children flow)))
     (is (= ["Source"] (label-texts source)))
-    (is (= {:event events/arm-source} (:on-mouse-clicked source)))
+    (is (= {:event events/arm-source} (:on-mouse-clicked (background source))))
     (is (= 3 (node-count source :circle)))
     (is (= 0 (node-count source :ellipse)))
     (is (= [42 24 42 3]
            (mapv source-arrow [:start-x :start-y :end-x :end-y])))
     (is (= ["Sink"] (label-texts sink)))
-    (is (= {:event events/arm-sink} (:on-mouse-clicked sink)))
+    (is (= {:event events/arm-sink} (:on-mouse-clicked (background sink))))
     (is (= 3 (node-count sink :circle)))
     (is (= 0 (node-count sink :ellipse)))
     (is (= [42 1 42 22]
            (mapv sink-arrow [:start-x :start-y :end-x :end-y])))
     (is (= ["Converter"] (label-texts converter)))
-    (is (= {:event events/arm-converter} (:on-mouse-clicked converter)))
+    (is (= {:event events/arm-converter} (:on-mouse-clicked (background converter))))
     (is (some #(= :circle (:fx/type %)) (:children converter)))
     (is (= ["Connector"] (label-texts connector)))
-    (is (= {:event events/arm-connector} (:on-mouse-clicked connector)))
+    (is (= {:event events/arm-connector} (:on-mouse-clicked (background connector))))
     (is (some #(= :quad-curve (:fx/type %)) (:children connector)))
     (is (= 0 (node-count connector :polygon)))
     (is (= 2 (node-count connector :line)))))
@@ -95,3 +97,20 @@
         [stock flow] (:children desc)]
     (is (re-find #"#2f80ed" (:style (background flow))))
     (is (not (re-find #"#2f80ed" (:style (background stock)))))))
+
+(deftest palette-switches-from-converter-to-other-tools-test
+  (let [armed (cmd/arm-converter-placement-on-shell! (cmd/default-shell! nil))]
+    (doseq [[event mode] [[events/arm-stock :stock]
+                          [events/arm-flow :flow]
+                          [events/arm-source :source]
+                          [events/arm-sink :sink]
+                          [events/arm-connector :connector]]]
+      (let [shell (dispatch/apply-event armed {:event event})
+            desc (palette/palette-desc shell)
+            tools (mapv background (:children desc))]
+        (is (= mode (get-in shell [:diagram :placement-mode])))
+        (is (= 1 (count (filter #(re-find #"#2f80ed" (:style %)) tools))))))))
+
+(deftest palette-desc-creates-with-converter-armed-test
+  (let [shell (cmd/arm-converter-placement-on-shell! (cmd/default-shell! nil))]
+    (is (some? (fx/create-component (palette/palette-desc shell))))))

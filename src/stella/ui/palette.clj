@@ -163,12 +163,15 @@
   [shell mode]
   (= mode (get-in shell [:diagram :placement-mode])))
 
+(defn- mouse-transparent
+  [desc]
+  (assoc desc :mouse-transparent true))
+
 (defn- palette-tool
   [shell index {:keys [kind label event mode]}]
   {:fx/type :group
    :id (str "palette-" label)
    :layout-y (* index tool-spacing)
-   :on-mouse-clicked {:event event}
    :children (into [{:fx/type :rectangle
                      :width tool-width
                      :height tool-height
@@ -176,15 +179,17 @@
                      :arc-height 6
                      :style (if (active? shell mode)
                               active-tool-style
-                              inactive-tool-style)}
-                    {:fx/type :label
-                     :layout-y 39
-                     :pref-width tool-width
-                     :alignment :center
-                     :text-alignment :center
-                     :style label-style
-                     :text label}]
-                   (icon-nodes kind))})
+                              inactive-tool-style)
+                     :on-mouse-clicked {:event event}}
+                    (mouse-transparent
+                     {:fx/type :label
+                      :layout-y 39
+                      :pref-width tool-width
+                      :alignment :center
+                      :text-alignment :center
+                      :style label-style
+                      :text label})]
+                   (map mouse-transparent (icon-nodes kind)))})
 
 (def ^:private tools
   [{:kind :stock :label "Stock" :event events/arm-stock :mode :stock}
@@ -201,4 +206,5 @@
     :style "-fx-background-color: #e8e8e8;"
     :pref-width tool-width
     :min-width tool-width
+    :min-height (+ tool-height (* (dec (count tools)) tool-spacing))
     :children (mapv #(palette-tool shell %1 %2) (range) tools)}))

@@ -133,8 +133,11 @@
   (let [shell (dispatch/apply-event (model/default-shell)
                                     {:event events/canvas-move
                                      :coordinates [120 140]})
+        unchanged (dispatch/apply-event shell {:event events/canvas-move
+                                               :coordinates [120 140]})
         cleared (dispatch/apply-event shell {:event events/arm-stock})]
     (is (= {:x 120 :y 140} (:canvas-preview shell)))
+    (is (= shell unchanged))
     (is (nil? (:canvas-preview cleared)))))
 
 (deftest apply-event-marquee-drag-updates-live-rectangle-test
