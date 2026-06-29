@@ -44,15 +44,18 @@
    :min-value (field-text "edit-stock-min")
    :max-value (field-text "edit-stock-max")})
 
+(defn- read-named-field-draft
+  [name-id value-key value-id]
+  {:name (field-text name-id)
+   value-key (field-text value-id)})
+
 (defn- read-edit-flow-draft
   []
-  {:name (field-text "edit-flow-name")
-   :rate (field-text "edit-flow-rate")})
+  (read-named-field-draft "edit-flow-name" :rate "edit-flow-rate"))
 
 (defn- read-edit-converter-draft
   []
-  {:name (field-text "edit-converter-name")
-   :formula (field-text "edit-converter-formula")})
+  (read-named-field-draft "edit-converter-name" :formula "edit-converter-formula"))
 
 (defn enrich-event
   "Adds derived fields to platform events before dispatch."

@@ -92,17 +92,21 @@
                                   :press-scene-y sy}))
       shell)))
 
-(defn- stock-drag-position
-  [drag [rx ry]]
-  [(+ (:start-x drag) (- rx (:press-scene-x drag)))
-   (+ (:start-y drag) (- ry (:press-scene-y drag)))])
+(defn- pointer-drag-position
+  [drag press-x-key press-y-key [rx ry]]
+  [(+ (:start-x drag) (- rx (press-x-key drag)))
+   (+ (:start-y drag) (- ry (press-y-key drag)))])
+
+(defn- scene-drag-position
+  [drag coordinates]
+  (pointer-drag-position drag :press-scene-x :press-scene-y coordinates))
 
 (defn drag-stock-on-shell!
   [shell {:keys [scene-coordinates]}]
   (if-let [drag (:stock-drag shell)]
     (if scene-coordinates
       (let [stock-name (:name drag)
-            [new-x new-y] (stock-drag-position drag scene-coordinates)]
+            [new-x new-y] (scene-drag-position drag scene-coordinates)]
         (move-stock-on-shell! shell stock-name new-x new-y))
       shell)
     shell))
@@ -156,16 +160,11 @@
                                   :press-scene-y sy}))
       shell)))
 
-(defn- cloud-drag-position
-  [drag [rx ry]]
-  [(+ (:start-x drag) (- rx (:press-scene-x drag)))
-   (+ (:start-y drag) (- ry (:press-scene-y drag)))])
-
 (defn drag-cloud-on-shell!
   [shell {:keys [scene-coordinates]}]
   (if-let [drag (:cloud-drag shell)]
     (if scene-coordinates
-      (let [[new-x new-y] (cloud-drag-position drag scene-coordinates)]
+      (let [[new-x new-y] (scene-drag-position drag scene-coordinates)]
         (move-cloud-on-shell! shell (:kind drag) (:name drag) new-x new-y))
       shell)
     shell))
@@ -218,17 +217,12 @@
                                       :press-scene-y sy}))
       shell)))
 
-(defn- converter-drag-position
-  [drag [rx ry]]
-  [(+ (:start-x drag) (- rx (:press-scene-x drag)))
-   (+ (:start-y drag) (- ry (:press-scene-y drag)))])
-
 (defn drag-converter-on-shell!
   [shell {:keys [scene-coordinates]}]
   (if-let [drag (:converter-drag shell)]
     (if scene-coordinates
       (let [converter-name (:name drag)
-            [new-x new-y] (converter-drag-position drag scene-coordinates)]
+            [new-x new-y] (scene-drag-position drag scene-coordinates)]
         (move-converter-on-shell! shell converter-name new-x new-y))
       shell)
     shell))
@@ -257,16 +251,15 @@
       shell)
     shell))
 
-(defn- connector-control-drag-position
-  [drag [cx cy]]
-  [(+ (:start-x drag) (- cx (:press-canvas-x drag)))
-   (+ (:start-y drag) (- cy (:press-canvas-y drag)))])
+(defn- canvas-drag-position
+  [drag coordinates]
+  (pointer-drag-position drag :press-canvas-x :press-canvas-y coordinates))
 
 (defn drag-connector-control-on-shell!
   [shell {:keys [canvas-coordinates]}]
   (if-let [drag (:connector-control-drag shell)]
     (if canvas-coordinates
-      (let [[new-x new-y] (connector-control-drag-position drag canvas-coordinates)]
+      (let [[new-x new-y] (canvas-drag-position drag canvas-coordinates)]
         (move-connector-handle-on-shell! shell (:name drag) new-x new-y))
       shell)
     shell))
