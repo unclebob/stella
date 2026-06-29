@@ -303,10 +303,13 @@
     [6 4]))
 
 (defn- connector-body
-  [selected? connector-name control-offset from to start-x start-y end-x end-y]
+  [selected? connector-name control-offset from to to-pos start-x start-y end-x end-y]
   (let [[control-x control-y] (connector-control-point start-x start-y end-x end-y control-offset)
         [marker-x marker-y] (connector-curve-midpoint start-x start-y control-x control-y end-x end-y)
         [ux uy] (unit-vector control-x control-y end-x end-y)
+        [arrow-tip-x arrow-tip-y] (if to-pos
+                                    (endpoint-boundary-point to-pos (:kind to) [control-x control-y])
+                                    [end-x end-y])
         stroke-dash-array (connector-stroke-dash-array from to)]
     (into
      (filterv map?
@@ -320,8 +323,8 @@
      (concat
       (connector-control-markers connector-name marker-x marker-y)
       (when selected?
-        (connector-arrowhead end-x end-y ux uy "#2f80ed" 5 0.35 stroke-dash-array))
-      (connector-arrowhead end-x end-y ux uy "#666" connector-stroke-width 1.0 stroke-dash-array)))))
+        (connector-arrowhead arrow-tip-x arrow-tip-y ux uy "#2f80ed" 5 0.35 stroke-dash-array))
+      (connector-arrowhead arrow-tip-x arrow-tip-y ux uy "#666" connector-stroke-width 1.0 stroke-dash-array)))))
 
 (defn connector-canvas-labels
   [diagram connector-name]
@@ -345,6 +348,7 @@
                                  control-offset
                                  from
                                  to
+                                 to-pos
                                  start-x start-y end-x end-y)
             label-children (filterv map? (into [{:fx/type :label :text name :style connector-label-style}]
                                  (when (seq formula)
@@ -608,7 +612,7 @@
          :id "preview-connector"
          :mouse-transparent true
          :opacity preview-opacity
-         :children (connector-body false nil nil nil {:kind :flow}
+         :children (connector-body false nil nil nil {:kind :flow} nil
                                    start-x start-y end-x end-y)}))))
 
 (defn- canvas-preview-nodes
