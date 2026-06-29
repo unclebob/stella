@@ -37,7 +37,16 @@
       :depends [test]
       :task (shell "bash scripts/run_qa_suites.sh")}
   crap {:doc "CRAP analysis"
-        :task (shell "clojure -M:crap")}
+        :task (shell "clojure" "-M:crap"
+                     "stella/model"
+                     "stella/commands"
+                     "stella/dispatch"
+                     "stella/actions"
+                     "stella/events"
+                     "stella/ui/canvas"
+                     "stella/ui/menu"
+                     "stella/ui/palette"
+                     "stella/qa/args")}
   dry {:doc "DRY analysis"
        :task (shell "clojure -M:dry src")}
   mutate {:doc "Mutation scan for a source file"

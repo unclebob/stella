@@ -3,6 +3,7 @@
             [stella.commands :as cmd]
             [stella.dispatch :as dispatch]
             [stella.events :as events]
+            [stella.fx.input :as fx-input]
             [stella.model :as model]))
 
 (deftest event-type-test
@@ -116,5 +117,90 @@
         connected (dispatch/apply-event drafted {:event events/endpoint-click
                                                  :endpoint-kind :flow
                                                  :endpoint-name "Flow1"})]
-    (is (= {:kind :converter :id "Converter1"} (:from (:connector-draft (:diagram drafted)))))
-    (is (model/connector-exists? (:diagram connected) "Connector1"))))
+     (is (= {:kind :converter :id "Converter1"} (:from (:connector-draft (:diagram drafted)))))
+     (is (model/connector-exists? (:diagram connected) "Connector1"))))
+
+(deftest stock-drag-shell-lifecycle-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram cmd/fixture-stock! "Stock1" 100 100))
+        started (cmd/start-stock-drag-on-shell!
+                 shell
+                 {:stock-name "Stock1"
+                  :scene-coordinates [10 20]})
+        moved (cmd/end-stock-drag-on-shell!
+               started
+               {:scene-coordinates [40 70]})]
+    (is (= {:name "Stock1"
+            :start-x 100
+            :start-y 100
+            :press-scene-x 10
+            :press-scene-y 20}
+           (:stock-drag started)))
+    (is (= [130 150] (model/stock-position (:diagram moved) "Stock1")))
+    (is (not (contains? moved :stock-drag)))))
+
+(deftest stock-drag-shell-no-op-paths-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram cmd/fixture-stock! "Stock1" 100 100))
+        armed-shell (cmd/arm-stock-placement-on-shell! shell)]
+    (is (= shell (cmd/start-stock-drag-on-shell! shell {:stock-name "Stock1"})))
+    (is (= armed-shell (cmd/start-stock-drag-on-shell!
+                  armed-shell
+                  {:stock-name "Stock1" :scene-coordinates [10 20]})))
+    (is (= shell (cmd/end-stock-drag-on-shell! shell {:scene-coordinates [10 20]})))
+    (is (not (contains? (cmd/end-stock-drag-on-shell!
+                         (assoc shell :stock-drag {:name "Stock1"})
+                         {})
+                        :stock-drag)))))
+
+(deftest converter-drag-shell-lifecycle-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram cmd/fixture-converter! "Converter1" 100 250))
+        started (cmd/start-converter-drag-on-shell!
+                 shell
+                 {:converter-name "Converter1"
+                  :scene-coordinates [10 20]})
+        moved (cmd/end-converter-drag-on-shell!
+               started
+               {:scene-coordinates [40 70]})]
+    (is (= {:name "Converter1"
+            :start-x 100
+            :start-y 250
+            :press-scene-x 10
+            :press-scene-y 20}
+           (:converter-drag started)))
+    (is (= [130 300] (model/converter-position (:diagram moved) "Converter1")))
+    (is (not (contains? moved :converter-drag)))))
+
+(deftest object-drag-dispatch-falls-through-to-converter-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram cmd/fixture-converter! "Converter1" 100 250))
+        started (dispatch/apply-event
+                 shell
+                 {:event events/stock-drag-start
+                  :converter-name "Converter1"
+                  :scene-coordinates [10 20]})
+        moved (dispatch/apply-event
+               started
+               {:event events/stock-drag-end
+                :scene-coordinates [20 40]})]
+    (is (= "Converter1" (:name (:converter-drag started))))
+    (is (= [110 270] (model/converter-position (:diagram moved) "Converter1")))))
+
+(deftest enrich-drag-event-preserves-existing-coordinates-test
+  (is (= {:event events/stock-drag-start
+          :scene-coordinates [10 20]
+          :canvas-coordinates [1 2]
+          :from-canvas true}
+         (fx-input/enrich-event
+          {:event events/stock-drag-start
+           :scene-coordinates [10 20]
+           :canvas-coordinates [1 2]
+           :from-canvas true}))))
+
+(deftest enrich-edit-apply-preserves-existing-draft-test
+  (is (= {:event events/edit-stock-apply
+          :draft {:name "Stock1"}}
+         (fx-input/enrich-event
+          {:event events/edit-stock-apply
+           :draft {:name "Stock1"}}))))

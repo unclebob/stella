@@ -99,5 +99,23 @@
                                  first
                                  :children
                                  first)]
-    (is (some? connector-line))
-    (is (> (:stroke-width flow-line) (:stroke-width connector-line)))))
+     (is (some? connector-line))
+     (is (> (:stroke-width flow-line) (:stroke-width connector-line)))))
+
+(deftest connector-canvas-labels-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-stock! "Stock1" 200 150)
+                    (cmd/fixture-stock! "Stock2" 350 150)
+                    (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                    (cmd/fixture-converter! "Converter1" 100 250)
+                    (cmd/fixture-connector! "Connector1" "Converter1" "Flow1"))]
+    (is (= {:name "Connector1"}
+           (canvas/connector-canvas-labels diagram "Connector1")))
+    (is (= {:name "Connector1" :formula "Stock1 * 0.1"}
+           (canvas/connector-canvas-labels
+            (cmd/set-converter-formula! diagram "Converter1" "Stock1 * 0.1")
+            "Connector1")))
+    (is (nil? (canvas/connector-canvas-labels diagram "Missing")))
+    (is (nil? (canvas/connector-canvas-labels
+               (cmd/fixture-connector! diagram "Connector2" "Missing" "Flow1")
+               "Connector2")))))

@@ -49,6 +49,14 @@
     (is (model/selected? diagram :stock "Stock1"))
     (is (not (model/selected? diagram :stock "Stock2")))))
 
+(deftest marquee-selects-links-test
+  (let [diagram (-> (base-diagram)
+                    (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                    (cmd/fixture-connector! "Connector1" "Converter1" "Flow1")
+                    (cmd/marquee-select! 150 90 350 260))]
+    (is (model/selected? diagram :flow "Flow1"))
+    (is (model/selected? diagram :connector "Connector1"))))
+
 (deftest clear-selection-test
   (let [diagram (-> (base-diagram)
                     (cmd/click-select! :stock "Stock1")

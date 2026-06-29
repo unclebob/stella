@@ -16,6 +16,44 @@
 (defonce *state
   (atom (cmd/default-shell! nil)))
 
+(declare dispatch-map-event!)
+
+(def ^:private diagram-sync-events
+  #{events/edit-stock-apply
+    events/edit-flow-apply
+    events/edit-converter-apply})
+
+(defn- sync-diagram-after-event!
+  [etype shell]
+  (when (or (dispatch/diagram-event? etype)
+            (contains? diagram-sync-events etype))
+    (fx-overlay/sync-diagram-overlay! (:diagram shell))))
+
+(defn- on-fx-thread!
+  [f]
+  (if (Platform/isFxApplicationThread)
+    (f)
+    (Platform/runLater f)))
+
+(defn- show-edit-dialog!
+  [state-atom dialog-state show!]
+  (on-fx-thread!
+   #(show! dialog-state
+           (fn [dialog-event]
+             (dispatch-map-event! dialog-event state-atom)))))
+
+(defn- show-dialogs-after-event!
+  [etype shell state-atom]
+  (cond
+    (and (= events/edit-stock-open etype) (:edit-stock shell))
+    (show-edit-dialog! state-atom (:edit-stock shell) edit-stock-dialog/show!)
+
+    (and (= events/edit-flow-open etype) (:edit-flow shell))
+    (show-edit-dialog! state-atom (:edit-flow shell) edit-flow-dialog/show!)
+
+    (and (= events/edit-converter-open etype) (:edit-converter shell))
+    (show-edit-dialog! state-atom (:edit-converter shell) edit-converter-dialog/show!)))
+
 (defn dispatch-map-event!
   ([event] (dispatch-map-event! event *state))
   ([event state-atom]
@@ -23,35 +61,8 @@
          etype (dispatch/event-type event)
          effect (dispatch/event-effect event)]
      (let [shell (swap! state-atom dispatch/apply-event event)]
-       (when (or (dispatch/diagram-event? etype)
-                 (= events/edit-stock-apply etype)
-                 (= events/edit-flow-apply etype)
-                 (= events/edit-converter-apply etype))
-         (fx-overlay/sync-diagram-overlay! (:diagram shell)))
-       (when (and (= events/edit-stock-open etype) (:edit-stock shell))
-         (let [show! (fn []
-                       (edit-stock-dialog/show! (:edit-stock shell)
-                                                (fn [dialog-event]
-                                                  (dispatch-map-event! dialog-event state-atom))))]
-           (if (Platform/isFxApplicationThread)
-             (show!)
-             (Platform/runLater show!))))
-       (when (and (= events/edit-flow-open etype) (:edit-flow shell))
-         (let [show! (fn []
-                       (edit-flow-dialog/show! (:edit-flow shell)
-                                               (fn [dialog-event]
-                                                 (dispatch-map-event! dialog-event state-atom))))]
-           (if (Platform/isFxApplicationThread)
-             (show!)
-             (Platform/runLater show!))))
-       (when (and (= events/edit-converter-open etype) (:edit-converter shell))
-         (let [show! (fn []
-                       (edit-converter-dialog/show! (:edit-converter shell)
-                                                      (fn [dialog-event]
-                                                        (dispatch-map-event! dialog-event state-atom))))]
-           (if (Platform/isFxApplicationThread)
-             (show!)
-             (Platform/runLater show!))))
+       (sync-diagram-after-event! etype shell)
+       (show-dialogs-after-event! etype shell state-atom)
        (when effect (fx-effects/run-effect effect))))))
 
 (defonce ^:private renderer

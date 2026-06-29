@@ -27,74 +27,101 @@
     (place! shell x y)
     shell))
 
+(defn- arm-stock [shell _]
+  (cmd/arm-stock-placement-on-shell! shell))
+
+(defn- arm-flow [shell _]
+  (cmd/arm-flow-placement-on-shell! shell))
+
+(defn- arm-source [shell _]
+  (cmd/arm-source-placement-on-shell! shell))
+
+(defn- arm-sink [shell _]
+  (cmd/arm-sink-placement-on-shell! shell))
+
+(defn- arm-converter [shell _]
+  (cmd/arm-converter-placement-on-shell! shell))
+
+(defn- arm-connector [shell _]
+  (cmd/arm-connector-placement-on-shell! shell))
+
+(defn- endpoint-click [shell event]
+  (if (and (:endpoint-kind event) (:endpoint-name event))
+    (cmd/select-endpoint-on-shell! shell
+                                   (:endpoint-kind event)
+                                   (:endpoint-name event))
+    shell))
+
+(defn- canvas-click [shell event]
+  (if-let [[x y] (:coordinates event)]
+    (place-on-canvas shell [x y])
+    shell))
+
+(defn- open-stock-editor [shell event]
+  (if (:stock-name event)
+    (cmd/open-edit-stock-on-shell! shell (:stock-name event))
+    shell))
+
+(defn- apply-stock-editor [shell event]
+  (if (:draft event)
+    (cmd/apply-edit-stock-on-shell! shell (:draft event))
+    shell))
+
+(defn- open-flow-editor [shell event]
+  (if (:flow-name event)
+    (cmd/open-edit-flow-on-shell! shell (:flow-name event))
+    shell))
+
+(defn- apply-flow-editor [shell event]
+  (if (:draft event)
+    (cmd/apply-edit-flow-on-shell! shell (:draft event))
+    shell))
+
+(defn- open-converter-editor [shell event]
+  (if (:converter-name event)
+    (cmd/open-edit-converter-on-shell! shell (:converter-name event))
+    shell))
+
+(defn- apply-converter-editor [shell event]
+  (if (:draft event)
+    (cmd/apply-edit-converter-on-shell! shell (:draft event))
+    shell))
+
+(defn- start-object-drag [shell event]
+  (let [shell (cmd/start-stock-drag-on-shell! shell event)]
+    (if (:stock-drag shell)
+      shell
+      (cmd/start-converter-drag-on-shell! shell event))))
+
+(defn- end-object-drag [shell event]
+  (cond
+    (:stock-drag shell) (cmd/end-stock-drag-on-shell! shell event)
+    (:converter-drag shell) (cmd/end-converter-drag-on-shell! shell event)
+    :else shell))
+
 (defn- diagram-shell-updaters
   []
-  {events/arm-stock (fn [shell _]
-                      (cmd/arm-stock-placement-on-shell! shell))
-   events/arm-flow (fn [shell _]
-                     (cmd/arm-flow-placement-on-shell! shell))
-   events/arm-source (fn [shell _]
-                       (cmd/arm-source-placement-on-shell! shell))
-   events/arm-sink (fn [shell _]
-                     (cmd/arm-sink-placement-on-shell! shell))
-   events/arm-converter (fn [shell _]
-                          (cmd/arm-converter-placement-on-shell! shell))
-   events/arm-connector (fn [shell _]
-                          (cmd/arm-connector-placement-on-shell! shell))
-   events/endpoint-click (fn [shell event]
-                           (if (and (:endpoint-kind event) (:endpoint-name event))
-                             (cmd/select-endpoint-on-shell! shell
-                                                            (:endpoint-kind event)
-                                                            (:endpoint-name event))
-                             shell))
-   events/canvas-click (fn [shell event]
-                         (if-let [[x y] (:coordinates event)]
-                           (place-on-canvas shell [x y])
-                           shell))
-   events/edit-stock-open (fn [shell event]
-                            (if (:stock-name event)
-                              (cmd/open-edit-stock-on-shell! shell (:stock-name event))
-                              shell))
-   events/edit-stock-apply (fn [shell event]
-                             (if (:draft event)
-                               (cmd/apply-edit-stock-on-shell! shell (:draft event))
-                               shell))
-   events/edit-stock-cancel (fn [shell _]
-                              (cmd/cancel-edit-stock-on-shell! shell))
-   events/edit-flow-open (fn [shell event]
-                           (if (:flow-name event)
-                             (cmd/open-edit-flow-on-shell! shell (:flow-name event))
-                             shell))
-   events/edit-flow-apply (fn [shell event]
-                            (if (:draft event)
-                              (cmd/apply-edit-flow-on-shell! shell (:draft event))
-                              shell))
-   events/edit-flow-cancel (fn [shell _]
-                             (cmd/cancel-edit-flow-on-shell! shell))
-   events/edit-converter-open (fn [shell event]
-                                (if (:converter-name event)
-                                  (cmd/open-edit-converter-on-shell! shell (:converter-name event))
-                                  shell))
-   events/edit-converter-apply (fn [shell event]
-                                 (if (:draft event)
-                                   (cmd/apply-edit-converter-on-shell! shell (:draft event))
-                                   shell))
-   events/edit-converter-cancel (fn [shell _]
-                                  (cmd/cancel-edit-converter-on-shell! shell))
-   events/stock-drag-start (fn [shell event]
-                            (let [shell (cmd/start-stock-drag-on-shell! shell event)]
-                              (if (:stock-drag shell)
-                                shell
-                                (cmd/start-converter-drag-on-shell! shell event))))
-   events/stock-drag-end (fn [shell event]
-                           (cond
-                             (:stock-drag shell) (cmd/end-stock-drag-on-shell! shell event)
-                             (:converter-drag shell) (cmd/end-converter-drag-on-shell! shell event)
-                             :else shell))
-   events/converter-drag-start (fn [shell event]
-                                 (cmd/start-converter-drag-on-shell! shell event))
-   events/converter-drag-end (fn [shell event]
-                               (cmd/end-converter-drag-on-shell! shell event))})
+  {events/arm-stock arm-stock
+   events/arm-flow arm-flow
+   events/arm-source arm-source
+   events/arm-sink arm-sink
+   events/arm-converter arm-converter
+   events/arm-connector arm-connector
+   events/endpoint-click endpoint-click
+   events/canvas-click canvas-click
+   events/edit-stock-open open-stock-editor
+   events/edit-stock-apply apply-stock-editor
+   events/edit-stock-cancel (fn [shell _] (cmd/cancel-edit-stock-on-shell! shell))
+   events/edit-flow-open open-flow-editor
+   events/edit-flow-apply apply-flow-editor
+   events/edit-flow-cancel (fn [shell _] (cmd/cancel-edit-flow-on-shell! shell))
+   events/edit-converter-open open-converter-editor
+   events/edit-converter-apply apply-converter-editor
+   events/edit-converter-cancel (fn [shell _] (cmd/cancel-edit-converter-on-shell! shell))
+   events/stock-drag-start start-object-drag
+   events/stock-drag-end end-object-drag
+   events/converter-drag-start (fn [shell event] (cmd/start-converter-drag-on-shell! shell event))
+   events/converter-drag-end (fn [shell event] (cmd/end-converter-drag-on-shell! shell event))})
 
 (defn diagram-event?
   [event-type]

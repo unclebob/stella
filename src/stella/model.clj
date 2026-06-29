@@ -1,105 +1,44 @@
-(ns stella.model)
-
-(defn- menu-item [label disabled]
-  {:label label :disabled disabled})
-
-(defn- separator []
-  {:separator true})
-
-(defn- file-menu []
-  {:label "File"
-   :items [(menu-item "New" true)
-           (menu-item "Open..." true)
-           (menu-item "Save" true)
-           (menu-item "Save As..." true)
-           (separator)
-           (menu-item "Quit" false)]})
-
-(defn- edit-menu []
-  {:label "Edit"
-   :items [(menu-item "Undo" true)
-           (menu-item "Redo" true)
-           (separator)
-           (menu-item "Cut" true)
-           (menu-item "Copy" true)
-           (menu-item "Paste" true)]})
-
-(defn- view-menu []
-  {:label "View"
-   :items [(menu-item "Zoom In" true)
-           (menu-item "Zoom Out" true)
-           (menu-item "Reset Zoom" true)]})
-
-(defn- help-menu []
-  {:label "Help"
-   :items [(menu-item "About Stella" false)]})
+(ns stella.model
+  (:require [stella.model.selection :as selection]
+            [stella.model.shell :as shell]))
 
 (defn default-diagram []
-  {:stocks {}
-   :sources {}
-   :sinks {}
-   :flows {}
-   :converters {}
-   :connectors {}
-   :selection #{}
-   :placement-mode :idle
-   :flow-draft nil
-   :connector-draft nil
-   :next-stock-num 1
-   :next-source-num 1
-   :next-sink-num 1
-   :next-flow-num 1
-   :next-converter-num 1
-   :next-connector-num 1})
+  (shell/default-diagram))
 
 (defn default-shell []
-  {:showing true
-   :window-title "Stella"
-   :about-visible false
-   :about-text ""
-   :menu-bar [(file-menu)
-              (edit-menu)
-              (view-menu)
-              (help-menu)]
-   :diagram (default-diagram)})
+  (shell/default-shell))
 
 (defn top-level-menus
   [shell]
-  (mapv :label (:menu-bar shell)))
+  (shell/top-level-menus shell))
 
 (defn menu-includes?
   [shell menu-label]
-  (some #(= menu-label (:label %)) (:menu-bar shell)))
-
-(defn- menu-items
-  [shell]
-  (mapcat :items (:menu-bar shell)))
+  (shell/menu-includes? shell menu-label))
 
 (defn menu-item-disabled?
   [shell item-label]
-  (when-let [item (first (filter #(and (= (:label %) item-label) (not (:separator %)))
-                                 (menu-items shell)))]
-    (:disabled item)))
+  (shell/menu-item-disabled? shell item-label))
 
 (defn window-title
   [shell]
-  (:window-title shell))
+  (shell/window-title shell))
 
 (defn showing?
   [shell]
-  (:showing shell))
+  (shell/showing? shell))
 
 (defn about-visible?
   [shell]
-  (:about-visible shell))
+  (shell/about-visible? shell))
 
 (defn about-text
   [shell]
-  (:about-text shell))
+  (shell/about-text shell))
 
 (defn diagram-empty?
   [shell]
-  (empty? (:stocks (:diagram shell))))
+  (shell/diagram-empty? shell))
 
 (defn stock-count
   [diagram]
@@ -121,14 +60,19 @@
 (def stock-icon-width 80)
 (def stock-icon-height 50)
 
+(defn- object-at-canvas-point
+  [objects width height cx cy]
+  (some (fn [{:keys [name x y]}]
+          (when (and (<= x cx (+ x width))
+                     (<= y cy (+ y height)))
+            name))
+        objects))
+
 (defn stock-at-canvas-point
   "Returns the stock name whose icon contains canvas-local point [x y], or nil."
   [diagram cx cy]
-  (some (fn [{:keys [name x y]}]
-          (when (and (<= x cx (+ x stock-icon-width))
-                     (<= y cy (+ y stock-icon-height)))
-            name))
-        (vals (:stocks diagram))))
+  (let [stocks (vals (:stocks diagram))]
+    (object-at-canvas-point stocks stock-icon-width stock-icon-height cx cy)))
 
 (defn- stock-field
   [diagram name key]
@@ -246,33 +190,53 @@
     (assoc-in diagram [:stocks id :max-value] nil)
     diagram))
 
+(defn- changed-and-rejected?
+  [requested prior current]
+  (and (not= (str requested) (str prior))
+       (= current prior)))
+
+(defn- apply-stock-min-edit
+  [diagram stock-name min-value]
+  (let [prior (stock-min-value diagram stock-name)
+        edited (set-stock-min diagram stock-name min-value)]
+    (if (changed-and-rejected? min-value prior (stock-min-value edited stock-name))
+      nil
+      edited)))
+
+(defn- apply-stock-max-edit
+  [diagram stock-name max-value]
+  (let [prior (stock-max-value diagram stock-name)
+        edited (if (seq (str max-value))
+                 (set-stock-max diagram stock-name max-value)
+                 (clear-stock-max diagram stock-name))]
+    (if (and (seq (str max-value))
+             (changed-and-rejected? max-value prior (stock-max-value edited stock-name)))
+      nil
+      edited)))
+
+(defn- apply-stock-initial-edit
+  [diagram stock-name initial-value]
+  (let [prior (stock-initial-value diagram stock-name)
+        edited (set-stock-initial-value diagram stock-name initial-value)]
+    (if (changed-and-rejected? initial-value prior (stock-initial-value edited stock-name))
+      nil
+      edited)))
+
+(defn- apply-stock-name-edit
+  [diagram stock-name name]
+  (let [edited (if (= name stock-name) diagram (set-stock-name diagram stock-name name))]
+    (when-not (and (not= name stock-name) (= edited diagram))
+      [edited (if (= edited diagram) stock-name name)])))
+
 (defn apply-stock-edit
   [diagram stock-name {:keys [name initial-value min-value max-value]}]
-  (let [after-name (if (= name stock-name)
-                     diagram
-                     (set-stock-name diagram stock-name name))]
-    (if (and (not= name stock-name) (= after-name diagram))
-      diagram
-      (let [target (if (= after-name diagram) stock-name name)
-            prior-min (stock-min-value after-name target)
-            after-min (set-stock-min after-name target min-value)]
-        (if (and (not= (str min-value) (str prior-min))
-                 (= (stock-min-value after-min target) prior-min))
-          after-name
-          (let [prior-max (stock-max-value after-min target)
-                after-max (if (seq (str max-value))
-                            (set-stock-max after-min target max-value)
-                            (clear-stock-max after-min target))]
-            (if (and (seq (str max-value))
-                     (not= (str max-value) (str prior-max))
-                     (= (stock-max-value after-max target) prior-max))
-              after-min
-              (let [prior-init (stock-initial-value after-max target)
-                    after-init (set-stock-initial-value after-max target initial-value)]
-                (if (and (not= (str initial-value) (str prior-init))
-                         (= (stock-initial-value after-init target) prior-init))
-                  after-max
-                  after-init)))))))))
+  (if-let [[after-name target] (apply-stock-name-edit diagram stock-name name)]
+    (if-let [after-min (apply-stock-min-edit after-name target min-value)]
+      (if-let [after-max (apply-stock-max-edit after-min target max-value)]
+        (or (apply-stock-initial-edit after-max target initial-value) after-max)
+        after-min)
+      after-name)
+    diagram))
 
 (defn placement-disarmed?
   [diagram]
@@ -660,11 +624,11 @@
 (defn converter-at-canvas-point
   "Returns the converter name whose icon contains canvas-local point [x y], or nil."
   [diagram cx cy]
-  (some (fn [{:keys [name x y]}]
-          (when (and (<= x cx (+ x converter-icon-size))
-                     (<= y cy (+ y converter-icon-size)))
-            name))
-        (vals (:converters diagram))))
+  (object-at-canvas-point (vals (:converters diagram))
+                          converter-icon-size
+                          converter-icon-size
+                          cx
+                          cy))
 
 (defn move-converter
   [diagram name x y]
@@ -795,6 +759,13 @@
   (when-let [id (converter-to-flow-connector-id diagram converter-name)]
     (get-in diagram [:connectors id :formula] "")))
 
+(defn- apply-converter-formula-edit
+  [diagram converter-name formula]
+  (let [prior (or (converter-connector-formula diagram converter-name) "")]
+    (if (= (str formula) (str prior))
+      diagram
+      (set-converter-formula diagram converter-name formula))))
+
 (defn apply-converter-edit
   [diagram converter-name {:keys [name formula]}]
   (let [after-name (if (= name converter-name)
@@ -802,11 +773,8 @@
                      (set-converter-name diagram converter-name name))]
     (if (and (not= name converter-name) (= after-name diagram))
       diagram
-      (let [target (if (= after-name diagram) converter-name name)
-            prior-formula (or (converter-connector-formula after-name target) "")]
-        (if (= (str formula) (str prior-formula))
-          after-name
-          (set-converter-formula after-name target formula))))))
+      (let [target (if (= after-name diagram) converter-name name)]
+        (apply-converter-formula-edit after-name target formula)))))
 
 (defn fixture-connector
   [diagram connector-name from-converter to-flow]
@@ -887,177 +855,34 @@
   [diagram]
   (placement-disarmed? diagram))
 
-(defn- object-ref
-  [kind name]
-  {:kind kind :id name})
-
 (defn selected?
   [diagram kind name]
-  (contains? (:selection diagram #{}) (object-ref kind name)))
+  (selection/selected? diagram kind name))
 
 (defn selection-count
   [diagram]
-  (count (:selection diagram #{})))
+  (selection/selection-count diagram))
 
 (defn nothing-selected?
   [diagram]
-  (zero? (selection-count diagram)))
-
-(defn- normalize-rect
-  [x1 y1 x2 y2]
-  [(min x1 x2) (min y1 y2) (max x1 x2) (max y1 y2)])
-
-(defn- rects-intersect?
-  [[mx1 my1 mx2 my2] [ox1 oy1 ox2 oy2]]
-  (and (< mx1 ox2) (> mx2 ox1) (< my1 oy2) (> my2 oy1)))
-
-(defn- stock-bounds
-  [{:keys [x y]}]
-  [x y (+ x 80) (+ y 50)])
-
-(defn- converter-bounds
-  [{:keys [x y]}]
-  [x y (+ x 50) (+ y 50)])
-
-(defn- cloud-bounds
-  [{:keys [x y]}]
-  [x y (+ x 80) (+ y 50)])
-
-(defn- link-bounds
-  [diagram from to padding]
-  (when-let [from-pos (endpoint-position diagram from)]
-    (when-let [to-pos (endpoint-position diagram to)]
-      (let [[fx fy] (endpoint-anchor from-pos (:kind from) :right)
-            [tx ty] (endpoint-anchor to-pos (:kind to) :left)]
-        [(min fx tx) (- (min fy ty) padding)
-         (max fx tx) (+ (max fy ty) padding)]))))
-
-(defn- selectable-objects-with-bounds
-  [diagram]
-  (concat
-   (for [[_ {:keys [name] :as stock}] (:stocks diagram)]
-     [(object-ref :stock name) (stock-bounds stock)])
-   (for [[_ {:keys [name] :as converter}] (:converters diagram)]
-     [(object-ref :converter name) (converter-bounds converter)])
-   (for [[_ {:keys [name from to]}] (:flows diagram)]
-     (when-let [bounds (link-bounds diagram from to 20)]
-       [(object-ref :flow name) bounds]))
-   (for [[_ {:keys [name from to]}] (:connectors diagram)]
-     (when-let [bounds (link-bounds diagram from to 15)]
-       [(object-ref :connector name) bounds]))
-   (for [[_ {:keys [name] :as source}] (:sources diagram)]
-     [(object-ref :source name) (cloud-bounds source)])
-   (for [[_ {:keys [name] :as sink}] (:sinks diagram)]
-     [(object-ref :sink name) (cloud-bounds sink)])))
-
-(defn- update-selection-when-idle
-  [diagram update-fn]
-  (if (placement-disarmed? diagram)
-    (update-fn diagram)
-    diagram))
+  (selection/nothing-selected? diagram))
 
 (defn click-select
   [diagram kind name]
-  (update-selection-when-idle
-   diagram
-   (fn [diagram]
-     (if (endpoint-exists? diagram kind name)
-       (let [ref (object-ref kind name)
-             selection (:selection diagram #{})]
-         (assoc diagram :selection
-                (if (contains? selection ref)
-                  (disj selection ref)
-                  #{ref})))
-       diagram))))
+  (selection/click-select diagram kind name))
 
 (defn shift-click-select
   [diagram kind name]
-  (update-selection-when-idle
-   diagram
-   (fn [diagram]
-     (if (endpoint-exists? diagram kind name)
-       (let [ref (object-ref kind name)
-             selection (:selection diagram #{})]
-         (assoc diagram :selection
-                (if (contains? selection ref)
-                  (disj selection ref)
-                  (conj selection ref))))
-       diagram))))
+  (selection/shift-click-select diagram kind name))
 
 (defn marquee-select
   [diagram x1 y1 x2 y2]
-  (update-selection-when-idle
-   diagram
-   (fn [diagram]
-     (let [marquee (normalize-rect x1 y1 x2 y2)
-           selected (into #{}
-                          (keep (fn [[ref bounds]]
-                                  (when (rects-intersect? marquee bounds)
-                                    ref))
-                                (selectable-objects-with-bounds diagram)))]
-       (assoc diagram :selection selected)))))
+  (selection/marquee-select diagram x1 y1 x2 y2))
 
 (defn clear-selection
   [diagram]
-  (assoc diagram :selection #{}))
-
-(defn- links-referencing-ref
-  [diagram collection ref]
-  (into #{}
-        (keep (fn [[_ {:keys [name from to]}]]
-                (when (or (= from ref) (= to ref))
-                  (object-ref (if (= collection :flows) :flow :connector) name)))
-              (get diagram collection))))
-
-(defn- cascade-additions-for-ref
-  [diagram ref]
-  (case (:kind ref)
-    :stock (into (links-referencing-ref diagram :flows ref)
-                 (links-referencing-ref diagram :connectors ref))
-    (:source :sink) (links-referencing-ref diagram :flows ref)
-    :flow (links-referencing-ref diagram :connectors ref)
-    :converter (links-referencing-ref diagram :connectors ref)
-    :connector #{}
-    #{}))
-
-(defn- expand-delete-set
-  [diagram refs]
-  (loop [current refs]
-    (let [additions (into #{} (mapcat #(cascade-additions-for-ref diagram %) current))
-          expanded (into current additions)]
-      (if (= expanded current)
-        expanded
-        (recur expanded)))))
-
-(defn- remove-object-ref
-  [diagram {:keys [kind id]}]
-  (case kind
-    :stock (if-let [[object-id _] (stock-entry-by-name diagram id)]
-             (update diagram :stocks dissoc object-id)
-             diagram)
-    :flow (if-let [[object-id _] (flow-entry-by-name diagram id)]
-            (update diagram :flows dissoc object-id)
-            diagram)
-    :converter (if-let [[object-id _] (converter-entry-by-name diagram id)]
-                 (update diagram :converters dissoc object-id)
-                 diagram)
-    :connector (if-let [[object-id _] (connector-entry-by-name diagram id)]
-                 (update diagram :connectors dissoc object-id)
-                 diagram)
-    :source (if-let [[object-id _] (source-entry-by-name diagram id)]
-              (update diagram :sources dissoc object-id)
-              diagram)
-    :sink (if-let [[object-id _] (sink-entry-by-name diagram id)]
-             (update diagram :sinks dissoc object-id)
-             diagram)
-    diagram))
+  (selection/clear-selection diagram))
 
 (defn delete-selection
   [diagram]
-  (if (and (placement-disarmed? diagram)
-           (seq (:selection diagram #{})))
-    (let [to-delete (expand-delete-set diagram (:selection diagram))]
-      (reduce remove-object-ref
-              (assoc diagram :selection #{})
-              to-delete))
-    diagram))
+  (selection/delete-selection diagram))

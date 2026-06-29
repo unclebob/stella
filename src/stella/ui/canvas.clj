@@ -10,6 +10,9 @@
 (def ^:private flow-pipe-stroke-width 8)
 (def ^:private connector-stroke-width 1)
 
+(defn flow-pipe-thicker-than-connector? []
+  (> flow-pipe-stroke-width connector-stroke-width))
+
 (defn- unit-vector
   [dx dy]
   (let [len (Math/sqrt (+ (* dx dx) (* dy dy)))]
