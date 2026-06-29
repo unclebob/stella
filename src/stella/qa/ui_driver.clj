@@ -210,12 +210,16 @@
 (defn click-palette!
   [^Stage stage label]
   (when-let [palette (palette-pane stage)]
-    (when-let [^Button button (find-button-by-text palette label)]
-      (if-let [handler (.getOnAction button)]
-        (.handle ^javafx.event.EventHandler handler (ActionEvent.))
-        (let [{:keys [x y]} (hit-test/node-screen-center button)]
-          (robot-click! x y)))
-      (Thread/sleep 250))))
+    (if-let [tool (fx-nodes/find-by-id-in-windows (str "palette-" label))]
+      (let [{:keys [x y]} (hit-test/node-screen-center tool)]
+        (robot-click! x y)
+        (Thread/sleep 250))
+      (when-let [^Button button (find-button-by-text palette label)]
+        (if-let [handler (.getOnAction button)]
+          (.handle ^javafx.event.EventHandler handler (ActionEvent.))
+          (let [{:keys [x y]} (hit-test/node-screen-center button)]
+            (robot-click! x y)))
+        (Thread/sleep 250)))))
 
 (defn- resolve-position
   [position center]

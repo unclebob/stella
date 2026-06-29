@@ -24,7 +24,7 @@
            :on-key-pressed {:event events/scene-key-pressed}
            :root {:fx/type :border-pane
                   :top (menu/menu-bar-desc shell)
-                  :left (palette/palette-desc)
+                  :left (palette/palette-desc shell)
                   :center (canvas/canvas-stack shell)
                   :bottom {:fx/type :label
                            :id "diagram-overlay"
