@@ -180,33 +180,36 @@
    :on-mouse-released {:event events/connector-control-drag-end
                        :connector-name connector-name}})
 
-(defn- connector-handle-children
-  [marker-x marker-y]
-  [{:fx/type :circle
-    :center-x marker-x
-    :center-y marker-y
-    :radius connector-control-hit-radius
-    :fill "transparent"
-    :stroke "transparent"}
-   {:fx/type :circle
-    :center-x marker-x
-    :center-y marker-y
-    :radius connector-control-radius
-    :fill "#000"
-    :mouse-transparent true}])
+(defn- connector-handle-desc
+  [connector-name marker-x marker-y]
+  (if connector-name
+    (merge {:fx/type :group
+            :fx/key (str "connector-handle-" connector-name)
+            :layout-x marker-x
+            :layout-y marker-y
+            :children [{:fx/type :circle
+                        :center-x 0
+                        :center-y 0
+                        :radius connector-control-hit-radius
+                        :fill "transparent"
+                        :stroke "transparent"}
+                       {:fx/type :circle
+                        :center-x 0
+                        :center-y 0
+                        :radius connector-control-radius
+                        :fill "#000"
+                        :mouse-transparent true}]
+            :on-mouse-clicked (selection-click :connector connector-name)}
+           (connector-control-drag-events connector-name))
+    {:fx/type :circle
+     :center-x marker-x
+     :center-y marker-y
+     :radius connector-control-radius
+     :fill "#000"}))
 
 (defn- connector-control-markers
   [connector-name marker-x marker-y]
-  (if connector-name
-    [(merge {:fx/type :group
-             :children (connector-handle-children marker-x marker-y)
-             :on-mouse-clicked (selection-click :connector connector-name)}
-            (connector-control-drag-events connector-name))]
-    [{:fx/type :circle
-      :center-x marker-x
-      :center-y marker-y
-      :radius connector-control-radius
-      :fill "#000"}]))
+  [(connector-handle-desc connector-name marker-x marker-y)])
 
 (defn- connector-arrowhead
   ([end-x end-y ux uy]
