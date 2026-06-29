@@ -49,6 +49,19 @@
   [desc pred]
   (first (filter pred (:children desc))))
 
+(defn- first-connector-node
+  [desc]
+  (first (filter #(re-matches #"connector-.*" (:id %)) (:children desc))))
+
+(defn- connector-node-by-name
+  [desc name]
+  (first (filter #(= (str "connector-" name) (:id %)) (:children desc))))
+
+(defn- connector-handle-by-name
+  [desc name]
+  (first (filter #(= (str "connector-handle-" name) (:fx/key %))
+                 (:children (first-connector-node desc)))))
+
 (defn- nil-mouse-handler?
   [desc]
   (boolean
@@ -65,14 +78,6 @@
                            (vector? v) v
                            :else nil))
                        desc))))))
-
-(defn- first-connector-node
-  [desc]
-  (first (filter #(re-matches #"connector-.*" (:id %)) (:children desc))))
-
-(defn- connector-node-by-name
-  [desc name]
-  (first (filter #(= (str "connector-" name) (:id %)) (:children desc))))
 
 (defn- dot
   [[ax ay] [bx by]]
@@ -422,7 +427,7 @@
         connector-curves (filter #(= :quad-curve (:fx/type %)) connector-children)
         visible-connector-lines (remove #(= "transparent" (:stroke %)) connector-lines)
         hit-curves (filter #(= "transparent" (:stroke %)) connector-curves)
-        control-handle (first (filter #(= :group (:fx/type %)) connector-children))
+        control-handle (connector-handle-by-name desc "Connector1")
         control-points (:children control-handle)
         connector-polygons (filter #(= :polygon (:fx/type %)) connector-children)
         arrow-lines visible-connector-lines

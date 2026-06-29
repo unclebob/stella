@@ -207,10 +207,6 @@
      :radius connector-control-radius
      :fill "#000"}))
 
-(defn- connector-control-markers
-  [connector-name marker-x marker-y]
-  [(connector-handle-desc connector-name marker-x marker-y)])
-
 (defn- connector-arrowhead
   ([end-x end-y ux uy]
    (connector-arrowhead end-x end-y ux uy "#666" connector-stroke-width 1.0 nil))
@@ -379,7 +375,7 @@
                (connector-curve start-x start-y control-x control-y end-x end-y
                                 "#666" connector-stroke-width 1.0 stroke-dash-array)])
      (concat
-      (connector-control-markers connector-name marker-x marker-y)
+      [(connector-handle-desc connector-name marker-x marker-y)]
       (when selected?
         (connector-arrowhead arrow-tip-x arrow-tip-y ux uy "#2f80ed" 5 0.35 stroke-dash-array))
       (connector-arrowhead arrow-tip-x arrow-tip-y ux uy "#666" connector-stroke-width 1.0 stroke-dash-array)))))
