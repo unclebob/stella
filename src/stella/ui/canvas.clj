@@ -556,11 +556,52 @@
     :height 18
     :style "-fx-fill: white; -fx-stroke: transparent;"}])
 
+(defn- cloud-arrowhead
+  [tip-x tip-y base-y]
+  [{:fx/type :line
+    :start-x tip-x
+    :start-y tip-y
+    :end-x (- tip-x 6)
+    :end-y base-y
+    :stroke "#333"
+    :stroke-width 1}
+   {:fx/type :line
+    :start-x tip-x
+    :start-y tip-y
+    :end-x (+ tip-x 6)
+    :end-y base-y
+    :stroke "#333"
+    :stroke-width 1}])
+
+(defn- cloud-direction-arrow
+  [kind]
+  (case kind
+    :source (into [{:fx/type :line
+                    :start-x 40
+                    :start-y 25
+                    :end-x 40
+                    :end-y -1
+                    :stroke "#333"
+                    :stroke-width 1}]
+                  (cloud-arrowhead 40 -4 5))
+    :sink (into [{:fx/type :line
+                  :start-x 40
+                  :start-y -4
+                  :end-x 40
+                  :end-y 22
+                  :stroke "#333"
+                  :stroke-width 1}]
+                (cloud-arrowhead 40 25 16))))
+
+(defn- directed-cloud-shape
+  [kind]
+  (into (cloud-shape) (cloud-direction-arrow kind)))
+
 (defn- cloud-desc
   [diagram kind {:keys [name x y]}]
   (let [body (with-ellipse-selection-outline
               diagram kind name 40 25 40 25
-              (cloud-shape))]
+              (directed-cloud-shape kind))]
     (cond-> {:fx/type :group
              :fx/key (str (clojure.core/name kind) "-" name)
              :id (str (clojure.core/name kind) "-" name)
@@ -608,7 +649,7 @@
    :layout-y y
    :mouse-transparent true
    :opacity preview-opacity
-   :children (cloud-shape)})
+   :children (directed-cloud-shape kind)})
 
 (defn- preview-converter-desc
   [x y]

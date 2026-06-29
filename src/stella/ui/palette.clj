@@ -27,7 +27,24 @@
     :height 24
     :style icon-shape-style}])
 
-(defn- cloud-icon []
+(defn- arrow-lines
+  [tip-x tip-y base-x base-y]
+  [{:fx/type :line
+    :start-x tip-x
+    :start-y tip-y
+    :end-x (- base-x 4)
+    :end-y base-y
+    :stroke "#333"
+    :stroke-width 1}
+   {:fx/type :line
+    :start-x tip-x
+    :start-y tip-y
+    :end-x (+ base-x 4)
+    :end-y base-y
+    :stroke "#333"
+    :stroke-width 1}])
+
+(defn- cloud-shape []
   [{:fx/type :circle
     :center-x 29
     :center-y 24
@@ -49,6 +66,28 @@
     :width 31
     :height 12
     :style "-fx-fill: white; -fx-stroke: transparent;"}])
+
+(defn- source-icon []
+  (into (cloud-shape)
+        (into [{:fx/type :line
+                :start-x 42
+                :start-y 24
+                :end-x 42
+                :end-y 3
+                :stroke "#333"
+                :stroke-width 1}]
+              (arrow-lines 42 1 42 7))))
+
+(defn- sink-icon []
+  (into (cloud-shape)
+        (into [{:fx/type :line
+                :start-x 42
+                :start-y 1
+                :end-x 42
+                :end-y 22
+                :stroke "#333"
+                :stroke-width 1}]
+              (arrow-lines 42 24 42 18))))
 
 (defn- converter-icon []
   [{:fx/type :circle
@@ -98,17 +137,28 @@
     :fill "transparent"
     :stroke "#666"
     :stroke-width 1}
-   {:fx/type :polygon
-    :points [62 24 53 18 55 30]
-    :fill "#666"}])
+   {:fx/type :line
+    :start-x 62
+    :start-y 24
+    :end-x 53.2
+    :end-y 22.5
+    :stroke "#666"
+    :stroke-width 1}
+   {:fx/type :line
+    :start-x 62
+    :start-y 24
+    :end-x 57.9
+    :end-y 16.1
+    :stroke "#666"
+    :stroke-width 1}])
 
 (defn- icon-nodes
   [kind]
   (case kind
     :stock (stock-icon)
     :flow (flow-icon)
-    :source (cloud-icon)
-    :sink (cloud-icon)
+    :source (source-icon)
+    :sink (sink-icon)
     :converter (converter-icon)
     :connector (connector-icon)))
 

@@ -44,6 +44,10 @@
   [desc fx-type]
   (count (filter #(= fx-type (:fx/type %)) (:children desc))))
 
+(defn- node-by
+  [desc pred]
+  (first (filter pred (:children desc))))
+
 (defn- dot
   [[ax ay] [bx by]]
   (+ (* ax bx) (* ay by)))
@@ -86,10 +90,15 @@
                   (cmd/arm-source-placement-on-shell!)
                   (assoc :canvas-preview {:x 120 :y 140}))
         preview (first (filter #(= "preview-source" (:id %))
-                               (:children (canvas/canvas-desc shell))))]
+                               (:children (canvas/canvas-desc shell))))
+        arrow (node-by preview #(and (= :line (:fx/type %))
+                                     (= 40 (:start-x %))
+                                     (= 25 (:start-y %))))]
     (is (some? preview))
     (is (= 3 (node-count preview :circle)))
     (is (= 0 (node-count preview :ellipse)))
+    (is (= [40 25 40 -1]
+           (mapv arrow [:start-x :start-y :end-x :end-y])))
     (is (empty? (filter #(= :label (:fx/type %)) (:children preview))))))
 
 (deftest canvas-renders-clouds-test
@@ -100,10 +109,23 @@
         desc (canvas/canvas-desc shell)
         clouds (filter #(and (= :group (:fx/type %))
                             (re-matches #"(source|sink)-.*" (:id %)))
-                     (:children desc))]
+                     (:children desc))
+        source (first (filter #(= "source-Source1" (:id %)) clouds))
+        sink (first (filter #(= "sink-Sink1" (:id %)) clouds))
+        source-arrow (node-by source #(and (= :line (:fx/type %))
+                                           (= 40 (:start-x %))
+                                           (= 25 (:start-y %))))
+        sink-arrow (node-by sink #(and (= :line (:fx/type %))
+                                       (= 40 (:start-x %))
+                                       (= -4 (:start-y %))))]
     (is (= 2 (count clouds)))
     (is (= #{"source-Source1" "sink-Sink1"} (set (map :id clouds))))
     (is (every? #(= 3 (node-count % :circle)) clouds))
+    (is (every? #(= 3 (node-count % :line)) clouds))
+    (is (= [40 25 40 -1]
+           (mapv source-arrow [:start-x :start-y :end-x :end-y])))
+    (is (= [40 -4 40 22]
+           (mapv sink-arrow [:start-x :start-y :end-x :end-y])))
     (is (every? #(= 0 (node-count % :ellipse)) clouds))
     (is (every? #(empty? (filter (fn [child] (= :label (:fx/type child))) (:children %))) clouds))))
 
