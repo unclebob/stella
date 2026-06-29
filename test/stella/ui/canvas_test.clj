@@ -160,17 +160,20 @@
         midpoint-circle (first (filter #(= :circle (:fx/type %)) (:children flow)))
         visible-pipe-lines (remove #(= "transparent" (:stroke %)) pipe-lines)
         pipe-line (last visible-pipe-lines)
-        arrowhead (first (filter #(= :polygon (:fx/type %)) (:children flow)))]
+        arrowhead (first (filter #(= :polygon (:fx/type %)) (:children flow)))
+        arrow-points (:points arrowhead)]
     (is (some? flow))
     (is (= 2 (count visible-pipe-lines)))
     (is (= 1 (count (filter #(= "transparent" (:stroke %)) pipe-lines))))
     (is (every? #(>= (:stroke-width %) 8) visible-pipe-lines))
-    (is (= [180.0 145.0 300.0 205.0]
-           (mapv pipe-line [:start-x :start-y :end-x :end-y])))
+    (is (= [180.0 145.0]
+           (mapv pipe-line [:start-x :start-y])))
+    (is (roughly= 287.478 (:end-x pipe-line)))
+    (is (roughly= 198.739 (:end-y pipe-line)))
     (is (= {:fx/type :circle
             :center-x 240.0
             :center-y 175.0
-            :radius 8.0
+            :radius 12.0
             :fill "white"
             :stroke "#555"
             :stroke-width 1
@@ -178,7 +181,12 @@
            midpoint-circle))
     (is (> (.indexOf (:children flow) midpoint-circle)
            (.indexOf (:children flow) pipe-line)))
-    (is (nil? arrowhead))
+    (is (= :polygon (:fx/type arrowhead)))
+    (is (= [300.0 205.0] (take 2 arrow-points)))
+    (is (roughly= (:end-x pipe-line)
+                  (/ (+ (nth arrow-points 2) (nth arrow-points 4)) 2.0)))
+    (is (roughly= (:end-y pipe-line)
+                  (/ (+ (nth arrow-points 3) (nth arrow-points 5)) 2.0)))
     (is (= {:name "Flow1" :rate "0"}
            (canvas/flow-canvas-labels diagram "Flow1")))))
 
@@ -358,7 +366,7 @@
                       (roughly= (second arrow-tip) (:start-y %)))
                 arrow-lines))
     (is (not= [(:end-x connector-curve) (:end-y connector-curve)] arrow-tip))
-    (is (roughly= 8.0 (distance flow-midpoint arrow-tip)))
+    (is (roughly= 12.0 (distance flow-midpoint arrow-tip)))
     (is (pos? (dot [(- (:end-x connector-curve) (:control-x connector-curve))
                     (- (:end-y connector-curve) (:control-y connector-curve))]
                    [(- (first arrow-tip) (first arrow-base))
