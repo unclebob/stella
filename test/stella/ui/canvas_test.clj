@@ -97,7 +97,7 @@
            (:on-mouse-dragged desc)))))
 
 (deftest converter-preview-anchor-insets-test
-  (is (= {:min-x 75 :min-y 0} (canvas/preview-anchor-insets :converter))))
+  (is (= {:min-x 75 :min-y 0} (model/preview-anchor-insets :converter))))
 
 (deftest converter-preview-stays-inside-canvas-test
   (let [shell (-> (cmd/arm-converter-placement-on-shell! (cmd/default-shell! nil))

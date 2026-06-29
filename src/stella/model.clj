@@ -296,6 +296,20 @@
       (assoc :placement-mode mode)
       clear-link-drafts))
 
+(def ^:private converter-preview-label-width 100)
+(def ^:private converter-preview-radius 25)
+(def ^:private cloud-preview-inset 16)
+
+(defn preview-anchor-insets
+  "Minimum canvas coordinates so placement previews stay inside the canvas pane."
+  [placement-mode]
+  (case placement-mode
+    :converter {:min-x (+ converter-preview-radius
+                          (quot converter-preview-label-width 2))
+                :min-y 0}
+    (:source :sink) {:min-x cloud-preview-inset :min-y 0}
+    {:min-x 0 :min-y 0}))
+
 (defn arm-stock-placement
   [diagram]
   (arm-placement-mode diagram :stock))

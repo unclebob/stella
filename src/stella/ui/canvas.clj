@@ -683,15 +683,6 @@
                 :text-alignment :center
                 :text "Converter"})]})
 
-(defn preview-anchor-insets
-  "Minimum canvas coordinates so placement previews stay inside the canvas pane."
-  [placement-mode]
-  (case placement-mode
-    :converter {:min-x (+ 25 (quot converter-label-width 2)) :min-y 0}
-    :source {:min-x 16 :min-y 0}
-    :sink {:min-x 16 :min-y 0}
-    {:min-x 0 :min-y 0}))
-
 (defn- placement-preview-desc
   [diagram {:keys [x y]}]
   (case (:placement-mode diagram)
