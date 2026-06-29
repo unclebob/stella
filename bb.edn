@@ -36,6 +36,9 @@
   qa {:doc "Headed UI QA suites aligned to qa/procedures"
       :depends [test]
       :task (shell "bash scripts/run_qa_suites.sh")}
+  cov {:doc "Code coverage for testable modules"
+       :depends [generate-acceptance]
+       :task (shell "clojure" "-M:cov")}
   crap {:doc "CRAP analysis"
         :task (shell "clojure" "-M:crap"
                      "stella/model"

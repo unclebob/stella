@@ -29,9 +29,15 @@
                           org.clojure/test.check {:mvn/version "1.1.1"}}
              :exec-fn cognitect.test-runner.api/test
              :exec-args {:dirs ["test-property"]}}
-  :cov {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}}
-        :extra-paths ["test"]
-        :main-opts ["-m" "cloverage.coverage" "-p" "src" "-s" "test" "--lcov"]}
+  :cov {:jvm-opts ["-Djavafx.cachedir=tmp/openjfx-cache"]
+        :extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}}
+        :extra-paths ["test" "acceptance/generated"]
+        :main-opts ["-m" "cloverage.coverage"
+                    "-p" "src"
+                    "-s" "test"
+                    "-s" "acceptance/generated"
+                    "--lcov"
+                    "-n" "^stella\\.(model|events|actions|commands|dispatch|ui\\.(menu|canvas|palette)|qa\\.args|acceptance\\.(step-support|step-handlers-connect|step-handlers-selection|step-handlers-placement|steps|runtime))$"]}
   :crap {:extra-deps {io.github.unclebob/crap4clj
                       {:git/url "https://github.com/unclebob/crap4clj.git"
                        :git/sha "63a56db38f898d8d63cb044c71da09c7bfa3abcd"}}

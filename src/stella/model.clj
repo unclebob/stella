@@ -1042,19 +1042,6 @@
         (* control-scale control-y)
         (* end-scale end-y))]))
 
-(defn- point-near-quadratic?
-  [padding x y start-x start-y control-x control-y end-x end-y]
-  (let [steps 24]
-    (loop [index 1
-           [prior-x prior-y] [start-x start-y]]
-      (if (> index steps)
-        false
-        (let [t (/ index steps)
-              [next-x next-y] (quadratic-point start-x start-y control-x control-y end-x end-y t)]
-          (if (<= (point-segment-distance x y prior-x prior-y next-x next-y) padding)
-            true
-            (recur (inc index) [next-x next-y])))))))
-
 (defn- connector-curve-midpoint
   [start-x start-y control-x control-y end-x end-y]
   (quadratic-point start-x start-y control-x control-y end-x end-y 0.5))
@@ -1124,13 +1111,6 @@
          :end [tx ty]
          :midpoint (connector-curve-midpoint fx fy cx cy tx ty)}))))
 
-(defn- point-near-connector?
-  [diagram connector padding x y]
-  (when-let [{[fx fy] :start
-              [cx cy] :control
-              [tx ty] :end} (connector-curve-points diagram connector)]
-    (point-near-quadratic? padding x y fx fy cx cy tx ty)))
-
 (defn- point-near-connector-handle?
   [diagram connector radius x y]
   (when-let [[mx my] (:midpoint (connector-curve-points diagram connector))]
@@ -1138,43 +1118,29 @@
           dy (- y my)]
       (<= (+ (* dx dx) (* dy dy)) (* radius radius)))))
 
-(defn- first-object-at
-  [objects]
-  (some identity objects))
-
 (defn object-at-canvas-point
   [diagram x y]
   (let [click-radius 5.0]
-    (first-object-at
-     (concat
-      (for [[_ {:keys [name] :as stock}] (:stocks diagram)
-            :when (circle-intersects-rect? (stock-bounds stock) x y click-radius)]
-        (object-ref :stock name))
-      (for [[_ {:keys [name] :as source}] (:sources diagram)
-            :when (circle-intersects-rect? (cloud-bounds source) x y click-radius)]
-        (object-ref :source name))
-      (for [[_ {:keys [name] :as sink}] (:sinks diagram)
-            :when (circle-intersects-rect? (cloud-bounds sink) x y click-radius)]
-        (object-ref :sink name))
-      (for [[_ {:keys [name from to]}] (:flows diagram)
-            :when (point-near-link? diagram from to (+ 5.0 click-radius) x y)]
-        (object-ref :flow name))
-      (for [[_ {:keys [name] :as converter}] (:converters diagram)
-            :when (circle-intersects-rect? (converter-bounds converter) x y click-radius)]
-        (object-ref :converter name))
-      (for [[_ {:keys [name] :as connector}] (:connectors diagram)
-            :when (point-near-connector-handle? diagram connector (+ 10.0 click-radius) x y)]
-        (object-ref :connector name))))))
-
-(defn- connector-bounds
-  [diagram connector padding]
-  (when-let [{[fx fy] :start
-              [cx cy] :control
-              [tx ty] :end} (connector-curve-points diagram connector)]
-    [(- (min fx cx tx) padding)
-     (- (min fy cy ty) padding)
-     (+ (max fx cx tx) padding)
-     (+ (max fy cy ty) padding)]))
+    (some identity
+          (concat
+           (for [[_ {:keys [name] :as stock}] (:stocks diagram)
+                 :when (circle-intersects-rect? (stock-bounds stock) x y click-radius)]
+             (object-ref :stock name))
+           (for [[_ {:keys [name] :as source}] (:sources diagram)
+                 :when (circle-intersects-rect? (cloud-bounds source) x y click-radius)]
+             (object-ref :source name))
+           (for [[_ {:keys [name] :as sink}] (:sinks diagram)
+                 :when (circle-intersects-rect? (cloud-bounds sink) x y click-radius)]
+             (object-ref :sink name))
+           (for [[_ {:keys [name from to]}] (:flows diagram)
+                 :when (point-near-link? diagram from to (+ 5.0 click-radius) x y)]
+             (object-ref :flow name))
+           (for [[_ {:keys [name] :as converter}] (:converters diagram)
+                 :when (circle-intersects-rect? (converter-bounds converter) x y click-radius)]
+             (object-ref :converter name))
+           (for [[_ {:keys [name] :as connector}] (:connectors diagram)
+                 :when (point-near-connector-handle? diagram connector (+ 10.0 click-radius) x y)]
+             (object-ref :connector name))))))
 
 (defn connector-handle-position
   [diagram name]
