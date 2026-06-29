@@ -18,6 +18,15 @@
     (is (= 1 (model/stock-count diagram)))
     (is (= :stock (:placement-mode diagram)))))
 
+(deftest disarm-placement-test
+  (let [diagram (-> (model/default-diagram)
+                    (model/arm-stock-placement)
+                    (assoc :flow-draft {:from {:kind :stock :id "Stock1"}})
+                    (model/disarm-placement))]
+    (is (model/placement-disarmed? diagram))
+    (is (nil? (:flow-draft diagram)))
+    (is (nil? (:connector-draft diagram)))))
+
 (deftest place-multiple-stocks-without-rearming-test
   (let [diagram (-> (model/default-diagram)
                     (model/arm-stock-placement)

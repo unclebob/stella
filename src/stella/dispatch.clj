@@ -140,12 +140,12 @@
                              (cmd/end-marquee-drag-on-shell! shell event))
    events/clear-selection (fn [shell event]
                             (if (= :Esc (:key-code event))
-                              (cmd/clear-selection-on-shell! shell)
+                              (cmd/cancel-on-escape-on-shell! shell)
                               shell))
    events/scene-key-pressed (fn [shell event]
                               (cond
                                 (= :Esc (:key-code event))
-                                (cmd/clear-selection-on-shell! shell)
+                                (cmd/cancel-on-escape-on-shell! shell)
 
                                 (#{:Delete :Backspace} (:key-code event))
                                 (if (and (= :idle (get-in shell [:diagram :placement-mode]))

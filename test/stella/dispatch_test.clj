@@ -49,6 +49,25 @@
   (is (true? (dispatch/diagram-event? events/canvas-move)))
   (is (false? (dispatch/diagram-event? events/quit))))
 
+(deftest apply-event-escape-disarms-placement-test
+  (let [armed (cmd/arm-stock-placement-on-shell!
+                (assoc (cmd/default-shell! nil) :canvas-preview {:x 100 :y 100}))
+        escaped (dispatch/apply-event armed {:event events/scene-key-pressed
+                                               :key-code :Esc})]
+    (is (model/placement-disarmed? (:diagram escaped)))
+    (is (nil? (:canvas-preview escaped)))))
+
+(deftest apply-event-escape-clears-flow-draft-test
+  (let [shell (-> (cmd/default-shell! nil)
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 100 100)
+                                        (cmd/arm-flow-placement!)
+                                        (cmd/select-flow-source! :stock "Stock1"))))
+        escaped (dispatch/apply-event shell {:event events/scene-key-pressed
+                                               :key-code :Esc})]
+    (is (model/placement-disarmed? (:diagram escaped)))
+    (is (nil? (:flow-draft (:diagram escaped))))))
+
 (deftest apply-event-arm-placement-test
   (let [shell (model/default-shell)]
     (is (= :stock (:placement-mode (:diagram (dispatch/apply-event

@@ -278,6 +278,13 @@
   [diagram]
   (= :idle (:placement-mode diagram)))
 
+(defn disarm-placement
+  [diagram]
+  (-> diagram
+      (assoc :placement-mode :idle)
+      (assoc :flow-draft nil)
+      (assoc :connector-draft nil)))
+
 (defn arm-stock-placement
   [diagram]
   (assoc diagram :placement-mode :stock))
