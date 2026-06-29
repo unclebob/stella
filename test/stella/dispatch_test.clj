@@ -3,8 +3,16 @@
             [stella.commands :as cmd]
             [stella.dispatch :as dispatch]
             [stella.events :as events]
-            [stella.fx.input :as fx-input]
             [stella.model :as model]))
+
+(defn- roughly=
+  [expected actual]
+  (< (Math/abs (- expected actual)) 0.001))
+
+(defn- roughly-point=
+  [[expected-x expected-y] [actual-x actual-y]]
+  (and (roughly= expected-x actual-x)
+       (roughly= expected-y actual-y)))
 
 (deftest event-type-test
   (is (= events/quit (:event {:event events/quit})))
@@ -18,12 +26,15 @@
 (deftest apply-action-test
   (let [shell (model/default-shell)]
     (is (false? (:showing (dispatch/apply-action shell :quit))))
+    (is (= shell (dispatch/apply-action shell :window-close)))
     (is (:about-visible (dispatch/apply-action shell :show-about)))
     (is (= shell (dispatch/apply-action shell :stella.test/unknown)))))
 
 (deftest process-event-test
   (is (= {:action :quit :effect :platform-exit}
          (dispatch/process-event {:event events/quit})))
+  (is (= {:action :window-close :effect :platform-exit}
+         (dispatch/process-event {:event events/window-close})))
   (is (nil? (dispatch/process-event {:event :stella.ui/unknown}))))
 
 (deftest diagram-event-test
@@ -35,6 +46,7 @@
   (is (true? (dispatch/diagram-event? events/arm-connector)))
   (is (true? (dispatch/diagram-event? events/endpoint-click)))
   (is (true? (dispatch/diagram-event? events/canvas-click)))
+  (is (true? (dispatch/diagram-event? events/canvas-move)))
   (is (false? (dispatch/diagram-event? events/quit))))
 
 (deftest apply-event-arm-placement-test
@@ -88,6 +100,51 @@
                                              {:event events/canvas-click
                                               :coordinates [1 2]})))))
 
+(deftest apply-event-idle-canvas-click-selects-flow-by-coordinate-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 80 110)
+                                        (cmd/fixture-stock! "Stock2" 429 141)
+                                        (cmd/fixture-flow! "Flow1" "Stock1" "Stock2"))))
+        selected (dispatch/apply-event shell {:event events/canvas-click
+                                              :coordinates [348 160]})]
+    (is (model/selected? (:diagram selected) :flow "Flow1"))))
+
+(deftest apply-event-canvas-move-updates-preview-test
+  (let [shell (dispatch/apply-event (model/default-shell)
+                                    {:event events/canvas-move
+                                     :coordinates [120 140]})
+        cleared (dispatch/apply-event shell {:event events/arm-stock})]
+    (is (= {:x 120 :y 140} (:canvas-preview shell)))
+    (is (nil? (:canvas-preview cleared)))))
+
+(deftest apply-event-marquee-drag-updates-live-rectangle-test
+  (let [started (dispatch/apply-event (model/default-shell)
+                                      {:event events/marquee-drag-start
+                                       :canvas-coordinates [10 20]})
+        dragged (dispatch/apply-event started
+                                      {:event events/marquee-drag
+                                       :canvas-coordinates [80 90]})]
+    (is (= {:start-x 10 :start-y 20}
+           (:marquee-drag started)))
+    (is (= {:start-x 10 :start-y 20 :current-x 80 :current-y 90}
+           (:marquee-drag dragged)))))
+
+(deftest apply-event-marquee-does-not-start-on-flow-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 226 172)
+                                        (cmd/fixture-stock! "Stock2" 475 184)
+                                        (cmd/fixture-flow! "Flow1" "Stock1" "Stock2"))))
+        pressed (dispatch/apply-event shell {:event events/marquee-drag-start
+                                             :canvas-coordinates [414 208]})
+        selected (dispatch/apply-event pressed {:event events/selection-click
+                                                :object-kind :flow
+                                                :object-name "Flow1"
+                                                :canvas-coordinates [414 208]})]
+    (is (nil? (:marquee-drag pressed)))
+    (is (model/selected? (:diagram selected) :flow "Flow1"))))
+
 (deftest apply-event-connect-flow-test
   (let [shell (-> (model/default-shell)
                   (update :diagram #(-> %
@@ -117,90 +174,149 @@
         connected (dispatch/apply-event drafted {:event events/endpoint-click
                                                  :endpoint-kind :flow
                                                  :endpoint-name "Flow1"})]
-     (is (= {:kind :converter :id "Converter1"} (:from (:connector-draft (:diagram drafted)))))
-     (is (model/connector-exists? (:diagram connected) "Connector1"))))
+    (is (= {:kind :converter :id "Converter1"} (:from (:connector-draft (:diagram drafted)))))
+    (is (model/connector-exists? (:diagram connected) "Connector1"))))
 
-(deftest stock-drag-shell-lifecycle-test
+(deftest apply-event-select-connector-does-not-select-flow-test
   (let [shell (-> (model/default-shell)
-                  (update :diagram cmd/fixture-stock! "Stock1" 100 100))
-        started (cmd/start-stock-drag-on-shell!
-                 shell
-                 {:stock-name "Stock1"
-                  :scene-coordinates [10 20]})
-        moved (cmd/end-stock-drag-on-shell!
-               started
-               {:scene-coordinates [40 70]})]
-    (is (= {:name "Stock1"
-            :start-x 100
-            :start-y 100
-            :press-scene-x 10
-            :press-scene-y 20}
-           (:stock-drag started)))
-    (is (= [130 150] (model/stock-position (:diagram moved) "Stock1")))
-    (is (not (contains? moved :stock-drag)))))
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 200 150)
+                                        (cmd/fixture-stock! "Stock2" 350 150)
+                                        (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                                        (cmd/fixture-converter! "Converter1" 100 250)
+                                        (cmd/fixture-connector! "Connector1" "Converter1" "Flow1"))))
+        selected (dispatch/apply-event shell {:event events/selection-click
+                                              :object-kind :connector
+                                              :object-name "Connector1"})
+        diagram (:diagram selected)]
+    (is (model/selected? diagram :connector "Connector1"))
+    (is (not (model/selected? diagram :flow "Flow1")))))
 
-(deftest stock-drag-shell-no-op-paths-test
+(deftest apply-event-selection-click-uses-coordinate-priority-test
   (let [shell (-> (model/default-shell)
-                  (update :diagram cmd/fixture-stock! "Stock1" 100 100))
-        armed-shell (cmd/arm-stock-placement-on-shell! shell)]
-    (is (= shell (cmd/start-stock-drag-on-shell! shell {:stock-name "Stock1"})))
-    (is (= armed-shell (cmd/start-stock-drag-on-shell!
-                  armed-shell
-                  {:stock-name "Stock1" :scene-coordinates [10 20]})))
-    (is (= shell (cmd/end-stock-drag-on-shell! shell {:scene-coordinates [10 20]})))
-    (is (not (contains? (cmd/end-stock-drag-on-shell!
-                         (assoc shell :stock-drag {:name "Stock1"})
-                         {})
-                        :stock-drag)))))
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 100 100)
+                                        (cmd/fixture-stock! "Stock2" 300 200)
+                                        (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                                        (cmd/fixture-converter! "Converter1" 230 150))))
+        connector-shell (-> (model/default-shell)
+                            (update :diagram #(-> %
+                                                  (cmd/fixture-stock! "Stock1" 100 100)
+                                                  (cmd/fixture-stock! "Stock2" 300 200)
+                                                  (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                                                  (cmd/fixture-converter! "Converter1" 100 250)
+                                                  (cmd/fixture-connector! "Connector1" "Converter1" "Flow1"))))
+        stock-over-flow (dispatch/apply-event shell {:event events/selection-click
+                                                     :object-kind :flow
+                                                     :object-name "Flow1"
+                                                     :canvas-coordinates [305 225]})
+        stock-click-circle (dispatch/apply-event shell {:event events/selection-click
+                                                        :canvas-coordinates [295 225]})
+        flow-over-converter (dispatch/apply-event shell {:event events/selection-click
+                                                         :object-kind :converter
+                                                         :object-name "Converter1"
+                                                         :canvas-coordinates [240 175]})
+        flow-over-connector (dispatch/apply-event shell {:event events/selection-click
+                                                         :object-kind :connector
+                                                         :object-name "Connector1"
+                                                         :canvas-coordinates [240 175]})
+        outside-flow-pipe (dispatch/apply-event shell {:event events/selection-click
+                                                       :object-kind :flow
+                                                       :object-name "Flow1"
+                                                       :canvas-coordinates [210 176]})
+        connector-alone (dispatch/apply-event connector-shell {:event events/selection-click
+                                                               :object-kind :connector
+                                                               :object-name "Connector1"
+                                                               :canvas-coordinates [140 240]})]
+    (is (model/selected? (:diagram stock-over-flow) :stock "Stock2"))
+    (is (not (model/selected? (:diagram stock-over-flow) :flow "Flow1")))
+    (is (model/selected? (:diagram stock-click-circle) :stock "Stock2"))
+    (is (model/selected? (:diagram flow-over-converter) :flow "Flow1"))
+    (is (not (model/selected? (:diagram flow-over-converter) :converter "Converter1")))
+    (is (model/selected? (:diagram flow-over-connector) :flow "Flow1"))
+    (is (not (model/selected? (:diagram flow-over-connector) :connector "Connector1")))
+    (is (not (model/selected? (:diagram outside-flow-pipe) :flow "Flow1")))
+    (is (model/nothing-selected? (:diagram outside-flow-pipe)))
+    (is (model/selected? (:diagram connector-alone) :connector "Connector1"))
+    (is (not (model/selected? (:diagram connector-alone) :flow "Flow1")))))
 
-(deftest converter-drag-shell-lifecycle-test
+(deftest apply-event-cloud-drag-test
   (let [shell (-> (model/default-shell)
-                  (update :diagram cmd/fixture-converter! "Converter1" 100 250))
-        started (cmd/start-converter-drag-on-shell!
-                 shell
-                 {:converter-name "Converter1"
-                  :scene-coordinates [10 20]})
-        moved (cmd/end-converter-drag-on-shell!
-               started
-               {:scene-coordinates [40 70]})]
-    (is (= {:name "Converter1"
-            :start-x 100
-            :start-y 250
-            :press-scene-x 10
-            :press-scene-y 20}
-           (:converter-drag started)))
-    (is (= [130 300] (model/converter-position (:diagram moved) "Converter1")))
-    (is (not (contains? moved :converter-drag)))))
+                  (update :diagram #(model/fixture-source % "Source1" 50 150)))
+        dragging (dispatch/apply-event shell {:event events/cloud-drag-start
+                                              :cloud-kind :source
+                                              :cloud-name "Source1"
+                                              :scene-coordinates [60 160]})
+        live-dragged (dispatch/apply-event dragging {:event events/cloud-drag
+                                                     :scene-coordinates [80 190]})
+        dragged (dispatch/apply-event dragging {:event events/cloud-drag-end
+                                                :scene-coordinates [100 210]})]
+    (is (:cloud-drag dragging))
+    (is (:cloud-drag live-dragged))
+    (is (= [70 180] (model/source-position (:diagram live-dragged) "Source1")))
+    (is (= [90 200] (model/source-position (:diagram dragged) "Source1")))
+    (is (nil? (:cloud-drag dragged)))))
 
-(deftest object-drag-dispatch-falls-through-to-converter-test
+(deftest apply-event-stock-drag-rubber-bands-links-test
   (let [shell (-> (model/default-shell)
-                  (update :diagram cmd/fixture-converter! "Converter1" 100 250))
-        started (dispatch/apply-event
-                 shell
-                 {:event events/stock-drag-start
-                  :converter-name "Converter1"
-                  :scene-coordinates [10 20]})
-        moved (dispatch/apply-event
-               started
-               {:event events/stock-drag-end
-                :scene-coordinates [20 40]})]
-    (is (= "Converter1" (:name (:converter-drag started))))
-    (is (= [110 270] (model/converter-position (:diagram moved) "Converter1")))))
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 100 100)
+                                        (cmd/fixture-stock! "Stock2" 300 200)
+                                        (cmd/fixture-flow! "Flow1" "Stock1" "Stock2"))))
+        dragging (dispatch/apply-event shell {:event events/stock-drag-start
+                                              :stock-name "Stock1"
+                                              :scene-coordinates [140 125]})
+        live-dragged (dispatch/apply-event dragging {:event events/stock-drag
+                                                     :scene-coordinates [170 165]})
+        released (dispatch/apply-event live-dragged {:event events/stock-drag-end
+                                                     :scene-coordinates [180 175]})]
+    (is (:stock-drag live-dragged))
+    (is (= [130 140] (model/stock-position (:diagram live-dragged) "Stock1")))
+    (is (= [255.0 195.0] (model/flow-midpoint (:diagram live-dragged) "Flow1")))
+    (is (= [140 150] (model/stock-position (:diagram released) "Stock1")))
+    (is (nil? (:stock-drag released)))))
 
-(deftest enrich-drag-event-preserves-existing-coordinates-test
-  (is (= {:event events/stock-drag-start
-          :scene-coordinates [10 20]
-          :canvas-coordinates [1 2]
-          :from-canvas true}
-         (fx-input/enrich-event
-          {:event events/stock-drag-start
-           :scene-coordinates [10 20]
-           :canvas-coordinates [1 2]
-           :from-canvas true}))))
+(deftest apply-event-converter-drag-rubber-bands-connectors-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 200 150)
+                                        (cmd/fixture-stock! "Stock2" 350 150)
+                                        (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                                        (cmd/fixture-converter! "Converter1" 100 250)
+                                        (cmd/fixture-connector! "Connector1" "Converter1" "Flow1"))))
+        dragging (dispatch/apply-event shell {:event events/converter-drag-start
+                                              :converter-name "Converter1"
+                                              :scene-coordinates [125 275]})
+        live-dragged (dispatch/apply-event dragging {:event events/converter-drag
+                                                     :scene-coordinates [165 315]})
+        released (dispatch/apply-event live-dragged {:event events/converter-drag-end
+                                                     :scene-coordinates [175 325]})]
+    (is (:converter-drag live-dragged))
+    (is (= [140 290] (model/converter-position (:diagram live-dragged) "Converter1")))
+    (is (= [150 300] (model/converter-position (:diagram released) "Converter1")))
+    (is (nil? (:converter-drag released)))))
 
-(deftest enrich-edit-apply-preserves-existing-draft-test
-  (is (= {:event events/edit-stock-apply
-          :draft {:name "Stock1"}}
-         (fx-input/enrich-event
-          {:event events/edit-stock-apply
-           :draft {:name "Stock1"}}))))
+(deftest apply-event-connector-control-drag-rubber-bands-curve-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 200 150)
+                                        (cmd/fixture-stock! "Stock2" 350 150)
+                                        (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                                        (cmd/fixture-converter! "Converter1" 100 250)
+                                        (cmd/fixture-connector! "Connector1" "Converter1" "Flow1"))))
+        [start-x start-y] (model/connector-handle-position (:diagram shell) "Connector1")
+        dragging (dispatch/apply-event shell {:event events/connector-control-drag-start
+                                              :connector-name "Connector1"
+                                              :canvas-coordinates [start-x start-y]})
+        live-target [(+ start-x 20.0) (- start-y 10.0)]
+        live-dragged (dispatch/apply-event dragging {:event events/connector-control-drag
+                                                     :canvas-coordinates live-target})
+        release-target [(+ start-x 30.0) (- start-y 15.0)]
+        released (dispatch/apply-event live-dragged {:event events/connector-control-drag-end
+                                                     :canvas-coordinates release-target})]
+    (is (:connector-control-drag live-dragged))
+    (is (roughly-point= live-target
+                        (model/connector-handle-position (:diagram live-dragged) "Connector1")))
+    (is (roughly-point= release-target
+                        (model/connector-handle-position (:diagram released) "Connector1")))
+    (is (nil? (:connector-control-drag released)))))

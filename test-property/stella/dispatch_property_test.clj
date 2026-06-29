@@ -7,7 +7,7 @@
             [stella.events :as events]
             [stella.model :as model]))
 
-(def ^:private known-events [events/quit events/show-about])
+(def ^:private known-events [events/quit events/window-close events/show-about])
 
 (defspec unknown-events-are-ignored
   100
@@ -26,6 +26,12 @@
   25
   (prop/for-all [_ gen/int]
     (false? (:showing (dispatch/apply-action (model/default-shell) :quit)))))
+
+(defspec window-close-preserves-shell
+  25
+  (prop/for-all [_ gen/int]
+    (= (model/default-shell)
+       (dispatch/apply-action (model/default-shell) :window-close))))
 
 (defspec show-about-marks-visible
   25

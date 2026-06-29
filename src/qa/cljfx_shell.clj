@@ -513,6 +513,118 @@
         (ui/quit-app! stage)
         (pass! "drag-stock" "Quit requested")))))
 
+(defn- wait-for-element-gone!
+  [^Stage stage kind name & {:keys [attempts] :or {attempts 20}}]
+  (loop [n attempts]
+    (if (ui/element-visible? stage kind name)
+      (when (pos? n)
+        (Thread/sleep 100)
+        (recur (dec n)))
+      true)))
+
+(defn- run-delete-selection! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (place-two-stocks! stage)
+      (ui/click-palette! stage "Flow")
+      (ui/click-element! stage :stock "Stock1")
+      (ui/click-element! stage :stock "Stock2")
+      (when-not (ui/wait-for-element! stage :flow "Flow1" :attempts 20)
+        (fail! "Flow1 did not appear"))
+      (pass! "delete-selection" "Flow1 connects Stock1 to Stock2")
+      (ui/click-element! stage :stock "Stock1")
+      (when-not (ui/element-selected? stage :stock "Stock1")
+        (fail! "Stock1 not selected before delete"))
+      (ui/press-delete! stage)
+      (when-not (wait-for-element-gone! stage :stock "Stock1")
+        (fail! "Stock1 still visible after delete"))
+      (when-not (wait-for-element-gone! stage :flow "Flow1")
+        (fail! "Flow1 still visible after stock delete cascade"))
+      (when-not (ui/wait-for-element! stage :stock "Stock2")
+        (fail! "Stock2 missing after delete"))
+      (pass! "delete-selection" "Delete removes selected stock and attached flow")
+      (ui/click-palette! stage "Converter")
+      (ui/click-in-region! stage :canvas [-60 100])
+      (when-not (ui/wait-for-element! stage :converter "Converter1" :attempts 20)
+        (fail! "Converter1 did not appear"))
+      (ui/click-palette! stage "Connector")
+      (ui/click-element! stage :stock "Stock2")
+      (ui/click-element! stage :converter "Converter1")
+      (when-not (ui/wait-for-element! stage :connector "Connector1" :attempts 20)
+        (fail! "Connector1 did not appear"))
+      (pass! "delete-selection" "Connector1 links Stock2 to Converter1")
+      (ui/click-element! stage :converter "Converter1")
+      (when-not (ui/element-selected? stage :converter "Converter1")
+        (fail! "Converter1 not selected before backspace"))
+      (ui/press-backspace! stage)
+      (when-not (wait-for-element-gone! stage :converter "Converter1")
+        (fail! "Converter1 still visible after backspace"))
+      (when-not (wait-for-element-gone! stage :connector "Connector1")
+        (fail! "Connector1 still visible after converter delete cascade"))
+      (when-not (ui/wait-for-element! stage :stock "Stock2")
+        (fail! "Stock2 missing after converter delete"))
+      (pass! "delete-selection" "Backspace removes converter and attached connector")
+      (ui/click-palette! stage "Flow")
+      (ui/press-delete! stage)
+      (when-not (ui/wait-for-element! stage :stock "Stock2")
+        (fail! "Stock2 deleted while placement armed"))
+      (pass! "delete-selection" "Delete ignored while placement armed")
+      (ui/quit-app! stage)
+      (pass! "delete-selection" "Quit requested"))))
+
+(defn- run-select-objects! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas :center)
+      (when-not (ui/wait-for-element! stage :stock "Stock1" :attempts 20)
+        (fail! "Stock1 did not appear"))
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas [180 60])
+      (when-not (ui/wait-for-element! stage :stock "Stock2" :attempts 20)
+        (fail! "Stock2 did not appear"))
+      (pass! "select-objects" "Stock1 and Stock2 placed")
+      (ui/click-element! stage :stock "Stock1")
+      (when-not (ui/element-selected? stage :stock "Stock1")
+        (fail! "Stock1 not selected after click"))
+      (when (ui/element-selected? stage :stock "Stock2")
+        (fail! "Stock2 selected after Stock1 click"))
+      (pass! "select-objects" "Plain click selects Stock1")
+      (ui/click-element! stage :stock "Stock1")
+      (when (ui/element-selected? stage :stock "Stock1")
+        (fail! "Stock1 still selected after second click"))
+      (pass! "select-objects" "Second click deselects Stock1")
+      (ui/click-element! stage :stock "Stock1")
+      (ui/shift-click-element! stage :stock "Stock2")
+      (when-not (ui/element-selected? stage :stock "Stock1")
+        (fail! "Stock1 not selected after shift-click add"))
+      (when-not (ui/element-selected? stage :stock "Stock2")
+        (fail! "Stock2 not selected after shift-click add"))
+      (pass! "select-objects" "Shift-click adds Stock2 to selection")
+      (ui/shift-click-element! stage :stock "Stock1")
+      (when (ui/element-selected? stage :stock "Stock1")
+        (fail! "Stock1 still selected after shift-click remove"))
+      (when-not (ui/element-selected? stage :stock "Stock2")
+        (fail! "Stock2 deselected after shift-click remove"))
+      (pass! "select-objects" "Shift-click removes Stock1 from selection")
+      (ui/marquee-select! stage :canvas [-120 -80] [80 80])
+      (when-not (ui/element-selected? stage :stock "Stock1")
+        (fail! "Stock1 not selected after marquee"))
+      (when (ui/element-selected? stage :stock "Stock2")
+        (fail! "Stock2 selected after marquee"))
+      (pass! "select-objects" "Marquee selects intersecting Stock1 only")
+      (ui/press-escape! stage)
+      (when-not (ui/nothing-selected? stage)
+        (fail! "Selection not cleared after Escape"))
+      (pass! "select-objects" "Escape clears selection")
+      (ui/click-palette! stage "Flow")
+      (ui/click-element! stage :stock "Stock1")
+      (when (ui/element-selected? stage :stock "Stock1")
+        (fail! "Stock1 selected while flow placement armed"))
+      (pass! "select-objects" "Selection disabled while placement armed")
+      (ui/quit-app! stage)
+      (pass! "select-objects" "Quit requested"))))
+
 (defn- run-drag-converter! []
   (with-app! {}
     (fn [^Stage stage]
@@ -579,15 +691,19 @@
    "edit-flow" run-edit-flow!
    "edit-converter" run-edit-converter!
    "drag-stock" run-drag-stock!
-   "drag-converter" run-drag-converter!})
+   "drag-converter" run-drag-converter!
+   "select-objects" run-select-objects!
+   "delete-selection" run-delete-selection!})
 
 (defn -main [& args]
   (let [{:keys [qa-seconds args]} (qa-args/parse-qa-flag args)
         suite (first args)]
     (when qa-seconds
       (System/setProperty "stella.qa.auto-close-seconds" (str qa-seconds)))
+    (when (qa-args/parse-debug-flag args)
+      (System/setProperty "stella.debug" "true"))
     (when-not suite
-      (fail! "Usage: clojure -M:qa [--qa <seconds>] <suite-name>"))
+      (fail! "Usage: clojure -M:qa [--qa <seconds>] [--debug] <suite-name>"))
     (if-let [run (get suites suite)]
       (run-suite! suite (fn [] (run)))
       (fail! (str "Unknown suite: " suite)))))

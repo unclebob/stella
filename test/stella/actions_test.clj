@@ -5,11 +5,13 @@
 
 (deftest event->action-test
   (is (= :quit (actions/event->action events/quit)))
+  (is (= :window-close (actions/event->action events/window-close)))
   (is (= :show-about (actions/event->action events/show-about)))
   (is (nil? (actions/event->action :stella.ui/unknown)))
   (is (nil? (actions/event->action nil))))
 
 (deftest action->effect-test
   (is (= :platform-exit (actions/action->effect :quit)))
+  (is (= :platform-exit (actions/action->effect :window-close)))
   (is (= :about-dialog (actions/action->effect :show-about)))
   (is (nil? (actions/action->effect nil)) "Unknown actions are ignored"))

@@ -6,6 +6,7 @@
   [event-type]
   (cond
     (= event-type events/quit) :quit
+    (= event-type events/window-close) :window-close
     (= event-type events/show-about) :show-about
     :else nil))
 
@@ -13,7 +14,7 @@
   "Maps an application action to an effect keyword executed on the JavaFX thread."
   [action]
   (cond
-    (= action :quit) :platform-exit
+    (or (= action :quit) (= action :window-close)) :platform-exit
     (= action :show-about) :about-dialog
     :else nil))
 

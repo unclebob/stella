@@ -6,9 +6,9 @@
             [stella.actions :as actions]
             [stella.events :as events]))
 
-(def ^:private known-events [events/quit events/show-about])
+(def ^:private known-events [events/quit events/window-close events/show-about])
 
-(def ^:private known-actions [:quit :show-about])
+(def ^:private known-actions [:quit :window-close :show-about])
 
 (defspec unknown-events-are-ignored
   100
@@ -23,7 +23,7 @@
 
 (defspec known-actions-map-to-effects
   100
-  (for-all [action (gen/elements known-actions)]
+  (for-all [action (gen/elements [:quit :window-close :show-about])]
     (some? (actions/action->effect action))))
 
 (defspec action-effect-round-trip
@@ -34,7 +34,7 @@
       (and (some? action)
            (some? effect)
            (= effect (cond
-                       (= event events/quit) :platform-exit
+                       (or (= event events/quit) (= event events/window-close)) :platform-exit
                        (= event events/show-about) :about-dialog
                        :else nil))))))
 

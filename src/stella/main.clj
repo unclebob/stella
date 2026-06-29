@@ -7,6 +7,7 @@
 (defn -main
   [& args]
   (qa-args/apply-qa-flag! args)
+  (qa-args/apply-debug-flag! args)
   (System/setProperty "apple.laf.useScreenMenuBar" "true")
   (System/setProperty "apple.awt.application.name" "Stella")
   (fx/on-fx-thread

@@ -169,7 +169,7 @@
             (when-not (= "0" actual)
               (support/fail! (str "stock " name " value " actual " expected 0")))
             world))}
-   {:pattern #"^stock ([A-Za-z0-9]+) initial value should be (\d+)$"
+   {:pattern #"^stock ([A-Za-z0-9]+) initial value should be ([A-Za-z0-9]+)$"
     :fn (fn [world [_ name value] _]
           (let [actual (model/stock-initial-value (support/diagram-from world) name)]
             (when-not (= value actual)
@@ -180,13 +180,13 @@
           (let [name (support/require-value example name-param)
                 new-name (support/require-value example new-name-param)]
             (support/apply-diagram-edit world #(cmd/set-stock-name! % name new-name))))}
-   {:pattern #"^I set stock ([A-Za-z0-9]+) name to ([A-Za-z0-9]+)$"
-    :fn (fn [world [_ name new-name] _]
-          (support/apply-diagram-edit world #(cmd/set-stock-name! % name new-name)))}
    {:pattern #"^I set stock ([A-Za-z0-9]+) name to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name new-name-param] example]
           (let [new-name (support/require-value example new-name-param)]
             (support/apply-diagram-edit world #(cmd/set-stock-name! % name new-name))))}
+   {:pattern #"^I set stock ([A-Za-z0-9]+) name to ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name new-name] _]
+          (support/apply-diagram-edit world #(cmd/set-stock-name! % name new-name)))}
    {:pattern #"^I set stock <([A-Za-z0-9_]+)> initial value to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param value-param] example]
           (let [name (support/require-value example name-param)
@@ -196,7 +196,7 @@
     :fn (fn [world [_ name value-param] example]
           (let [value (support/require-value example value-param)]
             (support/apply-diagram-edit world #(cmd/set-stock-initial-value! % name value))))}
-   {:pattern #"^I set stock ([A-Za-z0-9]+) initial value to (\d+)$"
+   {:pattern #"^I set stock ([A-Za-z0-9]+) initial value to ([A-Za-z0-9]+)$"
     :fn (fn [world [_ name value] _]
           (support/apply-diagram-edit world #(cmd/set-stock-initial-value! % name value)))}
    {:pattern #"^I set stock <([A-Za-z0-9_]+)> minimum to <([A-Za-z0-9_]+)>$"
@@ -208,7 +208,7 @@
     :fn (fn [world [_ name min-param] example]
           (let [min-value (support/require-value example min-param)]
             (support/apply-diagram-edit world #(cmd/set-stock-min! % name min-value))))}
-   {:pattern #"^I set stock ([A-Za-z0-9]+) minimum to (\d+)$"
+   {:pattern #"^I set stock ([A-Za-z0-9]+) minimum to ([A-Za-z0-9]+)$"
     :fn (fn [world [_ name min-value] _]
           (support/apply-diagram-edit world #(cmd/set-stock-min! % name min-value)))}
    {:pattern #"^I set stock <([A-Za-z0-9_]+)> maximum to <([A-Za-z0-9_]+)>$"
@@ -238,7 +238,7 @@
             (when-not (= min-value actual)
               (support/fail! (str "stock " name " minimum " actual " expected " min-value)))
             world))}
-   {:pattern #"^stock ([A-Za-z0-9]+) minimum should be (\d+)$"
+   {:pattern #"^stock ([A-Za-z0-9]+) minimum should be ([A-Za-z0-9]+)$"
     :fn (fn [world [_ name min-value] _]
           (let [actual (model/stock-min-value (support/diagram-from world) name)]
             (when-not (= min-value actual)
@@ -252,7 +252,7 @@
             (when-not (= max-value actual)
               (support/fail! (str "stock " name " maximum " actual " expected " max-value)))
             world))}
-   {:pattern #"^stock ([A-Za-z0-9]+) maximum should be (\d+)$"
+   {:pattern #"^stock ([A-Za-z0-9]+) maximum should be ([A-Za-z0-9]+)$"
     :fn (fn [world [_ name max-value] _]
           (let [actual (model/stock-max-value (support/diagram-from world) name)]
             (when-not (= max-value actual)
@@ -281,7 +281,7 @@
           (let [name (support/require-value example name-param)
                 min-value (support/require-value example min-param)]
             (support/assert-stock-canvas-label world name :min min-value)))}
-   {:pattern #"^stock ([A-Za-z0-9]+) canvas minimum should be (\d+)$"
+   {:pattern #"^stock ([A-Za-z0-9]+) canvas minimum should be ([A-Za-z0-9]+)$"
     :fn (fn [world [_ name min-value] _]
           (support/assert-stock-canvas-label world name :min min-value))}
    {:pattern #"^stock <([A-Za-z0-9_]+)> canvas maximum should be <([A-Za-z0-9_]+)>$"
@@ -289,7 +289,7 @@
           (let [name (support/require-value example name-param)
                 max-value (support/require-value example max-param)]
             (support/assert-stock-canvas-label world name :max max-value)))}
-   {:pattern #"^stock ([A-Za-z0-9]+) canvas maximum should be (\d+)$"
+   {:pattern #"^stock ([A-Za-z0-9]+) canvas maximum should be ([A-Za-z0-9]+)$"
     :fn (fn [world [_ name max-value] _]
           (support/assert-stock-canvas-label world name :max max-value))}
    {:pattern #"^stock ([A-Za-z0-9]+) should display no maximum on canvas$"
@@ -450,18 +450,18 @@
             (when-not (= rate actual)
               (support/fail! (str "flow " flow " rate " actual " expected " rate)))
             world))}
+   {:pattern #"^flow ([A-Za-z0-9]+) rate should be ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ flow rate] _]
+          (let [actual (model/flow-rate (support/diagram-from world) flow)]
+            (when-not (= rate actual)
+              (support/fail! (str "flow " flow " rate " actual " expected " rate)))
+            world))}
    {:pattern #"^flow <([A-Za-z0-9_]+)> rate should be 0$"
     :fn (fn [world [_ flow-param] example]
           (let [flow (support/require-value example flow-param)
                 actual (model/flow-rate (support/diagram-from world) flow)]
             (when-not (= "0" actual)
               (support/fail! (str "flow " flow " rate " actual " expected 0")))
-            world))}
-   {:pattern #"^flow ([A-Za-z0-9]+) rate should be (\d+)$"
-    :fn (fn [world [_ flow rate] _]
-          (let [actual (model/flow-rate (support/diagram-from world) flow)]
-            (when-not (= rate actual)
-              (support/fail! (str "flow " flow " rate " actual " expected " rate)))
             world))}
    {:pattern #"^flow ([A-Za-z0-9]+) rate should be 0$"
     :fn (fn [world [_ flow] _]
@@ -474,13 +474,13 @@
           (let [name (support/require-value example name-param)
                 new-name (support/require-value example new-name-param)]
             (support/apply-diagram-edit world #(cmd/set-flow-name! % name new-name))))}
-   {:pattern #"^I set flow ([A-Za-z0-9]+) name to ([A-Za-z0-9]+)$"
-    :fn (fn [world [_ name new-name] _]
-          (support/apply-diagram-edit world #(cmd/set-flow-name! % name new-name)))}
    {:pattern #"^I set flow ([A-Za-z0-9]+) name to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name new-name-param] example]
           (let [new-name (support/require-value example new-name-param)]
             (support/apply-diagram-edit world #(cmd/set-flow-name! % name new-name))))}
+   {:pattern #"^I set flow ([A-Za-z0-9]+) name to ([A-Za-z0-9]+)$"
+    :fn (fn [world [_ name new-name] _]
+          (support/apply-diagram-edit world #(cmd/set-flow-name! % name new-name)))}
    {:pattern #"^I set flow <([A-Za-z0-9_]+)> rate to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param rate-param] example]
           (let [name (support/require-value example name-param)
@@ -511,7 +511,7 @@
           (let [name (support/require-value example name-param)
                 rate (support/require-value example rate-param)]
             (support/assert-flow-canvas-label world name :rate rate)))}
-   {:pattern #"^flow ([A-Za-z0-9]+) canvas rate should be (\d+)$"
+   {:pattern #"^flow ([A-Za-z0-9]+) canvas rate should be ([A-Za-z0-9]+)$"
     :fn (fn [world [_ name rate] _]
           (support/assert-flow-canvas-label world name :rate rate))}
    {:pattern #"^the diagram flow count should be 0$"
@@ -552,3 +552,7 @@
               (support/fail! (str "flow " flow " to mismatch")))
             world))}
   ])
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-27T10:27:42.679169-05:00", :module-hash "606313202", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1666922602"} {:id "def/placement-handlers", :kind "def", :line 7, :end-line 554, :hash "-1744849629"}]}
+;; clj-mutate-manifest-end

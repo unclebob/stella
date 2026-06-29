@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=3f327bbba8756327355305ddebbfe31902998e7a7a8e70552f51bb04352e2bb6
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-06-27T15:28:45.061074Z","feature_name":"Select objects","feature_path":"features/model/select-objects.feature","background_hash":"cb87b75886b11f0d16a0b473329b5f45738246fc49979a6f28d49866e872c997","implementation_hash":"unknown","scenarios":[]}
+# acceptance-mutation-manifest-end
+
 Feature: Select objects
 
 Background:
@@ -6,14 +11,14 @@ Background:
   And converter Converter1 at 100 250
 
 # select-objects-01
-Scenario Outline: Click selects an object
-  When I click select <kind> <name>
-  Then <kind> <name> should be selected
+Scenario: Click selects stock
+  When I click select stock Stock1
+  Then stock Stock1 should be selected
 
-  Examples:
-    | kind       | name       |
-    | stock      | Stock1     |
-    | converter  | Converter1 |
+# select-objects-01b
+Scenario: Click selects converter
+  When I click select converter Converter1
+  Then converter Converter1 should be selected
 
 # select-objects-02
 Scenario: Clicking a selected object deselects it
@@ -47,14 +52,12 @@ Scenario: Shift clicking a selected object removes it from the selection
   And the selection count should be 1
 
 # select-objects-06
-Scenario Outline: Marquee select chooses intersecting objects
-  When I marquee select from <x1> <y1> to <x2> <y2>
+Scenario: Marquee select chooses intersecting objects
+  When I marquee select from 50 50 to 200 200
   Then stock Stock1 should be selected
   And stock Stock2 should not be selected
-
-  Examples:
-    | x1 | y1 | x2  | y2  |
-    | 50 | 50 | 200 | 200 |
+  And converter Converter1 should not be selected
+  And the selection count should be 1
 
 # select-objects-07
 Scenario: Escape clears the selection

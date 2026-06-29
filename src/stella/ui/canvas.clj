@@ -7,77 +7,321 @@
   [kind name]
   {:event events/endpoint-click :endpoint-kind kind :endpoint-name name})
 
-(def ^:private flow-pipe-stroke-width 8)
-(def ^:private connector-stroke-width 1)
+(defn- selection-click
+  [kind name]
+  {:event events/selection-click :object-kind kind :object-name name})
 
-(defn flow-pipe-thicker-than-connector? []
-  (> flow-pipe-stroke-width connector-stroke-width))
+(def ^:private selection-outline-style
+  "-fx-fill: transparent; -fx-stroke: #888; -fx-stroke-width: 2;")
+
+(defn- with-rect-selection-outline
+  [diagram kind name width height children]
+  (if (model/selected? diagram kind name)
+    (into [{:fx/type :rectangle
+            :width (+ width 4)
+            :height (+ height 4)
+            :layout-x -2
+            :layout-y -2
+            :mouse-transparent true
+            :style selection-outline-style}]
+          children)
+    children))
+
+(defn- with-ellipse-selection-outline
+  [diagram kind name center-x center-y radius-x radius-y children]
+  (if (model/selected? diagram kind name)
+    (into [{:fx/type :ellipse
+            :center-x center-x
+            :center-y center-y
+            :radius-x (+ radius-x 2)
+            :radius-y (+ radius-y 2)
+            :mouse-transparent true
+            :style selection-outline-style}]
+          children)
+    children))
+
+(def flow-pipe-stroke-width 8)
+(def connector-stroke-width 1)
+(def ^:private connector-arrow-size 8)
+(def ^:private flow-boundary-radius 5.0)
+(def ^:private preview-opacity 0.55)
+(def ^:private canvas-center [2000.0 2000.0])
+(def ^:private connector-control-radius 3)
+(def ^:private connector-control-hit-radius 10)
+
+(defn- endpoint-center
+  [[x y] kind]
+  (case kind
+    (:stock :source :sink) [(+ x 40.0) (+ y 25.0)]
+    :converter [(+ x 25.0) (+ y 25.0)]
+    :flow [x y]
+    [x y]))
+
+(defn- ellipse-boundary-point
+  [[cx cy] [tx ty] radius-x radius-y]
+  (let [dx (- tx cx)
+        dy (- ty cy)
+        scale (Math/sqrt (+ (/ (* dx dx) (* radius-x radius-x))
+                            (/ (* dy dy) (* radius-y radius-y))))]
+    (if (zero? scale)
+      [cx cy]
+      [(+ cx (/ dx scale)) (+ cy (/ dy scale))])))
+
+(defn- rectangle-boundary-point
+  [[cx cy] [tx ty] half-width half-height]
+  (let [dx (- tx cx)
+        dy (- ty cy)
+        scale (max (if (zero? half-width) 0.0 (/ (Math/abs dx) half-width))
+                   (if (zero? half-height) 0.0 (/ (Math/abs dy) half-height)))]
+    (if (zero? scale)
+      [cx cy]
+      [(+ cx (/ dx scale)) (+ cy (/ dy scale))])))
+
+(defn- endpoint-boundary-point
+  [pos kind target]
+  (let [center (endpoint-center pos kind)]
+    (case kind
+      :stock (rectangle-boundary-point center target 40.0 25.0)
+      (:source :sink) (ellipse-boundary-point center target 40.0 25.0)
+      :converter (ellipse-boundary-point center target 25.0 25.0)
+      :flow (ellipse-boundary-point center target flow-boundary-radius flow-boundary-radius)
+      center)))
+
+(defn- clipped-link-endpoints
+  [from-pos from-kind to-pos to-kind]
+  (let [from-center (endpoint-center from-pos from-kind)
+        to-center (endpoint-center to-pos to-kind)]
+    [(endpoint-boundary-point from-pos from-kind to-center)
+     (endpoint-boundary-point to-pos to-kind from-center)]))
 
 (defn- unit-vector
-  [dx dy]
-  (let [len (Math/sqrt (+ (* dx dx) (* dy dy)))]
-    (if (zero? len)
+  [from-x from-y to-x to-y]
+  (let [dx (- to-x from-x)
+        dy (- to-y from-y)
+        length (Math/sqrt (+ (* dx dx) (* dy dy)))]
+    (if (zero? length)
       [0.0 0.0]
-      [(/ dx len) (/ dy len)])))
+      [(/ dx length) (/ dy length)])))
 
-(defn- flow-arrowhead
-  [tip-x tip-y base-x base-y]
-  (let [[ux uy] (unit-vector (- tip-x base-x) (- tip-y base-y))
-        half 6.0
-        perp-x (- uy)
-        perp-y ux
-        left-x (+ base-x (* perp-x half))
-        left-y (+ base-y (* perp-y half))
-        right-x (- base-x (* perp-x half))
-        right-y (- base-y (* perp-y half))]
-    {:fx/type :polygon
-     :points [tip-x tip-y left-x left-y right-x right-y]
-     :fill "#333"}))
+(defn- connector-default-control-offset
+  [start-x start-y end-x end-y]
+  (let [mid-x (/ (+ start-x end-x) 2.0)
+        mid-y (/ (+ start-y end-y) 2.0)
+        chord (Math/sqrt (+ (Math/pow (- end-x start-x) 2)
+                            (Math/pow (- end-y start-y) 2)))
+        away-x (- mid-x (first canvas-center))
+        away-y (- mid-y (second canvas-center))
+        away-length (Math/sqrt (+ (* away-x away-x) (* away-y away-y)))
+        offset (-> (* chord 0.2) (max 20.0) (min 80.0))
+        [ux uy] (if (zero? away-length)
+                  [0.0 -1.0]
+                  [(/ away-x away-length) (/ away-y away-length)])]
+    [(* ux offset)
+     (* uy offset)]))
+
+(defn- connector-control-point
+  [start-x start-y end-x end-y control-offset]
+  (let [[offset-x offset-y] (or control-offset
+                                (connector-default-control-offset start-x start-y end-x end-y))]
+    [(+ (/ (+ start-x end-x) 2.0) offset-x)
+     (+ (/ (+ start-y end-y) 2.0) offset-y)]))
+
+(defn- quadratic-point
+  [start-x start-y control-x control-y end-x end-y t]
+  (let [one-minus-t (- 1.0 t)
+        start-scale (* one-minus-t one-minus-t)
+        control-scale (* 2.0 one-minus-t t)
+        end-scale (* t t)]
+    [(+ (* start-scale start-x)
+        (* control-scale control-x)
+        (* end-scale end-x))
+     (+ (* start-scale start-y)
+        (* control-scale control-y)
+        (* end-scale end-y))]))
+
+(defn- connector-curve-midpoint
+  [start-x start-y control-x control-y end-x end-y]
+  (quadratic-point start-x start-y control-x control-y end-x end-y 0.5))
+
+(defn- with-stroke-dash
+  [shape stroke-dash-array]
+  (cond-> shape
+    stroke-dash-array (assoc :stroke-dash-array stroke-dash-array)))
+
+(defn- connector-curve
+  [start-x start-y control-x control-y end-x end-y stroke stroke-width opacity stroke-dash-array]
+  (with-stroke-dash
+    {:fx/type :quad-curve
+     :start-x start-x
+     :start-y start-y
+     :control-x control-x
+     :control-y control-y
+     :end-x end-x
+     :end-y end-y
+     :fill "transparent"
+     :stroke stroke
+     :stroke-width stroke-width
+     :stroke-line-cap :round
+     :opacity opacity}
+    stroke-dash-array))
+
+(defn- connector-control-drag-events
+  [connector-name]
+  {:on-mouse-pressed {:event events/connector-control-drag-start
+                      :connector-name connector-name}
+   :on-mouse-dragged {:event events/connector-control-drag
+                      :connector-name connector-name}
+   :on-mouse-released {:event events/connector-control-drag-end
+                       :connector-name connector-name}})
+
+(defn- connector-control-markers
+  [connector-name marker-x marker-y]
+  (let [drag-events (when connector-name
+                      (connector-control-drag-events connector-name))]
+    (filterv map?
+             [(when connector-name
+                (merge {:fx/type :circle
+                        :center-x marker-x
+                        :center-y marker-y
+                        :radius connector-control-hit-radius
+                        :fill "transparent"
+                        :stroke "transparent"}
+                       drag-events))
+              (cond-> {:fx/type :circle
+                       :center-x marker-x
+                       :center-y marker-y
+                       :radius connector-control-radius
+                       :fill "#000"}
+                drag-events (merge drag-events))])))
+
+(defn- connector-arrowhead
+  ([end-x end-y ux uy]
+   (connector-arrowhead end-x end-y ux uy "#666" connector-stroke-width 1.0 nil))
+  ([end-x end-y ux uy stroke stroke-width opacity stroke-dash-array]
+  (let [px (- uy)
+        py ux
+        base-x (- end-x (* ux connector-arrow-size))
+        base-y (- end-y (* uy connector-arrow-size))
+        wing (/ connector-arrow-size 2.0)]
+    [(with-stroke-dash
+       {:fx/type :line
+        :start-x end-x
+        :start-y end-y
+        :end-x (+ base-x (* px wing))
+        :end-y (+ base-y (* py wing))
+        :stroke stroke
+        :stroke-width stroke-width
+        :opacity opacity}
+       stroke-dash-array)
+     (with-stroke-dash
+       {:fx/type :line
+        :start-x end-x
+        :start-y end-y
+        :end-x (- base-x (* px wing))
+        :end-y (- base-y (* py wing))
+        :stroke stroke
+        :stroke-width stroke-width
+        :opacity opacity}
+       stroke-dash-array)])))
 
 (defn- flow-pipe-body
+  [selected? start-x start-y end-x end-y]
+  (filterv map?
+           [(when selected?
+              {:fx/type :line
+               :start-x start-x
+               :start-y start-y
+               :end-x end-x
+               :end-y end-y
+               :stroke "#2f80ed"
+               :stroke-width 16
+               :stroke-line-cap :round
+               :opacity 0.35})
+            {:fx/type :line
+             :start-x start-x
+             :start-y start-y
+             :end-x end-x
+             :end-y end-y
+             :stroke "#555"
+             :stroke-width 10
+             :stroke-line-cap :round}
+            {:fx/type :line
+             :start-x start-x
+             :start-y start-y
+             :end-x end-x
+             :end-y end-y
+             :stroke "#eef4f7"
+             :stroke-width flow-pipe-stroke-width
+             :stroke-line-cap :round}]))
+
+(defn- flow-hit-line
   [start-x start-y end-x end-y]
-  (let [[ux uy] (unit-vector (- end-x start-x) (- end-y start-y))
-        arrow-size 12.0
-        pipe-end-x (- end-x (* ux arrow-size))
-        pipe-end-y (- end-y (* uy arrow-size))]
-    {:line {:fx/type :line
-            :start-x start-x
-            :start-y start-y
-            :end-x pipe-end-x
-            :end-y pipe-end-y
-            :stroke "#333"
-            :stroke-width flow-pipe-stroke-width
-            :stroke-line-cap :round}
-     :arrow (flow-arrowhead end-x end-y pipe-end-x pipe-end-y)}))
+  {:fx/type :line
+   :start-x start-x
+   :start-y start-y
+   :end-x end-x
+   :end-y end-y
+   :stroke "transparent"
+   :stroke-width 10
+   :stroke-line-cap :round})
 
 (defn- flow-desc
   [diagram {:keys [name rate from to]}]
   (when-let [from-pos (model/endpoint-position diagram from)]
     (when-let [to-pos (model/endpoint-position diagram to)]
-      (let [[start-x start-y] (model/endpoint-anchor from-pos (:kind from) :right)
-            [end-x end-y] (model/endpoint-anchor to-pos (:kind to) :left)
+      (let [[[start-x start-y] [end-x end-y]]
+            (clipped-link-endpoints from-pos (:kind from) to-pos (:kind to))
             mid-x (/ (+ start-x end-x) 2.0)
             mid-y (/ (+ start-y end-y) 2.0)
-            {:keys [line arrow]} (flow-pipe-body start-x start-y end-x end-y)]
+            pipe (flow-pipe-body (model/selected? diagram :flow name)
+                                 start-x start-y end-x end-y)]
         (cond-> {:fx/type :group
                  :fx/key (str "flow-" name)
                  :id (str "flow-" name)
-                 :children [line
-                            arrow
-                            {:fx/type :v-box
-                             :layout-x (- mid-x 30)
-                             :layout-y (- mid-y 20)
-                             :spacing 2
-                             :children [{:fx/type :label :text name}
-                                        {:fx/type :label :text (str rate)}]}]}
+                 :children (into (conj pipe (flow-hit-line start-x start-y end-x end-y))
+                                 [{:fx/type :v-box
+                                   :layout-x (- mid-x 30)
+                                   :layout-y (- mid-y 20)
+                                   :spacing 2
+                                   :children (filterv map? [{:fx/type :label :text name}
+                                                            {:fx/type :label :text (str rate)}])}])}
           (model/endpoint-clickable? diagram :flow)
           (assoc :on-mouse-clicked (endpoint-click :flow name))
+          (= :idle (:placement-mode diagram))
+          (assoc :on-mouse-clicked (selection-click :flow name))
           :always
           (assoc :on-context-menu-requested
                  {:event events/edit-flow-open :flow-name name}))))))
 
 (def ^:private connector-label-style "-fx-font-size: 10px;")
 (def ^:private connector-formula-style "-fx-font-size: 9px;")
+
+(defn- connector-stroke-dash-array
+  [from to]
+  (when (or (= :stock (:kind from))
+            (= :stock (:kind to)))
+    [6 4]))
+
+(defn- connector-body
+  [selected? connector-name control-offset from to start-x start-y end-x end-y]
+  (let [[control-x control-y] (connector-control-point start-x start-y end-x end-y control-offset)
+        [marker-x marker-y] (connector-curve-midpoint start-x start-y control-x control-y end-x end-y)
+        [ux uy] (unit-vector control-x control-y end-x end-y)
+        stroke-dash-array (connector-stroke-dash-array from to)]
+    (into
+     (filterv map?
+              [(when selected?
+                 (connector-curve start-x start-y control-x control-y end-x end-y
+                                  "#2f80ed" 8 0.35 stroke-dash-array))
+               (connector-curve start-x start-y control-x control-y end-x end-y
+                                "#666" connector-stroke-width 1.0 stroke-dash-array)
+               (connector-curve start-x start-y control-x control-y end-x end-y
+                                "transparent" 14 1.0 nil)])
+     (concat
+      (connector-control-markers connector-name marker-x marker-y)
+      (when selected?
+        (connector-arrowhead end-x end-y ux uy "#2f80ed" 5 0.35 stroke-dash-array))
+      (connector-arrowhead end-x end-y ux uy "#666" connector-stroke-width 1.0 stroke-dash-array)))))
 
 (defn connector-canvas-labels
   [diagram connector-name]
@@ -89,33 +333,36 @@
         (seq (:formula connector)) (assoc :formula (:formula connector))))))
 
 (defn- connector-desc
-  [diagram {:keys [name from to formula]}]
+  [diagram {:keys [name from to formula control-offset]}]
   (when-let [from-pos (model/endpoint-position diagram from)]
     (when-let [to-pos (model/endpoint-position diagram to)]
-      (let [[start-x start-y] (model/endpoint-anchor from-pos (:kind from) :right)
-            [end-x end-y] (model/endpoint-anchor to-pos (:kind to) :left)
+      (let [[start-x start-y] (endpoint-center from-pos (:kind from))
+            [end-x end-y] (endpoint-center to-pos (:kind to))
             mid-x (/ (+ start-x end-x) 2.0)
             mid-y (/ (+ start-y end-y) 2.0)
-            label-children (into [{:fx/type :label :text name :style connector-label-style}]
+            body (connector-body (model/selected? diagram :connector name)
+                                 name
+                                 control-offset
+                                 from
+                                 to
+                                 start-x start-y end-x end-y)
+            label-children (filterv map? (into [{:fx/type :label :text name :style connector-label-style}]
                                  (when (seq formula)
                                    [{:fx/type :label
                                      :text formula
-                                     :style connector-formula-style}]))]
-        {:fx/type :group
-         :fx/key (str "connector-" name)
-         :id (str "connector-" name)
-         :children [{:fx/type :line
-                     :start-x start-x
-                     :start-y start-y
-                     :end-x end-x
-                     :end-y end-y
-                     :stroke "#666"
-                     :stroke-width connector-stroke-width}
-                    {:fx/type :v-box
-                     :layout-x (- mid-x 30)
-                     :layout-y (- mid-y 15)
-                     :spacing 2
-                     :children label-children}]}))))
+                                     :style connector-formula-style}])))]
+        (cond-> {:fx/type :group
+                 :fx/key (str "connector-" name)
+                 :id (str "connector-" name)
+                 :children (into body
+                                 [{:fx/type :v-box
+                                   :layout-x (- mid-x 30)
+                                   :layout-y (- mid-y 15)
+                                   :spacing 2
+                                   :mouse-transparent true
+                                   :children label-children}])}
+          (= :idle (:placement-mode diagram))
+          (assoc :on-mouse-clicked (selection-click :connector name)))))))
 
 (defn converter-canvas-labels
   [diagram converter-name]
@@ -167,86 +414,210 @@
 (defn- stock-desc
   [diagram {:keys [name x y] :as stock}]
   (let [{:keys [name min max]} (stock-icon-labels stock)
-        children (into [{:fx/type :rectangle
-                         :width 80
-                         :height 50
-                         :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
-                        {:fx/type :label
-                         :layout-x 20
-                         :layout-y 14
-                         :text name}
-                        {:fx/type :label
-                         :layout-x 4
-                         :layout-y 36
-                         :text min
-                         :style bound-label-style}]
-                       (when max
-                         [{:fx/type :label
-                           :layout-x 52
-                           :layout-y 36
-                           :text max
-                           :style bound-label-style}]))]
+        body (into [{:fx/type :rectangle
+                     :width 80
+                     :height 50
+                     :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
+                    {:fx/type :label
+                     :layout-x 20
+                     :layout-y 14
+                     :text name}
+                    {:fx/type :label
+                     :layout-x 4
+                     :layout-y 36
+                     :text min
+                     :style bound-label-style}]
+                   (when max
+                     [{:fx/type :label
+                       :layout-x 52
+                       :layout-y 36
+                       :text max
+                       :style bound-label-style}]))
+        children (with-rect-selection-outline diagram :stock name 80 50 body)]
     (cond-> {:fx/type :group
              :fx/key (str "stock-" name)
              :id (str "stock-" name)
              :layout-x x
              :layout-y y
-             :children children}
+             :children (filterv map? children)}
       (model/endpoint-clickable? diagram :stock)
       (assoc :on-mouse-clicked (endpoint-click :stock name))
       (= :idle (:placement-mode diagram))
-      (assoc :on-mouse-pressed {:event events/stock-drag-start :stock-name name}
+      (assoc :on-mouse-clicked (selection-click :stock name)
+             :on-mouse-pressed {:event events/stock-drag-start :stock-name name}
+             :on-mouse-dragged {:event events/stock-drag :stock-name name}
              :on-mouse-released {:event events/stock-drag-end :stock-name name})
       :always
       (assoc :on-context-menu-requested
              {:event events/edit-stock-open :stock-name name}))))
 
 (defn- converter-desc
-  [diagram {:keys [name x y value]}]
-  (cond-> {:fx/type :group
-           :fx/key (str "converter-" name)
-           :id (str "converter-" name)
-           :layout-x x
-           :layout-y y
-           :children [{:fx/type :circle
-                       :center-x 25
-                       :center-y 25
-                       :radius 25
-                       :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
-                      {:fx/type :v-box
-                       :layout-x 5
-                       :layout-y 12
-                       :spacing 2
-                       :children [{:fx/type :label :text name}
-                                  {:fx/type :label :text value}]}]}
-    (model/endpoint-clickable? diagram :converter)
-    (assoc :on-mouse-clicked (endpoint-click :converter name))
-    (= :idle (:placement-mode diagram))
-    (assoc :on-mouse-pressed {:event events/converter-drag-start :converter-name name}
-           :on-mouse-released {:event events/converter-drag-end :converter-name name})
-    :always
-    (assoc :on-context-menu-requested
-           {:event events/edit-converter-open :converter-name name})))
+  [diagram {:keys [name x y]}]
+  (let [body (with-ellipse-selection-outline
+              diagram :converter name 25 25 25 25
+              [{:fx/type :circle
+                :center-x 25
+                :center-y 25
+                :radius 25
+                :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
+               {:fx/type :label
+                :layout-x 8
+                :layout-y 18
+                :text name}])]
+    (cond-> {:fx/type :group
+             :fx/key (str "converter-" name)
+             :id (str "converter-" name)
+             :layout-x x
+             :layout-y y
+             :children (filterv map? body)}
+      (model/endpoint-clickable? diagram :converter)
+      (assoc :on-mouse-clicked (endpoint-click :converter name))
+      (= :idle (:placement-mode diagram))
+      (assoc :on-mouse-clicked (selection-click :converter name)
+             :on-mouse-pressed {:event events/converter-drag-start :converter-name name}
+             :on-mouse-dragged {:event events/converter-drag :converter-name name}
+             :on-mouse-released {:event events/converter-drag-end :converter-name name})
+      :always
+      (assoc :on-context-menu-requested
+             {:event events/edit-converter-open :converter-name name}))))
 
 (defn- cloud-desc
   [diagram kind {:keys [name x y]}]
-  (cond-> {:fx/type :group
-           :fx/key (str (clojure.core/name kind) "-" name)
-           :id (str (clojure.core/name kind) "-" name)
-           :layout-x x
-           :layout-y y
-           :children [{:fx/type :ellipse
-                       :center-x 40
-                       :center-y 25
-                       :radius-x 40
-                       :radius-y 25
-                       :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
-                      {:fx/type :label
-                       :layout-x 20
-                       :layout-y 18
-                       :text name}]}
-    (model/endpoint-clickable? diagram kind)
-    (assoc :on-mouse-clicked (endpoint-click kind name))))
+  (let [body (with-ellipse-selection-outline
+              diagram kind name 40 25 40 25
+              [{:fx/type :ellipse
+                :center-x 40
+                :center-y 25
+                :radius-x 40
+                :radius-y 25
+                :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
+               {:fx/type :label
+                :layout-x 20
+                :layout-y 18
+                :text name}])]
+    (cond-> {:fx/type :group
+             :fx/key (str (clojure.core/name kind) "-" name)
+             :id (str (clojure.core/name kind) "-" name)
+             :layout-x x
+             :layout-y y
+             :children (filterv map? body)}
+      (model/endpoint-clickable? diagram kind)
+      (assoc :on-mouse-clicked (endpoint-click kind name))
+      (= :idle (:placement-mode diagram))
+      (assoc :on-mouse-clicked (selection-click kind name)
+             :on-mouse-pressed {:event events/cloud-drag-start
+                                :cloud-kind kind
+                                :cloud-name name}
+             :on-mouse-dragged {:event events/cloud-drag
+                                :cloud-kind kind
+                                :cloud-name name}
+             :on-mouse-released {:event events/cloud-drag-end
+                                 :cloud-kind kind
+                                 :cloud-name name}))))
+
+(defn- preview-stock-desc
+  [x y]
+  {:fx/type :group
+   :fx/key "preview-stock"
+   :id "preview-stock"
+   :layout-x x
+   :layout-y y
+   :mouse-transparent true
+   :opacity preview-opacity
+   :children [{:fx/type :rectangle
+               :width 80
+               :height 50
+               :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1; -fx-stroke-dash-array: 6 4;"}
+              {:fx/type :label
+               :layout-x 20
+               :layout-y 14
+               :text "Stock"}]})
+
+(defn- preview-cloud-desc
+  [kind x y]
+  (let [label (case kind
+                :source "Source"
+                :sink "Sink")]
+    {:fx/type :group
+     :fx/key (str "preview-" (clojure.core/name kind))
+     :id (str "preview-" (clojure.core/name kind))
+     :layout-x x
+     :layout-y y
+     :mouse-transparent true
+     :opacity preview-opacity
+     :children [{:fx/type :ellipse
+                 :center-x 40
+                 :center-y 25
+                 :radius-x 40
+                 :radius-y 25
+                 :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1; -fx-stroke-dash-array: 6 4;"}
+                {:fx/type :label
+                 :layout-x 20
+                 :layout-y 18
+                 :text label}]}))
+
+(defn- preview-converter-desc
+  [x y]
+  {:fx/type :group
+   :fx/key "preview-converter"
+   :id "preview-converter"
+   :layout-x x
+   :layout-y y
+   :mouse-transparent true
+   :opacity preview-opacity
+   :children [{:fx/type :circle
+               :center-x 25
+               :center-y 25
+               :radius 25
+               :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1; -fx-stroke-dash-array: 6 4;"}
+              {:fx/type :label
+               :layout-x 8
+               :layout-y 18
+               :text "Converter"}]})
+
+(defn- placement-preview-desc
+  [diagram {:keys [x y]}]
+  (case (:placement-mode diagram)
+    :stock (preview-stock-desc x y)
+    :source (preview-cloud-desc :source x y)
+    :sink (preview-cloud-desc :sink x y)
+    :converter (preview-converter-desc x y)
+    nil))
+
+(defn- draft-flow-desc
+  [diagram {:keys [x y]}]
+  (when-let [from (get-in diagram [:flow-draft :from])]
+    (when-let [from-pos (model/endpoint-position diagram from)]
+      (let [[[start-x start-y] [end-x end-y]]
+            (clipped-link-endpoints from-pos (:kind from) [x y] :point)]
+        {:fx/type :group
+         :fx/key "preview-flow"
+         :id "preview-flow"
+         :mouse-transparent true
+         :opacity preview-opacity
+         :children (flow-pipe-body false start-x start-y end-x end-y)}))))
+
+(defn- draft-connector-desc
+  [diagram {:keys [x y]}]
+  (when-let [from (get-in diagram [:connector-draft :from])]
+    (when-let [from-pos (model/endpoint-position diagram from)]
+      (let [[[start-x start-y] [end-x end-y]]
+            (clipped-link-endpoints from-pos (:kind from) [x y] :point)]
+        {:fx/type :group
+         :fx/key "preview-connector"
+         :id "preview-connector"
+         :mouse-transparent true
+         :opacity preview-opacity
+         :children (connector-body false nil nil nil {:kind :flow}
+                                   start-x start-y end-x end-y)}))))
+
+(defn- canvas-preview-nodes
+  [diagram preview]
+  (when preview
+    (filterv map?
+             [(placement-preview-desc diagram preview)
+              (draft-flow-desc diagram preview)
+              (draft-connector-desc diagram preview)])))
 
 (defn- overlay-segment
   [items]
@@ -275,6 +646,22 @@
    :height 4000
    :style "-fx-fill: #f5f5f5;"})
 
+(defn- marquee-preview-desc
+  [{:keys [start-x start-y current-x current-y]}]
+  (when (and start-x start-y current-x current-y)
+    (let [x (min start-x current-x)
+          y (min start-y current-y)
+          width (Math/abs (- current-x start-x))
+          height (Math/abs (- current-y start-y))]
+      {:fx/type :rectangle
+       :id "marquee-selection"
+       :x x
+       :y y
+       :width width
+       :height height
+       :mouse-transparent true
+       :style "-fx-fill: rgba(47, 128, 237, 0.12); -fx-stroke: #2f80ed; -fx-stroke-width: 1; -fx-stroke-dash-array: 5 4;"})))
+
 (defn canvas-stack
   [shell]
   (let [diagram (:diagram shell)
@@ -284,17 +671,22 @@
         sink-nodes (mapv #(cloud-desc diagram :sink %) (model/sinks diagram))
         converter-nodes (mapv #(converter-desc diagram %) (model/converters diagram))
         stock-nodes (mapv #(stock-desc diagram %) (model/stocks diagram))
+        preview-nodes (canvas-preview-nodes diagram (:canvas-preview shell))
+        marquee-node (marquee-preview-desc (:marquee-drag shell))
         diagram-nodes (into connector-nodes
                             (concat flow-nodes source-nodes sink-nodes
-                                    converter-nodes stock-nodes))
+                                    converter-nodes stock-nodes preview-nodes
+                                    [marquee-node]))
         children (into [(canvas-background)] diagram-nodes)]
-    (cond-> {:fx/type :stack-pane
+    (cond-> {:fx/type :pane
              :id "canvas"
              :on-mouse-clicked {:event events/canvas-click}
-             :children children}
+             :on-mouse-moved {:event events/canvas-move}
+             :children (filterv map? children)}
       (= :idle (:placement-mode diagram))
-      (assoc :on-mouse-pressed {:event events/stock-drag-start :from-canvas true}
-             :on-mouse-released {:event events/stock-drag-end :from-canvas true}))))
+      (assoc :on-mouse-pressed {:event events/marquee-drag-start :from-canvas true}
+             :on-mouse-dragged {:event events/marquee-drag :from-canvas true}
+             :on-mouse-released {:event events/marquee-drag-end :from-canvas true}))))
 
 (defn canvas-desc
   [shell]
