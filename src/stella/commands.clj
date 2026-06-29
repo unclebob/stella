@@ -1,5 +1,6 @@
 (ns stella.commands
-  (:require [stella.model :as model]))
+  (:require [stella.model :as model]
+            [stella.ui.canvas :as canvas]))
 
 (defn default-shell!
   [_]
@@ -25,7 +26,9 @@
 
 (defn update-canvas-preview-on-shell!
   [shell [x y]]
-  (let [preview {:x x :y y}]
+  (let [mode (get-in shell [:diagram :placement-mode])
+        {:keys [min-x min-y]} (canvas/preview-anchor-insets mode)
+        preview {:x (max min-x x) :y (max min-y y)}]
     (if (= preview (:canvas-preview shell))
       shell
       (assoc shell :canvas-preview preview))))

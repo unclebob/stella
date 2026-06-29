@@ -89,11 +89,22 @@
         background (first (:children desc))]
     (is (= :pane (:fx/type desc)))
     (is (= "canvas" (:id desc)))
+    (is (= :rectangle (:fx/type (:clip desc))))
     (is (nil? (:on-mouse-clicked desc)))
     (is (= {:event events/canvas-click} (:on-mouse-clicked background)))
     (is (= {:event events/canvas-move} (:on-mouse-moved desc)))
     (is (= {:event events/marquee-drag :from-canvas true}
            (:on-mouse-dragged desc)))))
+
+(deftest converter-preview-anchor-insets-test
+  (is (= {:min-x 75 :min-y 0} (canvas/preview-anchor-insets :converter))))
+
+(deftest converter-preview-stays-inside-canvas-test
+  (let [shell (-> (cmd/arm-converter-placement-on-shell! (cmd/default-shell! nil))
+                  (cmd/update-canvas-preview-on-shell! [-40 120]))
+        preview (first (filter #(= "preview-converter" (:id %))
+                               (:children (canvas/canvas-desc shell))))]
+    (is (= 75 (:layout-x preview)))))
 
 (deftest canvas-renders-stocks-test
   (let [shell (-> (cmd/default-shell! nil)

@@ -654,6 +654,10 @@
    :opacity preview-opacity
    :children (directed-cloud-shape kind)})
 
+(defn- preview-child
+  [desc]
+  (assoc desc :mouse-transparent true))
+
 (defn- preview-converter-desc
   [x y]
   {:fx/type :group
@@ -663,19 +667,30 @@
    :layout-y y
    :mouse-transparent true
    :opacity preview-opacity
-   :children [{:fx/type :circle
-               :center-x 25
-               :center-y 25
-               :radius 25
-               :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1; -fx-stroke-dash-array: 6 4;"}
-              {:fx/type :label
-               :layout-x (- 25 (/ converter-label-width 2.0))
-               :layout-y (+ 50 converter-label-gap)
-               :pref-width converter-label-width
-               :pref-height converter-label-height
-               :alignment :center
-               :text-alignment :center
-               :text "Converter"}]})
+   :children [(preview-child
+               {:fx/type :circle
+                :center-x 25
+                :center-y 25
+                :radius 25
+                :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1; -fx-stroke-dash-array: 6 4;"})
+              (preview-child
+               {:fx/type :label
+                :layout-x (- 25 (/ converter-label-width 2.0))
+                :layout-y (+ 50 converter-label-gap)
+                :pref-width converter-label-width
+                :pref-height converter-label-height
+                :alignment :center
+                :text-alignment :center
+                :text "Converter"})]})
+
+(defn preview-anchor-insets
+  "Minimum canvas coordinates so placement previews stay inside the canvas pane."
+  [placement-mode]
+  (case placement-mode
+    :converter {:min-x (+ 25 (quot converter-label-width 2)) :min-y 0}
+    :source {:min-x 16 :min-y 0}
+    :sink {:min-x 16 :min-y 0}
+    {:min-x 0 :min-y 0}))
 
 (defn- placement-preview-desc
   [diagram {:keys [x y]}]
@@ -783,6 +798,9 @@
         children (into [(canvas-background)] diagram-nodes)]
     (cond-> {:fx/type :pane
              :id "canvas"
+             :clip {:fx/type :rectangle
+                    :width 10000
+                    :height 10000}
              :on-mouse-moved {:event events/canvas-move}
              :children (filterv map? children)}
       (= :idle (:placement-mode diagram))

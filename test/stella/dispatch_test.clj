@@ -140,6 +140,12 @@
     (is (= shell unchanged))
     (is (nil? (:canvas-preview cleared)))))
 
+(deftest apply-event-canvas-move-clamps-converter-preview-test
+  (let [shell (cmd/arm-converter-placement-on-shell! (model/default-shell))
+        moved (dispatch/apply-event shell {:event events/canvas-move
+                                           :coordinates [-40 120]})]
+    (is (= {:x 75 :y 120} (:canvas-preview moved)))))
+
 (deftest apply-event-marquee-drag-updates-live-rectangle-test
   (let [started (dispatch/apply-event (model/default-shell)
                                       {:event events/marquee-drag-start
