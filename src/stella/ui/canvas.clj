@@ -537,20 +537,41 @@
       (assoc :on-context-menu-requested
              {:event events/edit-converter-open :converter-name name}))))
 
+(def ^:private cloud-shape-style
+  "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;")
+
+(defn- cloud-shape []
+  [{:fx/type :circle
+    :center-x 27
+    :center-y 29
+    :radius 18
+    :style cloud-shape-style}
+   {:fx/type :circle
+    :center-x 43
+    :center-y 20
+    :radius 21
+    :style cloud-shape-style}
+   {:fx/type :circle
+    :center-x 59
+    :center-y 30
+    :radius 16
+    :style cloud-shape-style}
+   {:fx/type :rectangle
+    :x 25
+    :y 28
+    :width 38
+    :height 18
+    :style "-fx-fill: white; -fx-stroke: transparent;"}])
+
 (defn- cloud-desc
   [diagram kind {:keys [name x y]}]
   (let [body (with-ellipse-selection-outline
               diagram kind name 40 25 40 25
-              [{:fx/type :ellipse
-                :center-x 40
-                :center-y 25
-                :radius-x 40
-                :radius-y 25
-                :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
+              (conj (cloud-shape)
                {:fx/type :label
                 :layout-x 20
                 :layout-y 18
-                :text name}])]
+                :text name}))]
     (cond-> {:fx/type :group
              :fx/key (str (clojure.core/name kind) "-" name)
              :id (str (clojure.core/name kind) "-" name)
@@ -601,16 +622,11 @@
      :layout-y y
      :mouse-transparent true
      :opacity preview-opacity
-     :children [{:fx/type :ellipse
-                 :center-x 40
-                 :center-y 25
-                 :radius-x 40
-                 :radius-y 25
-                 :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1; -fx-stroke-dash-array: 6 4;"}
-                {:fx/type :label
-                 :layout-x 20
-                 :layout-y 18
-                 :text label}]}))
+     :children (conj (cloud-shape)
+                     {:fx/type :label
+                      :layout-x 20
+                      :layout-y 18
+                      :text label})}))
 
 (defn- preview-converter-desc
   [x y]

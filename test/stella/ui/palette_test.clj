@@ -16,6 +16,10 @@
   [tool]
   (first (:children tool)))
 
+(defn- node-count
+  [tool fx-type]
+  (count (filter #(= fx-type (:fx/type %)) (:children tool))))
+
 (deftest palette-tools-test
   (let [desc (palette/palette-desc)
         [stock flow source sink converter connector] (:children desc)]
@@ -33,16 +37,20 @@
     (is (some #(= :circle (:fx/type %)) (:children flow)))
     (is (= ["Source"] (label-texts source)))
     (is (= {:event events/arm-source} (:on-mouse-clicked source)))
-    (is (some #(= :ellipse (:fx/type %)) (:children source)))
+    (is (= 3 (node-count source :circle)))
+    (is (= 0 (node-count source :ellipse)))
     (is (= ["Sink"] (label-texts sink)))
     (is (= {:event events/arm-sink} (:on-mouse-clicked sink)))
-    (is (some #(= :ellipse (:fx/type %)) (:children sink)))
+    (is (= 3 (node-count sink :circle)))
+    (is (= 0 (node-count sink :ellipse)))
     (is (= ["Converter"] (label-texts converter)))
     (is (= {:event events/arm-converter} (:on-mouse-clicked converter)))
     (is (some #(= :circle (:fx/type %)) (:children converter)))
     (is (= ["Connector"] (label-texts connector)))
     (is (= {:event events/arm-connector} (:on-mouse-clicked connector)))
-    (is (some #(= :quad-curve (:fx/type %)) (:children connector)))))
+    (is (some #(= :quad-curve (:fx/type %)) (:children connector)))
+    (is (= 1 (node-count connector :polygon)))
+    (is (= 0 (node-count connector :line)))))
 
 (deftest active-palette-tool-is-highlighted-test
   (let [shell (cmd/arm-flow-placement-on-shell! (cmd/default-shell! nil))

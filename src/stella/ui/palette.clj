@@ -16,28 +16,46 @@
 (def ^:private label-style
   "-fx-font-size: 10px;")
 
+(def ^:private icon-shape-style
+  "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;")
+
 (defn- stock-icon []
   [{:fx/type :rectangle
     :x 21
     :y 10
     :width 40
     :height 24
-    :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}])
+    :style icon-shape-style}])
 
 (defn- cloud-icon []
-  [{:fx/type :ellipse
-    :center-x icon-center-x
-    :center-y icon-center-y
-    :radius-x 24
-    :radius-y 14
-    :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}])
+  [{:fx/type :circle
+    :center-x 29
+    :center-y 24
+    :radius 11
+    :style icon-shape-style}
+   {:fx/type :circle
+    :center-x 42
+    :center-y 17
+    :radius 14
+    :style icon-shape-style}
+   {:fx/type :circle
+    :center-x 55
+    :center-y 24
+    :radius 10
+    :style icon-shape-style}
+   {:fx/type :rectangle
+    :x 27
+    :y 23
+    :width 31
+    :height 12
+    :style "-fx-fill: white; -fx-stroke: transparent;"}])
 
 (defn- converter-icon []
   [{:fx/type :circle
     :center-x icon-center-x
     :center-y icon-center-y
     :radius 14
-    :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}])
+    :style icon-shape-style}])
 
 (defn- flow-icon []
   [{:fx/type :line
@@ -80,20 +98,9 @@
     :fill "transparent"
     :stroke "#666"
     :stroke-width 1}
-   {:fx/type :line
-    :start-x 62
-    :start-y 24
-    :end-x 54
-    :end-y 21
-    :stroke "#666"
-    :stroke-width 1}
-   {:fx/type :line
-    :start-x 62
-    :start-y 24
-    :end-x 56
-    :end-y 30
-    :stroke "#666"
-    :stroke-width 1}])
+   {:fx/type :polygon
+    :points [62 24 53 18 55 30]
+    :fill "#666"}])
 
 (defn- icon-nodes
   [kind]

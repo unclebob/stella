@@ -40,6 +40,10 @@
   [arrow-lines]
   [(:start-x (first arrow-lines)) (:start-y (first arrow-lines))])
 
+(defn- node-count
+  [desc fx-type]
+  (count (filter #(= fx-type (:fx/type %)) (:children desc))))
+
 (defn- dot
   [[ax ay] [bx by]]
   (+ (* ax bx) (* ay by)))
@@ -77,6 +81,17 @@
     (is (= 140 (:layout-y preview)))
     (is (= 0.55 (:opacity preview)))))
 
+(deftest canvas-renders-armed-cloud-preview-test
+  (let [shell (-> (cmd/default-shell! nil)
+                  (cmd/arm-source-placement-on-shell!)
+                  (assoc :canvas-preview {:x 120 :y 140}))
+        preview (first (filter #(= "preview-source" (:id %))
+                               (:children (canvas/canvas-desc shell))))]
+    (is (some? preview))
+    (is (= 3 (node-count preview :circle)))
+    (is (= 0 (node-count preview :ellipse)))
+    (is (= ["Source"] (map :text (filter #(= :label (:fx/type %)) (:children preview)))))))
+
 (deftest canvas-renders-clouds-test
   (let [diagram (-> (cmd/default-diagram! nil)
                     (cmd/fixture-source! "Source1" 50 80)
@@ -87,7 +102,9 @@
                             (re-matches #"(source|sink)-.*" (:id %)))
                      (:children desc))]
     (is (= 2 (count clouds)))
-    (is (= #{"source-Source1" "sink-Sink1"} (set (map :id clouds))))))
+    (is (= #{"source-Source1" "sink-Sink1"} (set (map :id clouds))))
+    (is (every? #(= 3 (node-count % :circle)) clouds))
+    (is (every? #(= 0 (node-count % :ellipse)) clouds))))
 
 (deftest canvas-clouds-select-and-drag-when-idle-test
   (let [diagram (-> (cmd/default-diagram! nil)
