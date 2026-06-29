@@ -51,11 +51,11 @@ Scenario: Reject source as flow destination
   Then the diagram flow count should be 0
 
 # connect-cloud-05
-Scenario Outline: Completing cloud flow disarms the flow tool
+Scenario Outline: Completing cloud flow keeps the flow tool armed
   When I arm the flow placement tool
   And I select source <from> as the flow source
   And I select stock <to> as the flow destination
-  Then the flow placement tool should be disarmed
+  Then the flow placement tool should be armed
 
   Examples:
     | from    | to     |

@@ -88,6 +88,11 @@
           (when-not (model/source-placement-disarmed? (support/diagram-from world))
             (support/fail! "expected source placement tool disarmed"))
           world)}
+   {:pattern #"^the source placement tool should be armed$"
+    :fn (fn [world _ _]
+          (when-not (= :source (:placement-mode (support/diagram-from world)))
+            (support/fail! "expected source placement tool armed"))
+          world)}
    {:pattern #"^source ([A-Za-z0-9]+) at (\d+) (\d+)$"
     :fn (fn [world [_ name x-str y-str] _]
           (let [diagram (support/diagram-from world)]
@@ -250,6 +255,11 @@
     :fn (fn [world _ _]
           (when-not (model/converter-placement-disarmed? (support/diagram-from world))
             (support/fail! "expected converter placement tool disarmed"))
+          world)}
+   {:pattern #"^the converter placement tool should be armed$"
+    :fn (fn [world _ _]
+          (when-not (= :converter (:placement-mode (support/diagram-from world)))
+            (support/fail! "expected converter placement tool armed"))
           world)}
    {:pattern #"^converter ([A-Za-z0-9]+) at (\d+) (\d+)$"
     :fn (fn [world [_ name x-str y-str] _]

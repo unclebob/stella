@@ -327,6 +327,11 @@
           (when-not (model/placement-disarmed? (support/diagram-from world))
             (support/fail! "expected stock placement tool disarmed"))
           world)}
+   {:pattern #"^the stock placement tool should be armed$"
+    :fn (fn [world _ _]
+          (when-not (= :stock (:placement-mode (support/diagram-from world)))
+            (support/fail! "expected stock placement tool armed"))
+          world)}
    {:pattern #"^a diagram model with stock <([A-Za-z0-9_]+)> at <([A-Za-z0-9_]+)> <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param x-param y-param] example]
           (let [name (support/require-value example name-param)

@@ -56,11 +56,11 @@ Scenario: Arming connector without selecting elements connects nothing
   Then the diagram connector count should be 0
 
 # connect-connector-06
-Scenario Outline: Completing connector disarms the tool
+Scenario Outline: Completing connector keeps the tool armed
   When I arm the connector placement tool
   And I select converter <from> as the connector origin
   And I select flow <to> as the connector destination
-  Then the connector placement tool should be disarmed
+  Then the connector placement tool should be armed
 
   Examples:
     | from       | to    |

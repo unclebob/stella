@@ -21,10 +21,9 @@ Scenario Outline: Place first stock on empty diagram
     | 200 | 150 |
 
 # place-stock-02
-Scenario Outline: Second stock requires re-arming the placement tool
+Scenario Outline: Second stock without re-arming the placement tool
   When I arm the stock placement tool
   And I place a stock at <x1> <y1>
-  And I arm the stock placement tool
   And I place a stock at <x2> <y2>
   Then the diagram should contain stock Stock1
   And stock Stock1 should be at position 100 100
@@ -42,11 +41,11 @@ Scenario: Arming without a canvas click places no stock
   Then the diagram stock count should be 0
 
 # place-stock-04
-Scenario Outline: Placement disarms the stock tool
+Scenario Outline: Placement keeps the stock tool armed
   When I arm the stock placement tool
   And I place a stock at <x> <y>
   Then stock Stock1 should be at position 200 150
-  And the stock placement tool should be disarmed
+  And the stock placement tool should be armed
 
   Examples:
     | x   | y   |

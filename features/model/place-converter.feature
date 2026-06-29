@@ -26,21 +26,20 @@ Scenario: Arming converter without a canvas click places nothing
   Then the diagram converter count should be 0
 
 # place-converter-03
-Scenario Outline: Converter placement disarms the tool
+Scenario Outline: Converter placement keeps the tool armed
   When I arm the converter placement tool
   And I place a converter at <x> <y>
   Then converter Converter1 should be at position 100 250
-  And the converter placement tool should be disarmed
+  And the converter placement tool should be armed
 
   Examples:
     | x   | y   |
     | 100 | 250 |
 
 # place-converter-04
-Scenario Outline: Second converter requires re-arming the placement tool
+Scenario Outline: Second converter without re-arming the placement tool
   When I arm the converter placement tool
   And I place a converter at <x1> <y1>
-  And I arm the converter placement tool
   And I place a converter at <x2> <y2>
   Then the diagram should contain converter Converter2
   And converter Converter1 should be at position 100 250
