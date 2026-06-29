@@ -345,9 +345,6 @@
           (assoc :on-context-menu-requested
                  {:event events/edit-flow-open :flow-name name}))))))
 
-(def ^:private connector-label-style "-fx-font-size: 10px;")
-(def ^:private connector-formula-style "-fx-font-size: 9px;")
-
 (defn- connector-stroke-dash-array
   [from to]
   (when (or (= :stock (:kind from))
@@ -388,13 +385,11 @@
         (seq (:formula connector)) (assoc :formula (:formula connector))))))
 
 (defn- connector-desc
-  [diagram {:keys [name from to formula control-offset]}]
+  [diagram {:keys [name from to control-offset]}]
   (when-let [from-pos (model/endpoint-position diagram from)]
     (when-let [to-pos (model/endpoint-position diagram to)]
       (let [[start-x start-y] (endpoint-center from-pos (:kind from))
             [end-x end-y] (endpoint-center to-pos (:kind to))
-            mid-x (/ (+ start-x end-x) 2.0)
-            mid-y (/ (+ start-y end-y) 2.0)
             body (connector-body (model/selected? diagram :connector name)
                                  name
                                  control-offset
@@ -402,21 +397,11 @@
                                  to
                                  to-pos
                                  start-x start-y end-x end-y)
-            label-children (filterv map? (into [{:fx/type :label :text name :style connector-label-style}]
-                                 (when (seq formula)
-                                   [{:fx/type :label
-                                     :text formula
-                                     :style connector-formula-style}])))]
+            children body]
         (cond-> {:fx/type :group
                  :fx/key (str "connector-" name)
                  :id (str "connector-" name)
-                 :children (into body
-                                 [{:fx/type :v-box
-                                   :layout-x (- mid-x 30)
-                                   :layout-y (- mid-y 15)
-                                   :spacing 2
-                                   :mouse-transparent true
-                                   :children label-children}])}
+                 :children children}
           (= :idle (:placement-mode diagram))
           (assoc :on-mouse-clicked (selection-click :connector name)))))))
 
@@ -429,6 +414,10 @@
 (defn converter-canvas-position
   [diagram converter-name]
   (model/converter-position diagram converter-name))
+
+(def ^:private converter-label-width 100)
+(def ^:private converter-label-gap 6)
+(def ^:private converter-label-height 18)
 
 (def ^:private bound-label-style "-fx-font-size: 9px;")
 
@@ -517,8 +506,12 @@
                 :radius 25
                 :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
                {:fx/type :label
-                :layout-x 8
-                :layout-y 18
+                :layout-x (- 25 (/ converter-label-width 2.0))
+                :layout-y (+ 50 converter-label-gap)
+                :pref-width converter-label-width
+                :pref-height converter-label-height
+                :alignment :center
+                :text-alignment :center
                 :text name}])]
     (cond-> {:fx/type :group
              :fx/key (str "converter-" name)
@@ -567,11 +560,7 @@
   [diagram kind {:keys [name x y]}]
   (let [body (with-ellipse-selection-outline
               diagram kind name 40 25 40 25
-              (conj (cloud-shape)
-               {:fx/type :label
-                :layout-x 20
-                :layout-y 18
-                :text name}))]
+              (cloud-shape))]
     (cond-> {:fx/type :group
              :fx/key (str (clojure.core/name kind) "-" name)
              :id (str (clojure.core/name kind) "-" name)
@@ -612,21 +601,14 @@
 
 (defn- preview-cloud-desc
   [kind x y]
-  (let [label (case kind
-                :source "Source"
-                :sink "Sink")]
-    {:fx/type :group
-     :fx/key (str "preview-" (clojure.core/name kind))
-     :id (str "preview-" (clojure.core/name kind))
-     :layout-x x
-     :layout-y y
-     :mouse-transparent true
-     :opacity preview-opacity
-     :children (conj (cloud-shape)
-                     {:fx/type :label
-                      :layout-x 20
-                      :layout-y 18
-                      :text label})}))
+  {:fx/type :group
+   :fx/key (str "preview-" (clojure.core/name kind))
+   :id (str "preview-" (clojure.core/name kind))
+   :layout-x x
+   :layout-y y
+   :mouse-transparent true
+   :opacity preview-opacity
+   :children (cloud-shape)})
 
 (defn- preview-converter-desc
   [x y]
@@ -643,8 +625,12 @@
                :radius 25
                :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1; -fx-stroke-dash-array: 6 4;"}
               {:fx/type :label
-               :layout-x 8
-               :layout-y 18
+               :layout-x (- 25 (/ converter-label-width 2.0))
+               :layout-y (+ 50 converter-label-gap)
+               :pref-width converter-label-width
+               :pref-height converter-label-height
+               :alignment :center
+               :text-alignment :center
                :text "Converter"}]})
 
 (defn- placement-preview-desc

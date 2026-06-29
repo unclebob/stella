@@ -90,7 +90,7 @@
     (is (some? preview))
     (is (= 3 (node-count preview :circle)))
     (is (= 0 (node-count preview :ellipse)))
-    (is (= ["Source"] (map :text (filter #(= :label (:fx/type %)) (:children preview)))))))
+    (is (empty? (filter #(= :label (:fx/type %)) (:children preview))))))
 
 (deftest canvas-renders-clouds-test
   (let [diagram (-> (cmd/default-diagram! nil)
@@ -104,7 +104,8 @@
     (is (= 2 (count clouds)))
     (is (= #{"source-Source1" "sink-Sink1"} (set (map :id clouds))))
     (is (every? #(= 3 (node-count % :circle)) clouds))
-    (is (every? #(= 0 (node-count % :ellipse)) clouds))))
+    (is (every? #(= 0 (node-count % :ellipse)) clouds))
+    (is (every? #(empty? (filter (fn [child] (= :label (:fx/type child))) (:children %))) clouds))))
 
 (deftest canvas-clouds-select-and-drag-when-idle-test
   (let [diagram (-> (cmd/default-diagram! nil)
@@ -276,7 +277,6 @@
                     (cmd/fixture-connector! "Connector1" "Converter1" "Flow1"))
         shell (assoc (cmd/default-shell! nil) :diagram diagram)
         types (set (map :fx/type (descendant-types (canvas/canvas-desc shell))))]
-    (is (contains? types :v-box))
     (is (not (contains? types :vbox)))))
 
 (deftest flow-canvas-labels-test
@@ -292,6 +292,19 @@
                     (cmd/fixture-converter! "Converter1" 100 250)
                     (cmd/set-converter-name! "Converter1" "Growth"))]
     (is (= {:name "Growth"} (canvas/converter-canvas-labels diagram "Growth")))))
+
+(deftest canvas-renders-converter-name-below-circle-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-converter! "Converter1" 100 250))
+        shell (assoc (cmd/default-shell! nil) :diagram diagram)
+        converter (first (filter #(= "converter-Converter1" (:id %))
+                                 (:children (canvas/canvas-desc shell))))
+        label (first (filter #(= :label (:fx/type %)) (:children converter)))]
+    (is (= "Converter1" (:text label)))
+    (is (= -25.0 (:layout-x label)))
+    (is (= 56 (:layout-y label)))
+    (is (= 100 (:pref-width label)))
+    (is (= :center (:alignment label)))))
 
 (deftest diagram-overlay-text-test
   (let [diagram (-> (cmd/default-diagram! nil)
@@ -338,8 +351,12 @@
                                    (filter #(re-matches #"connector-.*" (:id %)))
                                    first
                                    :children
-                                   (filter #(= :v-box (:fx/type %)))
-                                   first)
+                                   (filter #(= :label (:fx/type %))))
+        connector-label-containers (some->> (:children desc)
+                                            (filter #(re-matches #"connector-.*" (:id %)))
+                                            first
+                                            :children
+                                            (filter #(= :v-box (:fx/type %))))
         connector-curves (some->> (:children desc)
                                    (filter #(re-matches #"connector-.*" (:id %)))
                                    first
@@ -371,7 +388,8 @@
     (is (= 2 (count visible-connector-lines)))
     (is (= 1 (count hit-curves)))
     (is (= 2 (count control-points)))
-    (is (true? (:mouse-transparent connector-labels)))
+    (is (empty? connector-labels))
+    (is (empty? connector-label-containers))
     (is (= "#000" (:fill control-point)))
     (is (= 3 (:radius control-point)))
     (is (= 10 (:radius hit-control-point)))
