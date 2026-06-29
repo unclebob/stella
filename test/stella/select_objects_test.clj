@@ -79,3 +79,12 @@
                     (cmd/arm-flow-placement!)
                     (cmd/click-select! :stock "Stock1"))]
     (is (model/nothing-selected? diagram))))
+
+(deftest connector-selectable-while-placement-armed-test
+  (let [diagram (-> (base-diagram)
+                    (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                    (cmd/fixture-connector! "Connector1" "Converter1" "Flow1")
+                    (cmd/arm-connector-placement!)
+                    (cmd/click-select! :connector "Connector1"))]
+    (is (model/selected? diagram :connector "Connector1"))
+    (is (model/connector-placement-armed? diagram))))

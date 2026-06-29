@@ -192,6 +192,24 @@
     (is (model/selected? diagram :connector "Connector1"))
     (is (not (model/selected? diagram :flow "Flow1")))))
 
+(deftest apply-event-select-connector-while-placement-armed-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 200 150)
+                                        (cmd/fixture-stock! "Stock2" 350 150)
+                                        (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                                        (cmd/fixture-converter! "Converter1" 100 250)
+                                        (cmd/fixture-connector! "Connector1" "Converter1" "Flow1")
+                                        (cmd/arm-stock-placement!))))
+        [handle-x handle-y] (model/connector-handle-position (:diagram shell) "Connector1")
+        selected (dispatch/apply-event shell {:event events/selection-click
+                                              :object-kind :connector
+                                              :object-name "Connector1"
+                                              :canvas-coordinates [(int handle-x) (int handle-y)]})
+        diagram (:diagram selected)]
+    (is (model/selected? diagram :connector "Connector1"))
+    (is (= :stock (:placement-mode diagram)))))
+
 (deftest apply-event-selection-click-uses-coordinate-priority-test
   (let [shell (-> (model/default-shell)
                   (update :diagram #(-> %

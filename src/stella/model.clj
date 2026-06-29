@@ -1182,10 +1182,18 @@
     (update-fn diagram)
     diagram))
 
+(defn- update-selection-when-allowed
+  [diagram kind update-fn]
+  (if (or (placement-disarmed? diagram)
+          (= kind :connector))
+    (update-fn diagram)
+    diagram))
+
 (defn click-select
   [diagram kind name]
-  (update-selection-when-idle
+  (update-selection-when-allowed
    diagram
+   kind
    (fn [diagram]
      (if (endpoint-exists? diagram kind name)
        (let [ref (object-ref kind name)
@@ -1203,8 +1211,9 @@
 
 (defn shift-click-select
   [diagram kind name]
-  (update-selection-when-idle
+  (update-selection-when-allowed
    diagram
+   kind
    (fn [diagram]
      (if (endpoint-exists? diagram kind name)
        (let [ref (object-ref kind name)

@@ -33,3 +33,10 @@
   (let [diagram (connector-diagram)
         [hx hy] (model/connector-handle-position diagram "Connector1")]
     (is (model/selected? (model/click-select-at diagram hx hy) :connector "Connector1"))))
+
+(deftest click-select-at-connector-on-handle-while-stock-armed-test
+  (let [diagram (-> (connector-diagram)
+                    (model/arm-stock-placement))
+        [hx hy] (model/connector-handle-position diagram "Connector1")]
+    (is (model/selected? (model/click-select-at diagram hx hy) :connector "Connector1"))
+    (is (= :stock (:placement-mode diagram)))))
