@@ -160,7 +160,7 @@
   (type-into-dialog-field! field-label ""))
 
 (defn flow-pipe-thicker-than-connector? [_stage]
-  (> canvas/flow-pipe-stroke-width canvas/connector-stroke-width))
+  (canvas/flow-pipe-thicker-than-connector?))
 
 (defn- palette-pane [^Stage stage]
   (when-let [root (some-> stage .getScene .getRoot)]
