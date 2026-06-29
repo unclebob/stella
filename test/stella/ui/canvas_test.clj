@@ -157,6 +157,7 @@
         desc (canvas/canvas-desc shell)
         flow (first (filter #(= "flow-Flow1" (:id %)) (:children desc)))
         pipe-lines (filter #(= :line (:fx/type %)) (:children flow))
+        midpoint-circle (first (filter #(= :circle (:fx/type %)) (:children flow)))
         visible-pipe-lines (remove #(= "transparent" (:stroke %)) pipe-lines)
         pipe-line (last visible-pipe-lines)
         arrowhead (first (filter #(= :polygon (:fx/type %)) (:children flow)))]
@@ -166,6 +167,17 @@
     (is (every? #(>= (:stroke-width %) 8) visible-pipe-lines))
     (is (= [180.0 145.0 300.0 205.0]
            (mapv pipe-line [:start-x :start-y :end-x :end-y])))
+    (is (= {:fx/type :circle
+            :center-x 240.0
+            :center-y 175.0
+            :radius 8.0
+            :fill "white"
+            :stroke "#555"
+            :stroke-width 1
+            :mouse-transparent true}
+           midpoint-circle))
+    (is (> (.indexOf (:children flow) midpoint-circle)
+           (.indexOf (:children flow) pipe-line)))
     (is (nil? arrowhead))
     (is (= {:name "Flow1" :rate "0"}
            (canvas/flow-canvas-labels diagram "Flow1")))))
@@ -346,7 +358,7 @@
                       (roughly= (second arrow-tip) (:start-y %)))
                 arrow-lines))
     (is (not= [(:end-x connector-curve) (:end-y connector-curve)] arrow-tip))
-    (is (roughly= 5.0 (distance flow-midpoint arrow-tip)))
+    (is (roughly= 8.0 (distance flow-midpoint arrow-tip)))
     (is (pos? (dot [(- (:end-x connector-curve) (:control-x connector-curve))
                     (- (:end-y connector-curve) (:control-y connector-curve))]
                    [(- (first arrow-tip) (first arrow-base))

@@ -43,7 +43,7 @@
 (def flow-pipe-stroke-width 8)
 (def connector-stroke-width 1)
 (def ^:private connector-arrow-size 8)
-(def ^:private flow-boundary-radius 5.0)
+(def ^:private flow-boundary-radius (* flow-pipe-stroke-width 1.0))
 (def ^:private preview-opacity 0.55)
 (def ^:private canvas-center [2000.0 2000.0])
 (def ^:private connector-control-radius 3)
@@ -265,6 +265,17 @@
    :stroke-width 10
    :stroke-line-cap :round})
 
+(defn- flow-midpoint-circle
+  [mid-x mid-y]
+  {:fx/type :circle
+   :center-x mid-x
+   :center-y mid-y
+   :radius flow-boundary-radius
+   :fill "white"
+   :stroke "#555"
+   :stroke-width 1
+   :mouse-transparent true})
+
 (defn- flow-desc
   [diagram {:keys [name rate from to]}]
   (when-let [from-pos (model/endpoint-position diagram from)]
@@ -278,7 +289,9 @@
         (cond-> {:fx/type :group
                  :fx/key (str "flow-" name)
                  :id (str "flow-" name)
-                 :children (into (conj pipe (flow-hit-line start-x start-y end-x end-y))
+                 :children (into (conj pipe
+                                       (flow-hit-line start-x start-y end-x end-y)
+                                       (flow-midpoint-circle mid-x mid-y))
                                  [{:fx/type :v-box
                                    :layout-x (- mid-x 30)
                                    :layout-y (- mid-y 20)
