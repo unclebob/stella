@@ -49,6 +49,14 @@
   [desc pred]
   (first (filter pred (:children desc))))
 
+(defn- first-connector-node
+  [desc]
+  (first (filter #(re-matches #"connector-.*" (:id %)) (:children desc))))
+
+(defn- connector-node-by-name
+  [desc name]
+  (first (filter #(= (str "connector-" name) (:id %)) (:children desc))))
+
 (defn- dot
   [[ax ay] [bx by]]
   (+ (* ax bx) (* ay by)))
@@ -370,47 +378,19 @@
                             (filter #(= :line (:fx/type %)))
                             (remove #(= "transparent" (:stroke %)))
                             last)
-        connector-curve (some->> (:children desc)
-                                  (filter #(re-matches #"connector-.*" (:id %)))
-                                  first
-                                  :children
-                                  (filter #(= :quad-curve (:fx/type %)))
-                                  first)
+        connector-node (first-connector-node desc)
+        connector-children (:children connector-node)
+        connector-curve (first (filter #(= :quad-curve (:fx/type %)) connector-children))
         flow-midpoint (model/flow-midpoint diagram "Flow1")
-        connector-lines (some->> (:children desc)
-                                  (filter #(re-matches #"connector-.*" (:id %)))
-                                  first
-                                  :children
-                                  (filter #(= :line (:fx/type %))))
-        connector-labels (some->> (:children desc)
-                                   (filter #(re-matches #"connector-.*" (:id %)))
-                                   first
-                                   :children
-                                   (filter #(= :label (:fx/type %))))
-        connector-label-containers (some->> (:children desc)
-                                            (filter #(re-matches #"connector-.*" (:id %)))
-                                            first
-                                            :children
-                                            (filter #(= :v-box (:fx/type %))))
-        connector-curves (some->> (:children desc)
-                                   (filter #(re-matches #"connector-.*" (:id %)))
-                                   first
-                                   :children
-                                   (filter #(= :quad-curve (:fx/type %))))
+        connector-lines (filter #(= :line (:fx/type %)) connector-children)
+        connector-labels (filter #(= :label (:fx/type %)) connector-children)
+        connector-label-containers (filter #(= :v-box (:fx/type %)) connector-children)
+        connector-curves (filter #(= :quad-curve (:fx/type %)) connector-children)
         visible-connector-lines (remove #(= "transparent" (:stroke %)) connector-lines)
         hit-curves (filter #(= "transparent" (:stroke %)) connector-curves)
-        control-handle (some->> (:children desc)
-                                 (filter #(re-matches #"connector-.*" (:id %)))
-                                 first
-                                 :children
-                                 (filter #(= :group (:fx/type %)))
-                                 first)
+        control-handle (first (filter #(= :group (:fx/type %)) connector-children))
         control-points (:children control-handle)
-        connector-polygons (some->> (:children desc)
-                                     (filter #(re-matches #"connector-.*" (:id %)))
-                                     first
-                                     :children
-                                     (filter #(= :polygon (:fx/type %))))
+        connector-polygons (filter #(= :polygon (:fx/type %)) connector-children)
         arrow-lines visible-connector-lines
         arrow-tip (arrow-tip arrow-lines)
         arrow-base (arrow-wing-base arrow-lines)
@@ -460,9 +440,7 @@
            [(:start-x connector-curve) (:start-y connector-curve)]))
     (is (= flow-midpoint
            [(:end-x connector-curve) (:end-y connector-curve)]))
-    (is (nil? (:on-mouse-clicked (some->> (:children desc)
-                                          (filter #(re-matches #"connector-.*" (:id %)))
-                                          first))))
+    (is (nil? (:on-mouse-clicked connector-node)))
     (is (= {:event events/selection-click
             :object-kind :connector
             :object-name "Connector1"}
@@ -475,8 +453,8 @@
                     (cmd/fixture-converter! "Converter1" 100 250)
                     (cmd/fixture-stock-connector! "Connector1" "Stock1" "Converter1"))
         shell (assoc (cmd/default-shell! nil) :diagram diagram)
-        connector (first (filter #(= "connector-Connector1" (:id %))
-                                 (:children (canvas/canvas-desc shell))))
+        desc (canvas/canvas-desc shell)
+        connector (connector-node-by-name desc "Connector1")
         connector-curve (first (filter #(and (= :quad-curve (:fx/type %))
                                              (= "#666" (:stroke %)))
                                        (:children connector)))
@@ -508,8 +486,7 @@
                     (cmd/fixture-connector! "Connector1" "Converter1" "Flow1")
                     (cmd/click-select! :connector "Connector1"))
         shell (assoc (cmd/default-shell! nil) :diagram diagram)
-        connector (first (filter #(= "connector-Connector1" (:id %))
-                                 (:children (canvas/canvas-desc shell))))
+        connector (connector-node-by-name (canvas/canvas-desc shell) "Connector1")
         lines (filter #(= :line (:fx/type %)) (:children connector))
         curves (filter #(= :quad-curve (:fx/type %)) (:children connector))
         visible-lines (remove #(= "transparent" (:stroke %)) lines)
