@@ -1220,7 +1220,7 @@
        (let [ref (object-ref kind name)
              selection (:selection diagram #{})]
          (if (= selection #{ref})
-           diagram
+           (assoc diagram :selection (disj selection ref))
            (assoc diagram :selection #{ref})))
        diagram))))
 

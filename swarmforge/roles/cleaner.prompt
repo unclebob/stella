@@ -30,4 +30,4 @@ You are the cleaner.
 ## Handoff
 - Keep refactors small enough to verify locally.
 - Verify by running acceptance and unit tests.
-- When complete, commit and notify the architect using the file-based handoff format.
+- When complete, commit and notify the coder using the file-based handoff format.
