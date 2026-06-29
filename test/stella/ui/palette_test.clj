@@ -81,6 +81,13 @@
         [stock] (:children desc)]
     (is (re-find #"#2f80ed" (:style (background stock))))))
 
+(deftest palette-inactive-after-escape-disarms-placement-test
+  (let [armed (cmd/arm-stock-placement-on-shell! (cmd/default-shell! nil))
+        disarmed (cmd/cancel-on-escape-on-shell! armed)
+        desc (palette/palette-desc disarmed)
+        [stock] (:children desc)]
+    (is (not (re-find #"#2f80ed" (:style (background stock)))))))
+
 (deftest palette-switches-active-tool-when-another-is-clicked-test
   (let [shell (cmd/arm-flow-placement-on-shell!
                 (cmd/arm-stock-placement-on-shell! (cmd/default-shell! nil)))
