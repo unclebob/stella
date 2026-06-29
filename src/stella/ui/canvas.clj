@@ -44,7 +44,12 @@
 (def connector-stroke-width 1)
 (def ^:private connector-arrow-size 8)
 (def ^:private flow-arrow-size 14)
+(def ^:private flow-arrow-wing 10)
+(def ^:private flow-pipe-fill "#eef4f7")
 (def ^:private flow-boundary-radius (* flow-pipe-stroke-width 1.5))
+(def ^:private flow-label-width 120)
+(def ^:private flow-label-height 18)
+(def ^:private flow-label-gap 6)
 (def ^:private preview-opacity 0.55)
 (def ^:private canvas-center [2000.0 2000.0])
 (def ^:private connector-control-radius 3)
@@ -230,12 +235,14 @@
   (let [[ux uy] (unit-vector base-x base-y tip-x tip-y)
         px (- uy)
         py ux
-        wing (/ flow-arrow-size 2.0)]
+        wing flow-arrow-wing]
     {:fx/type :polygon
      :points [tip-x tip-y
               (+ base-x (* px wing)) (+ base-y (* py wing))
               (- base-x (* px wing)) (- base-y (* py wing))]
-     :fill "#555"}))
+     :fill flow-pipe-fill
+     :stroke "#555"
+     :stroke-width 1}))
 
 (defn- flow-pipe-body
   [selected? start-x start-y end-x end-y]
@@ -266,7 +273,7 @@
                :start-y start-y
                :end-x base-x
                :end-y base-y
-               :stroke "#eef4f7"
+               :stroke flow-pipe-fill
                :stroke-width flow-pipe-stroke-width
                :stroke-line-cap :round}
               (flow-arrowhead end-x end-y base-x base-y)])))
@@ -293,6 +300,26 @@
    :stroke-width 1
    :mouse-transparent true})
 
+(defn- flow-label
+  [text mid-x layout-y]
+  {:fx/type :label
+   :layout-x (- mid-x (/ flow-label-width 2.0))
+   :layout-y layout-y
+   :pref-width flow-label-width
+   :alignment :center
+   :text-alignment :center
+   :mouse-transparent true
+   :text text})
+
+(defn- flow-labels
+  [name rate mid-x mid-y]
+  [(flow-label name
+               mid-x
+               (- mid-y flow-boundary-radius flow-label-gap flow-label-height))
+   (flow-label (str rate)
+               mid-x
+               (+ mid-y flow-boundary-radius flow-label-gap))])
+
 (defn- flow-desc
   [diagram {:keys [name rate from to]}]
   (when-let [from-pos (model/endpoint-position diagram from)]
@@ -309,12 +336,7 @@
                  :children (into (conj pipe
                                        (flow-hit-line start-x start-y end-x end-y)
                                        (flow-midpoint-circle mid-x mid-y))
-                                 [{:fx/type :v-box
-                                   :layout-x (- mid-x 30)
-                                   :layout-y (- mid-y 20)
-                                   :spacing 2
-                                   :children (filterv map? [{:fx/type :label :text name}
-                                                            {:fx/type :label :text (str rate)}])}])}
+                                 (flow-labels name rate mid-x mid-y))}
           (model/endpoint-clickable? diagram :flow)
           (assoc :on-mouse-clicked (endpoint-click :flow name))
           (= :idle (:placement-mode diagram))
