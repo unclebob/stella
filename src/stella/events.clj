@@ -60,6 +60,12 @@
 
 (def cloud-drag-end ::cloud-drag-end)
 
+(def connector-control-drag-start ::connector-control-drag-start)
+
+(def connector-control-drag ::connector-control-drag)
+
+(def connector-control-drag-end ::connector-control-drag-end)
+
 (def selection-click ::selection-click)
 
 (def marquee-drag-start ::marquee-drag-start)

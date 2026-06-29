@@ -1004,6 +1004,61 @@
         (Math/sqrt (+ (* (- px cx) (- px cx))
                       (* (- py cy) (- py cy))))))))
 
+(def ^:private canvas-center [2000.0 2000.0])
+
+(defn- connector-default-control-offset
+  [start-x start-y end-x end-y]
+  (let [mid-x (/ (+ start-x end-x) 2.0)
+        mid-y (/ (+ start-y end-y) 2.0)
+        chord (Math/sqrt (+ (Math/pow (- end-x start-x) 2)
+                            (Math/pow (- end-y start-y) 2)))
+        away-x (- mid-x (first canvas-center))
+        away-y (- mid-y (second canvas-center))
+        away-length (Math/sqrt (+ (* away-x away-x) (* away-y away-y)))
+        offset (-> (* chord 0.2) (max 20.0) (min 80.0))
+        [ux uy] (if (zero? away-length)
+                  [0.0 -1.0]
+                  [(/ away-x away-length) (/ away-y away-length)])]
+    [(* ux offset)
+     (* uy offset)]))
+
+(defn- connector-control-point
+  [start-x start-y end-x end-y control-offset]
+  (let [[offset-x offset-y] (or control-offset
+                                (connector-default-control-offset start-x start-y end-x end-y))]
+    [(+ (/ (+ start-x end-x) 2.0) offset-x)
+     (+ (/ (+ start-y end-y) 2.0) offset-y)]))
+
+(defn- quadratic-point
+  [start-x start-y control-x control-y end-x end-y t]
+  (let [one-minus-t (- 1.0 t)
+        start-scale (* one-minus-t one-minus-t)
+        control-scale (* 2.0 one-minus-t t)
+        end-scale (* t t)]
+    [(+ (* start-scale start-x)
+        (* control-scale control-x)
+        (* end-scale end-x))
+     (+ (* start-scale start-y)
+        (* control-scale control-y)
+        (* end-scale end-y))]))
+
+(defn- point-near-quadratic?
+  [padding x y start-x start-y control-x control-y end-x end-y]
+  (let [steps 24]
+    (loop [index 1
+           [prior-x prior-y] [start-x start-y]]
+      (if (> index steps)
+        false
+        (let [t (/ index steps)
+              [next-x next-y] (quadratic-point start-x start-y control-x control-y end-x end-y t)]
+          (if (<= (point-segment-distance x y prior-x prior-y next-x next-y) padding)
+            true
+            (recur (inc index) [next-x next-y])))))))
+
+(defn- connector-curve-midpoint
+  [start-x start-y control-x control-y end-x end-y]
+  (quadratic-point start-x start-y control-x control-y end-x end-y 0.5))
+
 (defn- endpoint-center
   [[x y] kind]
   (case kind
@@ -1057,6 +1112,25 @@
                                                       to-pos (:kind to))]
         (<= (point-segment-distance x y fx fy tx ty) padding)))))
 
+(defn- connector-curve-points
+  [diagram {:keys [from to control-offset]}]
+  (when-let [from-pos (endpoint-position diagram from)]
+    (when-let [to-pos (endpoint-position diagram to)]
+      (let [[fx fy] (endpoint-center from-pos (:kind from))
+            [tx ty] (endpoint-center to-pos (:kind to))
+            [cx cy] (connector-control-point fx fy tx ty control-offset)]
+        {:start [fx fy]
+         :control [cx cy]
+         :end [tx ty]
+         :midpoint (connector-curve-midpoint fx fy cx cy tx ty)}))))
+
+(defn- point-near-connector?
+  [diagram connector padding x y]
+  (when-let [{[fx fy] :start
+              [cx cy] :control
+              [tx ty] :end} (connector-curve-points diagram connector)]
+    (point-near-quadratic? padding x y fx fy cx cy tx ty)))
+
 (defn- first-object-at
   [objects]
   (some identity objects))
@@ -1081,9 +1155,37 @@
       (for [[_ {:keys [name] :as converter}] (:converters diagram)
             :when (circle-intersects-rect? (converter-bounds converter) x y click-radius)]
         (object-ref :converter name))
-      (for [[_ {:keys [name from to]}] (:connectors diagram)
-            :when (point-near-link? diagram from to (+ 10.0 click-radius) x y)]
+      (for [[_ {:keys [name] :as connector}] (:connectors diagram)
+            :when (point-near-connector? diagram connector (+ 10.0 click-radius) x y)]
         (object-ref :connector name))))))
+
+(defn- connector-bounds
+  [diagram connector padding]
+  (when-let [{[fx fy] :start
+              [cx cy] :control
+              [tx ty] :end} (connector-curve-points diagram connector)]
+    [(- (min fx cx tx) padding)
+     (- (min fy cy ty) padding)
+     (+ (max fx cx tx) padding)
+     (+ (max fy cy ty) padding)]))
+
+(defn connector-handle-position
+  [diagram name]
+  (when-let [[_ connector] (connector-entry-by-name diagram name)]
+    (:midpoint (connector-curve-points diagram connector))))
+
+(defn move-connector-handle
+  [diagram name x y]
+  (if-let [[connector-id connector] (connector-entry-by-name diagram name)]
+    (if-let [{[start-x start-y] :start
+              [end-x end-y] :end} (connector-curve-points diagram connector)]
+      (let [chord-midpoint-x (/ (+ start-x end-x) 2.0)
+            chord-midpoint-y (/ (+ start-y end-y) 2.0)
+            offset-x (* 2.0 (- x chord-midpoint-x))
+            offset-y (* 2.0 (- y chord-midpoint-y))]
+        (assoc-in diagram [:connectors connector-id :control-offset] [offset-x offset-y]))
+      diagram)
+    diagram))
 
 (defn- selectable-objects-with-bounds
   [diagram]
@@ -1095,8 +1197,8 @@
    (for [[_ {:keys [name from to]}] (:flows diagram)]
      (when-let [bounds (link-bounds diagram from to 20)]
        [(object-ref :flow name) bounds]))
-   (for [[_ {:keys [name from to]}] (:connectors diagram)]
-     (when-let [bounds (link-bounds diagram from to 15)]
+   (for [[_ {:keys [name] :as connector}] (:connectors diagram)]
+     (when-let [bounds (connector-bounds diagram connector 15)]
        [(object-ref :connector name) bounds]))
    (for [[_ {:keys [name] :as source}] (:sources diagram)]
      [(object-ref :source name) (cloud-bounds source)])

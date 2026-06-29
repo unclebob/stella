@@ -114,6 +114,12 @@
                        (cmd/drag-cloud-on-shell! shell event))
    events/cloud-drag-end (fn [shell event]
                            (cmd/end-cloud-drag-on-shell! shell event))
+   events/connector-control-drag-start (fn [shell event]
+                                         (cmd/start-connector-control-drag-on-shell! shell event))
+   events/connector-control-drag (fn [shell event]
+                                   (cmd/drag-connector-control-on-shell! shell event))
+   events/connector-control-drag-end (fn [shell event]
+                                       (cmd/end-connector-control-drag-on-shell! shell event))
    events/selection-click (fn [shell event]
                             (if-let [[x y] (:canvas-coordinates event)]
                               (if (:shift-key event)

@@ -13,6 +13,33 @@
   [expected actual]
   (< (Math/abs (- expected actual)) 0.001))
 
+(defn- distance
+  [[ax ay] [bx by]]
+  (Math/sqrt (+ (Math/pow (- bx ax) 2)
+                (Math/pow (- by ay) 2))))
+
+(defn- quadratic-point
+  [curve t]
+  (let [one-minus-t (- 1.0 t)
+        start-scale (* one-minus-t one-minus-t)
+        control-scale (* 2.0 one-minus-t t)
+        end-scale (* t t)]
+    [(+ (* start-scale (:start-x curve))
+        (* control-scale (:control-x curve))
+        (* end-scale (:end-x curve)))
+     (+ (* start-scale (:start-y curve))
+        (* control-scale (:control-y curve))
+        (* end-scale (:end-y curve)))]))
+
+(defn- arrow-wing-base
+  [arrow-lines]
+  [(/ (+ (:end-x (first arrow-lines)) (:end-x (second arrow-lines))) 2.0)
+   (/ (+ (:end-y (first arrow-lines)) (:end-y (second arrow-lines))) 2.0)])
+
+(defn- dot
+  [[ax ay] [bx by]]
+  (+ (* ax bx) (* ay by)))
+
 (deftest canvas-description-test
   (let [shell (model/default-shell)
         desc (canvas/canvas-desc shell)]
@@ -237,44 +264,125 @@
                             (filter #(= :line (:fx/type %)))
                             (remove #(= "transparent" (:stroke %)))
                             last)
-        connector-line (some->> (:children desc)
-                                 (filter #(re-matches #"connector-.*" (:id %)))
-                                 first
-                                 :children
-                                 (filter #(= :line (:fx/type %)))
-                                 first)
+        connector-curve (some->> (:children desc)
+                                  (filter #(re-matches #"connector-.*" (:id %)))
+                                  first
+                                  :children
+                                  (filter #(= :quad-curve (:fx/type %)))
+                                  first)
         flow-midpoint (model/flow-midpoint diagram "Flow1")
         connector-lines (some->> (:children desc)
                                   (filter #(re-matches #"connector-.*" (:id %)))
                                   first
                                   :children
                                   (filter #(= :line (:fx/type %))))
+        connector-labels (some->> (:children desc)
+                                   (filter #(re-matches #"connector-.*" (:id %)))
+                                   first
+                                   :children
+                                   (filter #(= :v-box (:fx/type %)))
+                                   first)
+        connector-curves (some->> (:children desc)
+                                   (filter #(re-matches #"connector-.*" (:id %)))
+                                   first
+                                   :children
+                                   (filter #(= :quad-curve (:fx/type %))))
         visible-connector-lines (remove #(= "transparent" (:stroke %)) connector-lines)
-        hit-lines (filter #(= "transparent" (:stroke %)) connector-lines)
+        hit-curves (filter #(= "transparent" (:stroke %)) connector-curves)
+        control-points (some->> (:children desc)
+                                (filter #(re-matches #"connector-.*" (:id %)))
+                                first
+                                :children
+                                (filter #(= :circle (:fx/type %))))
         connector-polygons (some->> (:children desc)
                                      (filter #(re-matches #"connector-.*" (:id %)))
                                      first
                                      :children
                                      (filter #(= :polygon (:fx/type %))))
-        arrow-lines (rest visible-connector-lines)]
-    (is (some? connector-line))
-    (is (= 3 (count visible-connector-lines)))
-    (is (= 1 (count hit-lines)))
+        arrow-lines visible-connector-lines
+        arrow-base (arrow-wing-base arrow-lines)
+        control-point (first (filter #(= "#000" (:fill %)) control-points))
+        hit-control-point (first (filter #(= "transparent" (:fill %)) control-points))
+        curve-midpoint (quadratic-point connector-curve 0.5)
+        chord-midpoint [(/ (+ (:start-x connector-curve) (:end-x connector-curve)) 2.0)
+                        (/ (+ (:start-y connector-curve) (:end-y connector-curve)) 2.0)]
+        converter-center [125.0 275.0]]
+    (is (some? connector-curve))
+    (is (= 2 (count connector-curves)))
+    (is (= 2 (count visible-connector-lines)))
+    (is (= 1 (count hit-curves)))
+    (is (= 2 (count control-points)))
+    (is (true? (:mouse-transparent connector-labels)))
+    (is (= "#000" (:fill control-point)))
+    (is (= 3 (:radius control-point)))
+    (is (= 10 (:radius hit-control-point)))
+    (is (roughly= (first curve-midpoint) (:center-x control-point)))
+    (is (roughly= (second curve-midpoint) (:center-y control-point)))
+    (is (not (roughly= (:control-x connector-curve) (:center-x control-point))))
+    (is (= {:event events/connector-control-drag-start
+            :connector-name "Connector1"}
+           (:on-mouse-pressed control-point)))
+    (is (= {:event events/connector-control-drag
+            :connector-name "Connector1"}
+           (:on-mouse-dragged control-point)))
+    (is (= {:event events/connector-control-drag-end
+            :connector-name "Connector1"}
+           (:on-mouse-released control-point)))
+    (is (= (:on-mouse-pressed control-point)
+           (:on-mouse-pressed hit-control-point)))
+    (is (= (:on-mouse-dragged control-point)
+           (:on-mouse-dragged hit-control-point)))
+    (is (= (:on-mouse-released control-point)
+           (:on-mouse-released hit-control-point)))
+    (is (> (distance [(:control-x connector-curve) (:control-y connector-curve)] [2000.0 2000.0])
+           (distance chord-midpoint [2000.0 2000.0])))
     (is (empty? connector-polygons))
-    (is (every? #(and (roughly= (:end-x connector-line) (:start-x %))
-                      (roughly= (:end-y connector-line) (:start-y %)))
+    (is (every? #(and (roughly= (:end-x connector-curve) (:start-x %))
+                      (roughly= (:end-y connector-curve) (:start-y %)))
                 arrow-lines))
-    (is (not= [150.0 275.0 305.0 175.0]
-              (mapv connector-line [:start-x :start-y :end-x :end-y])))
-    (is (not= flow-midpoint
-              [(:end-x connector-line) (:end-y connector-line)]))
+    (is (pos? (dot [(- (:end-x connector-curve) (:control-x connector-curve))
+                    (- (:end-y connector-curve) (:control-y connector-curve))]
+                   [(- (:end-x connector-curve) (first arrow-base))
+                    (- (:end-y connector-curve) (second arrow-base))])))
+    (is (nil? (:stroke-dash-array connector-curve)))
+    (is (= converter-center
+           [(:start-x connector-curve) (:start-y connector-curve)]))
+    (is (= flow-midpoint
+           [(:end-x connector-curve) (:end-y connector-curve)]))
     (is (= {:event events/selection-click
             :object-kind :connector
             :object-name "Connector1"}
            (:on-mouse-clicked (some->> (:children desc)
                                        (filter #(re-matches #"connector-.*" (:id %)))
                                        first))))
-    (is (> (:stroke-width flow-line) (:stroke-width connector-line)))))
+    (is (> (:stroke-width flow-line) (:stroke-width connector-curve)))))
+
+(deftest canvas-renders-stock-connectors-dashed-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-stock! "Stock1" 200 150)
+                    (cmd/fixture-converter! "Converter1" 100 250)
+                    (cmd/fixture-stock-connector! "Connector1" "Stock1" "Converter1"))
+        shell (assoc (cmd/default-shell! nil) :diagram diagram)
+        connector (first (filter #(= "connector-Connector1" (:id %))
+                                 (:children (canvas/canvas-desc shell))))
+        connector-curve (first (filter #(and (= :quad-curve (:fx/type %))
+                                             (= "#666" (:stroke %)))
+                                       (:children connector)))
+        connector-lines (filter #(= :line (:fx/type %)) (:children connector))
+        arrow-lines (remove #(= "transparent" (:stroke %)) connector-lines)
+        arrow-base (arrow-wing-base arrow-lines)
+        stock-center [240.0 175.0]
+        converter-center [125.0 275.0]]
+    (is (= [6 4] (:stroke-dash-array connector-curve)))
+    (is (every? #(= [6 4] (:stroke-dash-array %)) arrow-lines))
+    (is (= stock-center
+           [(:start-x connector-curve) (:start-y connector-curve)]))
+    (is (= converter-center
+           [(:end-x connector-curve) (:end-y connector-curve)]))
+    (is (pos? (dot [(- (:end-x connector-curve) (:control-x connector-curve))
+                    (- (:end-y connector-curve) (:control-y connector-curve))]
+                   [(- (:end-x connector-curve) (first arrow-base))
+                    (- (:end-y connector-curve) (second arrow-base))])))))
 
 (deftest canvas-selected-connector-renders-highlight-test
   (let [diagram (-> (cmd/default-diagram! nil)
@@ -288,10 +396,12 @@
         connector (first (filter #(= "connector-Connector1" (:id %))
                                  (:children (canvas/canvas-desc shell))))
         lines (filter #(= :line (:fx/type %)) (:children connector))
+        curves (filter #(= :quad-curve (:fx/type %)) (:children connector))
         visible-lines (remove #(= "transparent" (:stroke %)) lines)
-        highlights (filter #(= "#2f80ed" (:stroke %)) lines)]
-    (is (= 6 (count visible-lines)))
-    (is (= 1 (count (filter #(= "transparent" (:stroke %)) lines))))
+        highlights (concat (filter #(= "#2f80ed" (:stroke %)) lines)
+                           (filter #(= "#2f80ed" (:stroke %)) curves))]
+    (is (= 4 (count visible-lines)))
+    (is (= 1 (count (filter #(= "transparent" (:stroke %)) curves))))
     (is (= 3 (count highlights)))
     (is (every? #(= 0.35 (:opacity %)) highlights))))
 
@@ -305,6 +415,10 @@
                      :canvas-preview {:x 250 :y 200})
         preview (first (filter #(= "preview-connector" (:id %))
                                (:children (canvas/canvas-desc shell))))
-        lines (filter #(= :line (:fx/type %)) (:children preview))]
+        lines (filter #(= :line (:fx/type %)) (:children preview))
+        curves (filter #(= :quad-curve (:fx/type %)) (:children preview))
+        control-points (filter #(= :circle (:fx/type %)) (:children preview))]
     (is (some? preview))
-    (is (= 4 (count lines)))))
+    (is (= 2 (count lines)))
+    (is (= 2 (count curves)))
+    (is (= 1 (count control-points)))))

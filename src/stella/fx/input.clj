@@ -63,12 +63,15 @@
 
     (#{events/stock-drag-start events/stock-drag events/stock-drag-end
        events/converter-drag-start events/converter-drag events/converter-drag-end
-       events/cloud-drag-start events/cloud-drag events/cloud-drag-end} (event-type event))
+       events/cloud-drag-start events/cloud-drag events/cloud-drag-end
+       events/connector-control-drag-start
+       events/connector-control-drag
+       events/connector-control-drag-end} (event-type event))
     (cond-> event
       (not (:scene-coordinates event))
       (assoc :scene-coordinates (scene-coordinates event))
-      (and (:from-canvas event) (not (:canvas-coordinates event)))
-      (assoc :canvas-coordinates (click-coordinates event)))
+      (nil? (:canvas-coordinates event))
+      (assoc :canvas-coordinates (canvas-coordinates event)))
 
     (= events/selection-click (event-type event))
     (cond-> event

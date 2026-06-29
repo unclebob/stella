@@ -5,6 +5,15 @@
             [stella.events :as events]
             [stella.model :as model]))
 
+(defn- roughly=
+  [expected actual]
+  (< (Math/abs (- expected actual)) 0.001))
+
+(defn- roughly-point=
+  [[expected-x expected-y] [actual-x actual-y]]
+  (and (roughly= expected-x actual-x)
+       (roughly= expected-y actual-y)))
+
 (deftest event-type-test
   (is (= events/quit (:event {:event events/quit})))
   (is (= events/quit (:event/type {:event/type events/quit}))))
@@ -218,7 +227,7 @@
         connector-alone (dispatch/apply-event connector-shell {:event events/selection-click
                                                                :object-kind :connector
                                                                :object-name "Connector1"
-                                                               :canvas-coordinates [190 225]})]
+                                                               :canvas-coordinates [140 240]})]
     (is (model/selected? (:diagram stock-over-flow) :stock "Stock2"))
     (is (not (model/selected? (:diagram stock-over-flow) :flow "Flow1")))
     (is (model/selected? (:diagram stock-click-circle) :stock "Stock2"))
@@ -286,3 +295,28 @@
     (is (= [140 290] (model/converter-position (:diagram live-dragged) "Converter1")))
     (is (= [150 300] (model/converter-position (:diagram released) "Converter1")))
     (is (nil? (:converter-drag released)))))
+
+(deftest apply-event-connector-control-drag-rubber-bands-curve-test
+  (let [shell (-> (model/default-shell)
+                  (update :diagram #(-> %
+                                        (cmd/fixture-stock! "Stock1" 200 150)
+                                        (cmd/fixture-stock! "Stock2" 350 150)
+                                        (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                                        (cmd/fixture-converter! "Converter1" 100 250)
+                                        (cmd/fixture-connector! "Connector1" "Converter1" "Flow1"))))
+        [start-x start-y] (model/connector-handle-position (:diagram shell) "Connector1")
+        dragging (dispatch/apply-event shell {:event events/connector-control-drag-start
+                                              :connector-name "Connector1"
+                                              :canvas-coordinates [start-x start-y]})
+        live-target [(+ start-x 20.0) (- start-y 10.0)]
+        live-dragged (dispatch/apply-event dragging {:event events/connector-control-drag
+                                                     :canvas-coordinates live-target})
+        release-target [(+ start-x 30.0) (- start-y 15.0)]
+        released (dispatch/apply-event live-dragged {:event events/connector-control-drag-end
+                                                     :canvas-coordinates release-target})]
+    (is (:connector-control-drag live-dragged))
+    (is (roughly-point= live-target
+                        (model/connector-handle-position (:diagram live-dragged) "Connector1")))
+    (is (roughly-point= release-target
+                        (model/connector-handle-position (:diagram released) "Connector1")))
+    (is (nil? (:connector-control-drag released)))))

@@ -45,6 +45,9 @@
 (def ^:private connector-arrow-size 8)
 (def ^:private flow-boundary-radius 5.0)
 (def ^:private preview-opacity 0.55)
+(def ^:private canvas-center [2000.0 2000.0])
+(def ^:private connector-control-radius 3)
+(def ^:private connector-control-hit-radius 10)
 
 (defn- endpoint-center
   [[x y] kind]
@@ -100,32 +103,126 @@
       [0.0 0.0]
       [(/ dx length) (/ dy length)])))
 
+(defn- connector-default-control-offset
+  [start-x start-y end-x end-y]
+  (let [mid-x (/ (+ start-x end-x) 2.0)
+        mid-y (/ (+ start-y end-y) 2.0)
+        chord (Math/sqrt (+ (Math/pow (- end-x start-x) 2)
+                            (Math/pow (- end-y start-y) 2)))
+        away-x (- mid-x (first canvas-center))
+        away-y (- mid-y (second canvas-center))
+        away-length (Math/sqrt (+ (* away-x away-x) (* away-y away-y)))
+        offset (-> (* chord 0.2) (max 20.0) (min 80.0))
+        [ux uy] (if (zero? away-length)
+                  [0.0 -1.0]
+                  [(/ away-x away-length) (/ away-y away-length)])]
+    [(* ux offset)
+     (* uy offset)]))
+
+(defn- connector-control-point
+  [start-x start-y end-x end-y control-offset]
+  (let [[offset-x offset-y] (or control-offset
+                                (connector-default-control-offset start-x start-y end-x end-y))]
+    [(+ (/ (+ start-x end-x) 2.0) offset-x)
+     (+ (/ (+ start-y end-y) 2.0) offset-y)]))
+
+(defn- quadratic-point
+  [start-x start-y control-x control-y end-x end-y t]
+  (let [one-minus-t (- 1.0 t)
+        start-scale (* one-minus-t one-minus-t)
+        control-scale (* 2.0 one-minus-t t)
+        end-scale (* t t)]
+    [(+ (* start-scale start-x)
+        (* control-scale control-x)
+        (* end-scale end-x))
+     (+ (* start-scale start-y)
+        (* control-scale control-y)
+        (* end-scale end-y))]))
+
+(defn- connector-curve-midpoint
+  [start-x start-y control-x control-y end-x end-y]
+  (quadratic-point start-x start-y control-x control-y end-x end-y 0.5))
+
+(defn- with-stroke-dash
+  [shape stroke-dash-array]
+  (cond-> shape
+    stroke-dash-array (assoc :stroke-dash-array stroke-dash-array)))
+
+(defn- connector-curve
+  [start-x start-y control-x control-y end-x end-y stroke stroke-width opacity stroke-dash-array]
+  (with-stroke-dash
+    {:fx/type :quad-curve
+     :start-x start-x
+     :start-y start-y
+     :control-x control-x
+     :control-y control-y
+     :end-x end-x
+     :end-y end-y
+     :fill "transparent"
+     :stroke stroke
+     :stroke-width stroke-width
+     :stroke-line-cap :round
+     :opacity opacity}
+    stroke-dash-array))
+
+(defn- connector-control-drag-events
+  [connector-name]
+  {:on-mouse-pressed {:event events/connector-control-drag-start
+                      :connector-name connector-name}
+   :on-mouse-dragged {:event events/connector-control-drag
+                      :connector-name connector-name}
+   :on-mouse-released {:event events/connector-control-drag-end
+                       :connector-name connector-name}})
+
+(defn- connector-control-markers
+  [connector-name marker-x marker-y]
+  (let [drag-events (when connector-name
+                      (connector-control-drag-events connector-name))]
+    (filterv map?
+             [(when connector-name
+                (merge {:fx/type :circle
+                        :center-x marker-x
+                        :center-y marker-y
+                        :radius connector-control-hit-radius
+                        :fill "transparent"
+                        :stroke "transparent"}
+                       drag-events))
+              (cond-> {:fx/type :circle
+                       :center-x marker-x
+                       :center-y marker-y
+                       :radius connector-control-radius
+                       :fill "#000"}
+                drag-events (merge drag-events))])))
+
 (defn- connector-arrowhead
-  ([start-x start-y end-x end-y]
-   (connector-arrowhead start-x start-y end-x end-y "#666" connector-stroke-width 1.0))
-  ([start-x start-y end-x end-y stroke stroke-width opacity]
-  (let [[ux uy] (unit-vector start-x start-y end-x end-y)
-        px (- uy)
+  ([end-x end-y ux uy]
+   (connector-arrowhead end-x end-y ux uy "#666" connector-stroke-width 1.0 nil))
+  ([end-x end-y ux uy stroke stroke-width opacity stroke-dash-array]
+  (let [px (- uy)
         py ux
         base-x (- end-x (* ux connector-arrow-size))
         base-y (- end-y (* uy connector-arrow-size))
         wing (/ connector-arrow-size 2.0)]
-    [{:fx/type :line
-      :start-x end-x
-      :start-y end-y
-      :end-x (+ base-x (* px wing))
-      :end-y (+ base-y (* py wing))
-      :stroke stroke
-      :stroke-width stroke-width
-      :opacity opacity}
-     {:fx/type :line
-      :start-x end-x
-      :start-y end-y
-      :end-x (- base-x (* px wing))
-      :end-y (- base-y (* py wing))
-      :stroke stroke
-      :stroke-width stroke-width
-      :opacity opacity}])))
+    [(with-stroke-dash
+       {:fx/type :line
+        :start-x end-x
+        :start-y end-y
+        :end-x (+ base-x (* px wing))
+        :end-y (+ base-y (* py wing))
+        :stroke stroke
+        :stroke-width stroke-width
+        :opacity opacity}
+       stroke-dash-array)
+     (with-stroke-dash
+       {:fx/type :line
+        :start-x end-x
+        :start-y end-y
+        :end-x (- base-x (* px wing))
+        :end-y (- base-y (* py wing))
+        :stroke stroke
+        :stroke-width stroke-width
+        :opacity opacity}
+       stroke-dash-array)])))
 
 (defn- flow-pipe-body
   [selected? start-x start-y end-x end-y]
@@ -199,39 +296,32 @@
 (def ^:private connector-label-style "-fx-font-size: 10px;")
 (def ^:private connector-formula-style "-fx-font-size: 9px;")
 
+(defn- connector-stroke-dash-array
+  [from to]
+  (when (or (= :stock (:kind from))
+            (= :stock (:kind to)))
+    [6 4]))
+
 (defn- connector-body
-  [selected? start-x start-y end-x end-y]
-  (into
-   (filterv map?
-            [(when selected?
-               {:fx/type :line
-                :start-x start-x
-                :start-y start-y
-                :end-x end-x
-                :end-y end-y
-                :stroke "#2f80ed"
-                :stroke-width 8
-                :stroke-line-cap :round
-                :opacity 0.35})
-             {:fx/type :line
-              :start-x start-x
-              :start-y start-y
-              :end-x end-x
-              :end-y end-y
-              :stroke "#666"
-              :stroke-width connector-stroke-width}
-             {:fx/type :line
-              :start-x start-x
-              :start-y start-y
-              :end-x end-x
-              :end-y end-y
-              :stroke "transparent"
-              :stroke-width 14
-              :stroke-line-cap :round}])
-   (concat
-    (when selected?
-      (connector-arrowhead start-x start-y end-x end-y "#2f80ed" 5 0.35))
-    (connector-arrowhead start-x start-y end-x end-y))))
+  [selected? connector-name control-offset from to start-x start-y end-x end-y]
+  (let [[control-x control-y] (connector-control-point start-x start-y end-x end-y control-offset)
+        [marker-x marker-y] (connector-curve-midpoint start-x start-y control-x control-y end-x end-y)
+        [ux uy] (unit-vector control-x control-y end-x end-y)
+        stroke-dash-array (connector-stroke-dash-array from to)]
+    (into
+     (filterv map?
+              [(when selected?
+                 (connector-curve start-x start-y control-x control-y end-x end-y
+                                  "#2f80ed" 8 0.35 stroke-dash-array))
+               (connector-curve start-x start-y control-x control-y end-x end-y
+                                "#666" connector-stroke-width 1.0 stroke-dash-array)
+               (connector-curve start-x start-y control-x control-y end-x end-y
+                                "transparent" 14 1.0 nil)])
+     (concat
+      (connector-control-markers connector-name marker-x marker-y)
+      (when selected?
+        (connector-arrowhead end-x end-y ux uy "#2f80ed" 5 0.35 stroke-dash-array))
+      (connector-arrowhead end-x end-y ux uy "#666" connector-stroke-width 1.0 stroke-dash-array)))))
 
 (defn connector-canvas-labels
   [diagram connector-name]
@@ -243,14 +333,18 @@
         (seq (:formula connector)) (assoc :formula (:formula connector))))))
 
 (defn- connector-desc
-  [diagram {:keys [name from to formula]}]
+  [diagram {:keys [name from to formula control-offset]}]
   (when-let [from-pos (model/endpoint-position diagram from)]
     (when-let [to-pos (model/endpoint-position diagram to)]
-      (let [[[start-x start-y] [end-x end-y]]
-            (clipped-link-endpoints from-pos (:kind from) to-pos (:kind to))
+      (let [[start-x start-y] (endpoint-center from-pos (:kind from))
+            [end-x end-y] (endpoint-center to-pos (:kind to))
             mid-x (/ (+ start-x end-x) 2.0)
             mid-y (/ (+ start-y end-y) 2.0)
             body (connector-body (model/selected? diagram :connector name)
+                                 name
+                                 control-offset
+                                 from
+                                 to
                                  start-x start-y end-x end-y)
             label-children (filterv map? (into [{:fx/type :label :text name :style connector-label-style}]
                                  (when (seq formula)
@@ -265,6 +359,7 @@
                                    :layout-x (- mid-x 30)
                                    :layout-y (- mid-y 15)
                                    :spacing 2
+                                   :mouse-transparent true
                                    :children label-children}])}
           (= :idle (:placement-mode diagram))
           (assoc :on-mouse-clicked (selection-click :connector name)))))))
@@ -513,7 +608,8 @@
          :id "preview-connector"
          :mouse-transparent true
          :opacity preview-opacity
-         :children (connector-body false start-x start-y end-x end-y)}))))
+         :children (connector-body false nil nil nil {:kind :flow}
+                                   start-x start-y end-x end-y)}))))
 
 (defn- canvas-preview-nodes
   [diagram preview]

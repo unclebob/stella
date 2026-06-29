@@ -146,11 +146,11 @@
   "Returns semantic hit-test targets for connectors on the diagram."
   [diagram]
   (into {}
-        (for [{:keys [name from to]} (model/connectors diagram)
-              :let [from-pos (model/endpoint-position diagram from)
-                    to-pos (model/endpoint-position diagram to)]
-              :when (and from-pos to-pos)]
-          [[:connector name] (link-target from-pos to-pos 60 20)])))
+        (for [{:keys [name]} (model/connectors diagram)
+              :let [position (model/connector-handle-position diagram name)]
+              :when position
+              :let [[x y] position]]
+          [[:connector name] {:x (- x 10) :y (- y 10) :w 20 :h 20}])))
 
 (defn- semantic-targets
   [diagram]

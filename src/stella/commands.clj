@@ -186,6 +186,14 @@
   [shell name x y]
   (update shell :diagram #(move-converter! % name x y)))
 
+(defn move-connector-handle!
+  [diagram connector-name x y]
+  (model/move-connector-handle diagram connector-name x y))
+
+(defn move-connector-handle-on-shell!
+  [shell connector-name x y]
+  (update shell :diagram #(move-connector-handle! % connector-name x y)))
+
 (defn- resolve-converter-drag-name
   [shell {:keys [converter-name canvas-coordinates]}]
   (or converter-name
@@ -231,6 +239,44 @@
     (-> shell
         (drag-converter-on-shell! event)
         (dissoc :converter-drag))
+    shell))
+
+(defn start-connector-control-drag-on-shell!
+  [shell {:keys [connector-name canvas-coordinates]}]
+  (if (and (= :idle (get-in shell [:diagram :placement-mode]))
+           connector-name
+           canvas-coordinates
+           (model/connector-exists? (:diagram shell) connector-name))
+    (if-let [[handle-x handle-y] (model/connector-handle-position (:diagram shell) connector-name)]
+      (let [[cx cy] canvas-coordinates]
+        (assoc shell :connector-control-drag {:name connector-name
+                                              :start-x handle-x
+                                              :start-y handle-y
+                                              :press-canvas-x cx
+                                              :press-canvas-y cy}))
+      shell)
+    shell))
+
+(defn- connector-control-drag-position
+  [drag [cx cy]]
+  [(+ (:start-x drag) (- cx (:press-canvas-x drag)))
+   (+ (:start-y drag) (- cy (:press-canvas-y drag)))])
+
+(defn drag-connector-control-on-shell!
+  [shell {:keys [canvas-coordinates]}]
+  (if-let [drag (:connector-control-drag shell)]
+    (if canvas-coordinates
+      (let [[new-x new-y] (connector-control-drag-position drag canvas-coordinates)]
+        (move-connector-handle-on-shell! shell (:name drag) new-x new-y))
+      shell)
+    shell))
+
+(defn end-connector-control-drag-on-shell!
+  [shell event]
+  (if (:connector-control-drag shell)
+    (-> shell
+        (drag-connector-control-on-shell! event)
+        (dissoc :connector-control-drag))
     shell))
 
 (defn click-select!
@@ -299,7 +345,8 @@
            canvas-coordinates
            (not (:stock-drag shell))
            (not (:converter-drag shell))
-           (not (:cloud-drag shell)))
+           (not (:cloud-drag shell))
+           (not (:connector-control-drag shell)))
     (let [[cx cy] canvas-coordinates
           diagram (:diagram shell)]
       (if (model/object-at-canvas-point diagram cx cy)
