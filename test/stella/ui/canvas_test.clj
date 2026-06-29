@@ -49,6 +49,23 @@
   [desc pred]
   (first (filter pred (:children desc))))
 
+(defn- nil-mouse-handler?
+  [desc]
+  (boolean
+   (when (map? desc)
+     (or (some (fn [[k v]]
+                 (and (keyword? k)
+                      (.startsWith (name k) "on-mouse")
+                      (nil? v)))
+               desc)
+         (some nil-mouse-handler?
+               (mapcat (fn [[_ v]]
+                         (cond
+                           (map? v) [v]
+                           (vector? v) v
+                           :else nil))
+                       desc))))))
+
 (defn- dot
   [[ax ay] [bx by]]
   (+ (* ax bx) (* ay by)))
@@ -342,6 +359,23 @@
     (is (= "Stock1 0 || Flow1 0 || Converter1 || Connector1"
            (canvas/diagram-overlay-text diagram)))))
 
+(deftest canvas-desc-has-no-nil-mouse-handlers-test
+  (doseq [mode [:idle :stock :flow :connector :converter]]
+    (let [shell (case mode
+                  :idle (cmd/default-shell! nil)
+                  :stock (cmd/arm-stock-placement-on-shell! (cmd/default-shell! nil))
+                  :flow (cmd/arm-flow-placement-on-shell! (cmd/default-shell! nil))
+                  :connector (cmd/arm-connector-placement-on-shell! (cmd/default-shell! nil))
+                  :converter (cmd/arm-converter-placement-on-shell! (cmd/default-shell! nil)))
+          diagram (-> (cmd/default-diagram! nil)
+                      (cmd/fixture-stock! "Stock1" 200 150)
+                      (cmd/fixture-stock! "Stock2" 350 150)
+                      (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                      (cmd/fixture-converter! "Converter1" 100 250)
+                      (cmd/fixture-connector! "Connector1" "Converter1" "Flow1"))
+          desc (canvas/canvas-desc (assoc shell :diagram diagram))]
+      (is (not (nil-mouse-handler? desc))))))
+
 (deftest canvas-desc-creates-with-connectors-test
   (let [diagram (-> (cmd/default-diagram! nil)
                     (cmd/fixture-stock! "Stock1" 200 150)
@@ -404,6 +438,7 @@
                                  first
                                  :children
                                  (filter #(= :group (:fx/type %)))
+                                 (filter #(= "connector-handle-Connector1" (:fx/key %)))
                                  first)
         control-points (:children control-handle)
         connector-polygons (some->> (:children desc)
@@ -425,14 +460,17 @@
     (is (= 2 (count visible-connector-lines)))
     (is (= 0 (count hit-curves)))
     (is (some? control-handle))
+    (is (= "connector-handle-Connector1" (:fx/key control-handle)))
     (is (= 2 (count control-points)))
     (is (empty? connector-labels))
     (is (empty? connector-label-containers))
     (is (= "#000" (:fill control-point)))
     (is (= 3 (:radius control-point)))
     (is (= 10 (:radius hit-control-point)))
-    (is (roughly= (first curve-midpoint) (:center-x control-point)))
-    (is (roughly= (second curve-midpoint) (:center-y control-point)))
+    (is (roughly= (first curve-midpoint) (:layout-x control-handle)))
+    (is (roughly= (second curve-midpoint) (:layout-y control-handle)))
+    (is (= 0 (:center-x control-point)))
+    (is (= 0 (:center-y control-point)))
     (is (not (roughly= (:control-x connector-curve) (:center-x control-point))))
     (is (= {:event events/connector-control-drag-start
             :connector-name "Connector1"}
