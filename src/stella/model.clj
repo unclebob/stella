@@ -278,19 +278,23 @@
   [diagram]
   (= :idle (:placement-mode diagram)))
 
+(defn- clear-link-drafts
+  [diagram]
+  (-> diagram
+      (assoc :flow-draft nil)
+      (assoc :connector-draft nil)))
+
 (defn disarm-placement
   [diagram]
   (-> diagram
       (assoc :placement-mode :idle)
-      (assoc :flow-draft nil)
-      (assoc :connector-draft nil)))
+      clear-link-drafts))
 
 (defn- arm-placement-mode
   [diagram mode]
   (-> diagram
       (assoc :placement-mode mode)
-      (assoc :flow-draft nil)
-      (assoc :connector-draft nil)))
+      clear-link-drafts))
 
 (defn arm-stock-placement
   [diagram]
@@ -622,13 +626,9 @@
             :draft-key :flow-draft}
    from to))
 
-(defn- arm-link-placement
-  [diagram mode _draft-key]
-  (arm-placement-mode diagram mode))
-
 (defn arm-flow-placement
   [diagram]
-  (arm-link-placement diagram :flow :flow-draft))
+  (arm-placement-mode diagram :flow))
 
 (defn flow-placement-armed?
   [diagram]
@@ -896,7 +896,7 @@
 
 (defn arm-connector-placement
   [diagram]
-  (arm-link-placement diagram :connector :connector-draft))
+  (arm-placement-mode diagram :connector))
 
 (defn connector-placement-armed?
   [diagram]
