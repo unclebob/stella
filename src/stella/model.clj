@@ -1176,16 +1176,14 @@
    (for [[_ {:keys [name] :as sink}] (:sinks diagram)]
      [(object-ref :sink name) (cloud-bounds sink)])))
 
-(defn- update-selection-when-idle
-  [diagram update-fn]
-  (if (placement-disarmed? diagram)
-    (update-fn diagram)
-    diagram))
+(defn- selection-update-allowed?
+  [diagram kind]
+  (or (placement-disarmed? diagram)
+      (= kind :connector)))
 
 (defn- update-selection-when-allowed
   [diagram kind update-fn]
-  (if (or (placement-disarmed? diagram)
-          (= kind :connector))
+  (if (selection-update-allowed? diagram kind)
     (update-fn diagram)
     diagram))
 
@@ -1232,8 +1230,9 @@
 
 (defn marquee-select
   [diagram x1 y1 x2 y2]
-  (update-selection-when-idle
+  (update-selection-when-allowed
    diagram
+   nil
    (fn [diagram]
      (let [marquee (normalize-rect x1 y1 x2 y2)
            selected (into #{}
