@@ -36,6 +36,10 @@
   [(/ (+ (:end-x (first arrow-lines)) (:end-x (second arrow-lines))) 2.0)
    (/ (+ (:end-y (first arrow-lines)) (:end-y (second arrow-lines))) 2.0)])
 
+(defn- arrow-tip
+  [arrow-lines]
+  [(:start-x (first arrow-lines)) (:start-y (first arrow-lines))])
+
 (defn- dot
   [[ax ay] [bx by]]
   (+ (* ax bx) (* ay by)))
@@ -300,6 +304,7 @@
                                      :children
                                      (filter #(= :polygon (:fx/type %))))
         arrow-lines visible-connector-lines
+        arrow-tip (arrow-tip arrow-lines)
         arrow-base (arrow-wing-base arrow-lines)
         control-point (first (filter #(= "#000" (:fill %)) control-points))
         hit-control-point (first (filter #(= "transparent" (:fill %)) control-points))
@@ -337,13 +342,15 @@
     (is (> (distance [(:control-x connector-curve) (:control-y connector-curve)] [2000.0 2000.0])
            (distance chord-midpoint [2000.0 2000.0])))
     (is (empty? connector-polygons))
-    (is (every? #(and (roughly= (:end-x connector-curve) (:start-x %))
-                      (roughly= (:end-y connector-curve) (:start-y %)))
+    (is (every? #(and (roughly= (first arrow-tip) (:start-x %))
+                      (roughly= (second arrow-tip) (:start-y %)))
                 arrow-lines))
+    (is (not= [(:end-x connector-curve) (:end-y connector-curve)] arrow-tip))
+    (is (roughly= 5.0 (distance flow-midpoint arrow-tip)))
     (is (pos? (dot [(- (:end-x connector-curve) (:control-x connector-curve))
                     (- (:end-y connector-curve) (:control-y connector-curve))]
-                   [(- (:end-x connector-curve) (first arrow-base))
-                    (- (:end-y connector-curve) (second arrow-base))])))
+                   [(- (first arrow-tip) (first arrow-base))
+                    (- (second arrow-tip) (second arrow-base))])))
     (is (nil? (:stroke-dash-array connector-curve)))
     (is (= converter-center
            [(:start-x connector-curve) (:start-y connector-curve)]))
@@ -370,6 +377,7 @@
                                        (:children connector)))
         connector-lines (filter #(= :line (:fx/type %)) (:children connector))
         arrow-lines (remove #(= "transparent" (:stroke %)) connector-lines)
+        arrow-tip (arrow-tip arrow-lines)
         arrow-base (arrow-wing-base arrow-lines)
         stock-center [240.0 175.0]
         converter-center [125.0 275.0]]
@@ -379,10 +387,12 @@
            [(:start-x connector-curve) (:start-y connector-curve)]))
     (is (= converter-center
            [(:end-x connector-curve) (:end-y connector-curve)]))
+    (is (not= [(:end-x connector-curve) (:end-y connector-curve)] arrow-tip))
+    (is (roughly= 25.0 (distance converter-center arrow-tip)))
     (is (pos? (dot [(- (:end-x connector-curve) (:control-x connector-curve))
                     (- (:end-y connector-curve) (:control-y connector-curve))]
-                   [(- (:end-x connector-curve) (first arrow-base))
-                    (- (:end-y connector-curve) (second arrow-base))])))))
+                   [(- (first arrow-tip) (first arrow-base))
+                    (- (second arrow-tip) (second arrow-base))])))))
 
 (deftest canvas-selected-connector-renders-highlight-test
   (let [diagram (-> (cmd/default-diagram! nil)
