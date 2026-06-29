@@ -54,10 +54,12 @@
 
 (deftest canvas-description-test
   (let [shell (model/default-shell)
-        desc (canvas/canvas-desc shell)]
+        desc (canvas/canvas-desc shell)
+        background (first (:children desc))]
     (is (= :pane (:fx/type desc)))
     (is (= "canvas" (:id desc)))
-    (is (= {:event events/canvas-click} (:on-mouse-clicked desc)))
+    (is (nil? (:on-mouse-clicked desc)))
+    (is (= {:event events/canvas-click} (:on-mouse-clicked background)))
     (is (= {:event events/canvas-move} (:on-mouse-moved desc)))
     (is (= {:event events/marquee-drag :from-canvas true}
            (:on-mouse-dragged desc)))))
@@ -406,9 +408,9 @@
                         (/ (+ (:start-y connector-curve) (:end-y connector-curve)) 2.0)]
         converter-center [125.0 275.0]]
     (is (some? connector-curve))
-    (is (= 2 (count connector-curves)))
+    (is (= 1 (count connector-curves)))
     (is (= 2 (count visible-connector-lines)))
-    (is (= 1 (count hit-curves)))
+    (is (= 0 (count hit-curves)))
     (is (= 2 (count control-points)))
     (is (empty? connector-labels))
     (is (empty? connector-label-containers))
@@ -450,12 +452,13 @@
            [(:start-x connector-curve) (:start-y connector-curve)]))
     (is (= flow-midpoint
            [(:end-x connector-curve) (:end-y connector-curve)]))
+    (is (nil? (:on-mouse-clicked (some->> (:children desc)
+                                          (filter #(re-matches #"connector-.*" (:id %)))
+                                          first))))
     (is (= {:event events/selection-click
             :object-kind :connector
             :object-name "Connector1"}
-           (:on-mouse-clicked (some->> (:children desc)
-                                       (filter #(re-matches #"connector-.*" (:id %)))
-                                       first))))
+           (:on-mouse-clicked control-point)))
     (is (> (:stroke-width flow-line) (:stroke-width connector-curve)))))
 
 (deftest canvas-renders-stock-connectors-dashed-test
@@ -505,7 +508,7 @@
         highlights (concat (filter #(= "#2f80ed" (:stroke %)) lines)
                            (filter #(= "#2f80ed" (:stroke %)) curves))]
     (is (= 4 (count visible-lines)))
-    (is (= 1 (count (filter #(= "transparent" (:stroke %)) curves))))
+    (is (= 0 (count (filter #(= "transparent" (:stroke %)) curves))))
     (is (= 3 (count highlights)))
     (is (every? #(= 0.35 (:opacity %)) highlights))))
 
@@ -524,5 +527,5 @@
         control-points (filter #(= :circle (:fx/type %)) (:children preview))]
     (is (some? preview))
     (is (= 2 (count lines)))
-    (is (= 2 (count curves)))
+    (is (= 1 (count curves)))
     (is (= 1 (count control-points)))))

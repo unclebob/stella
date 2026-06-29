@@ -1131,6 +1131,13 @@
               [tx ty] :end} (connector-curve-points diagram connector)]
     (point-near-quadratic? padding x y fx fy cx cy tx ty)))
 
+(defn- point-near-connector-handle?
+  [diagram connector radius x y]
+  (when-let [[mx my] (:midpoint (connector-curve-points diagram connector))]
+    (let [dx (- x mx)
+          dy (- y my)]
+      (<= (+ (* dx dx) (* dy dy)) (* radius radius)))))
+
 (defn- first-object-at
   [objects]
   (some identity objects))
@@ -1156,7 +1163,7 @@
             :when (circle-intersects-rect? (converter-bounds converter) x y click-radius)]
         (object-ref :converter name))
       (for [[_ {:keys [name] :as connector}] (:connectors diagram)
-            :when (point-near-connector? diagram connector (+ 10.0 click-radius) x y)]
+            :when (point-near-connector-handle? diagram connector (+ 10.0 click-radius) x y)]
         (object-ref :connector name))))))
 
 (defn- connector-bounds
@@ -1198,8 +1205,9 @@
      (when-let [bounds (link-bounds diagram from to 20)]
        [(object-ref :flow name) bounds]))
    (for [[_ {:keys [name] :as connector}] (:connectors diagram)]
-     (when-let [bounds (connector-bounds diagram connector 15)]
-       [(object-ref :connector name) bounds]))
+     (when-let [[mx my] (:midpoint (connector-curve-points diagram connector))]
+       [(object-ref :connector name)
+        [(- mx 15) (- my 15) (+ mx 15) (+ my 15)]]))
    (for [[_ {:keys [name] :as source}] (:sources diagram)]
      [(object-ref :source name) (cloud-bounds source)])
    (for [[_ {:keys [name] :as sink}] (:sinks diagram)]

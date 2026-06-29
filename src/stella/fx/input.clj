@@ -62,7 +62,8 @@
   [event]
   (cond
     (#{events/canvas-click events/canvas-move} (event-type event))
-    (assoc event :coordinates (click-coordinates event))
+    (assoc event :coordinates (or (canvas-coordinates event)
+                                  (click-coordinates event)))
 
     (#{events/stock-drag-start events/stock-drag events/stock-drag-end
        events/converter-drag-start events/converter-drag events/converter-drag-end
@@ -86,7 +87,8 @@
     (#{events/marquee-drag-start events/marquee-drag events/marquee-drag-end} (event-type event))
     (cond-> event
       (and (:from-canvas event) (not (:canvas-coordinates event)))
-      (assoc :canvas-coordinates (click-coordinates event)))
+      (assoc :canvas-coordinates (or (canvas-coordinates event)
+                                     (click-coordinates event))))
 
     (#{events/clear-selection events/scene-key-pressed} (event-type event))
     (if-let [^KeyEvent key (:fx/event event)]

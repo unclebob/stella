@@ -224,10 +224,11 @@
                                                        :object-kind :flow
                                                        :object-name "Flow1"
                                                        :canvas-coordinates [210 176]})
+        [handle-x handle-y] (model/connector-handle-position (:diagram connector-shell) "Connector1")
         connector-alone (dispatch/apply-event connector-shell {:event events/selection-click
                                                                :object-kind :connector
                                                                :object-name "Connector1"
-                                                               :canvas-coordinates [140 240]})]
+                                                               :canvas-coordinates [(int handle-x) (int handle-y)]})]
     (is (model/selected? (:diagram stock-over-flow) :stock "Stock2"))
     (is (not (model/selected? (:diagram stock-over-flow) :flow "Flow1")))
     (is (model/selected? (:diagram stock-click-circle) :stock "Stock2"))

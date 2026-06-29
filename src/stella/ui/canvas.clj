@@ -183,7 +183,9 @@
 (defn- connector-control-markers
   [connector-name marker-x marker-y]
   (let [drag-events (when connector-name
-                      (connector-control-drag-events connector-name))]
+                      (connector-control-drag-events connector-name))
+        selection-event (when connector-name
+                          (selection-click :connector connector-name))]
     (filterv map?
              [(when connector-name
                 (merge {:fx/type :circle
@@ -191,13 +193,15 @@
                         :center-y marker-y
                         :radius connector-control-hit-radius
                         :fill "transparent"
-                        :stroke "transparent"}
+                        :stroke "transparent"
+                        :on-mouse-clicked selection-event}
                        drag-events))
               (cond-> {:fx/type :circle
                        :center-x marker-x
                        :center-y marker-y
                        :radius connector-control-radius
-                       :fill "#000"}
+                       :fill "#000"
+                       :on-mouse-clicked selection-event}
                 drag-events (merge drag-events))])))
 
 (defn- connector-arrowhead
@@ -366,9 +370,7 @@
                  (connector-curve start-x start-y control-x control-y end-x end-y
                                   "#2f80ed" 8 0.35 stroke-dash-array))
                (connector-curve start-x start-y control-x control-y end-x end-y
-                                "#666" connector-stroke-width 1.0 stroke-dash-array)
-               (connector-curve start-x start-y control-x control-y end-x end-y
-                                "transparent" 14 1.0 nil)])
+                                "#666" connector-stroke-width 1.0 stroke-dash-array)])
      (concat
       (connector-control-markers connector-name marker-x marker-y)
       (when selected?
@@ -398,12 +400,10 @@
                                  to-pos
                                  start-x start-y end-x end-y)
             children body]
-        (cond-> {:fx/type :group
-                 :fx/key (str "connector-" name)
-                 :id (str "connector-" name)
-                 :children children}
-          (= :idle (:placement-mode diagram))
-          (assoc :on-mouse-clicked (selection-click :connector name)))))))
+        {:fx/type :group
+         :fx/key (str "connector-" name)
+         :id (str "connector-" name)
+         :children children}))))
 
 (defn converter-canvas-labels
   [diagram converter-name]
@@ -743,7 +743,8 @@
    :id "canvas-bg"
    :width 4000
    :height 4000
-   :style "-fx-fill: #f5f5f5;"})
+   :style "-fx-fill: #f5f5f5;"
+   :on-mouse-clicked {:event events/canvas-click}})
 
 (defn- marquee-preview-desc
   [{:keys [start-x start-y current-x current-y]}]
@@ -779,7 +780,6 @@
         children (into [(canvas-background)] diagram-nodes)]
     (cond-> {:fx/type :pane
              :id "canvas"
-             :on-mouse-clicked {:event events/canvas-click}
              :on-mouse-moved {:event events/canvas-move}
              :children (filterv map? children)}
       (= :idle (:placement-mode diagram))
