@@ -44,6 +44,17 @@
     :stroke "#333"
     :stroke-width 1}])
 
+(defn- vertical-arrow
+  [line-start-y line-end-y tip-y base-y]
+  (into [{:fx/type :line
+          :start-x 42
+          :start-y line-start-y
+          :end-x 42
+          :end-y line-end-y
+          :stroke "#333"
+          :stroke-width 1}]
+        (arrow-lines 42 tip-y 42 base-y)))
+
 (defn- cloud-shape []
   [{:fx/type :circle
     :center-x 29
@@ -69,25 +80,11 @@
 
 (defn- source-icon []
   (into (cloud-shape)
-        (into [{:fx/type :line
-                :start-x 42
-                :start-y 24
-                :end-x 42
-                :end-y 3
-                :stroke "#333"
-                :stroke-width 1}]
-              (arrow-lines 42 1 42 7))))
+        (vertical-arrow 24 3 1 7)))
 
 (defn- sink-icon []
   (into (cloud-shape)
-        (into [{:fx/type :line
-                :start-x 42
-                :start-y 1
-                :end-x 42
-                :end-y 22
-                :stroke "#333"
-                :stroke-width 1}]
-              (arrow-lines 42 24 42 18))))
+        (vertical-arrow 1 22 24 18)))
 
 (defn- converter-icon []
   [{:fx/type :circle
