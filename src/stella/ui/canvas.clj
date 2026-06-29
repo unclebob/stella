@@ -180,29 +180,33 @@
    :on-mouse-released {:event events/connector-control-drag-end
                        :connector-name connector-name}})
 
+(defn- connector-handle-children
+  [marker-x marker-y]
+  [{:fx/type :circle
+    :center-x marker-x
+    :center-y marker-y
+    :radius connector-control-hit-radius
+    :fill "transparent"
+    :stroke "transparent"}
+   {:fx/type :circle
+    :center-x marker-x
+    :center-y marker-y
+    :radius connector-control-radius
+    :fill "#000"
+    :mouse-transparent true}])
+
 (defn- connector-control-markers
   [connector-name marker-x marker-y]
-  (let [drag-events (when connector-name
-                      (connector-control-drag-events connector-name))
-        selection-event (when connector-name
-                          (selection-click :connector connector-name))]
-    (filterv map?
-             [(when connector-name
-                (merge {:fx/type :circle
-                        :center-x marker-x
-                        :center-y marker-y
-                        :radius connector-control-hit-radius
-                        :fill "transparent"
-                        :stroke "transparent"
-                        :on-mouse-clicked selection-event}
-                       drag-events))
-              (cond-> {:fx/type :circle
-                       :center-x marker-x
-                       :center-y marker-y
-                       :radius connector-control-radius
-                       :fill "#000"
-                       :on-mouse-clicked selection-event}
-                drag-events (merge drag-events))])))
+  (if connector-name
+    [(merge {:fx/type :group
+             :children (connector-handle-children marker-x marker-y)
+             :on-mouse-clicked (selection-click :connector connector-name)}
+            (connector-control-drag-events connector-name))]
+    [{:fx/type :circle
+      :center-x marker-x
+      :center-y marker-y
+      :radius connector-control-radius
+      :fill "#000"}]))
 
 (defn- connector-arrowhead
   ([end-x end-y ux uy]

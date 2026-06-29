@@ -1,5 +1,6 @@
 (ns stella.ui.canvas-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [cljfx.api :as fx]
+            [clojure.test :refer [deftest is]]
             [stella.commands :as cmd]
             [stella.events :as events]
             [stella.model :as model]
@@ -341,6 +342,16 @@
     (is (= "Stock1 0 || Flow1 0 || Converter1 || Connector1"
            (canvas/diagram-overlay-text diagram)))))
 
+(deftest canvas-desc-creates-with-connectors-test
+  (let [diagram (-> (cmd/default-diagram! nil)
+                    (cmd/fixture-stock! "Stock1" 200 150)
+                    (cmd/fixture-stock! "Stock2" 350 150)
+                    (cmd/fixture-flow! "Flow1" "Stock1" "Stock2")
+                    (cmd/fixture-converter! "Converter1" 100 250)
+                    (cmd/fixture-connector! "Connector1" "Converter1" "Flow1"))
+        shell (assoc (cmd/default-shell! nil) :diagram diagram)]
+    (is (some? (fx/create-component (canvas/canvas-desc shell))))))
+
 (deftest canvas-renders-connectors-test
   (let [diagram (-> (cmd/default-diagram! nil)
                     (cmd/fixture-stock! "Stock1" 200 150)
@@ -388,11 +399,13 @@
                                    (filter #(= :quad-curve (:fx/type %))))
         visible-connector-lines (remove #(= "transparent" (:stroke %)) connector-lines)
         hit-curves (filter #(= "transparent" (:stroke %)) connector-curves)
-        control-points (some->> (:children desc)
-                                (filter #(re-matches #"connector-.*" (:id %)))
-                                first
-                                :children
-                                (filter #(= :circle (:fx/type %))))
+        control-handle (some->> (:children desc)
+                                 (filter #(re-matches #"connector-.*" (:id %)))
+                                 first
+                                 :children
+                                 (filter #(= :group (:fx/type %)))
+                                 first)
+        control-points (:children control-handle)
         connector-polygons (some->> (:children desc)
                                      (filter #(re-matches #"connector-.*" (:id %)))
                                      first
@@ -411,6 +424,7 @@
     (is (= 1 (count connector-curves)))
     (is (= 2 (count visible-connector-lines)))
     (is (= 0 (count hit-curves)))
+    (is (some? control-handle))
     (is (= 2 (count control-points)))
     (is (empty? connector-labels))
     (is (empty? connector-label-containers))
@@ -422,19 +436,13 @@
     (is (not (roughly= (:control-x connector-curve) (:center-x control-point))))
     (is (= {:event events/connector-control-drag-start
             :connector-name "Connector1"}
-           (:on-mouse-pressed control-point)))
+           (:on-mouse-pressed control-handle)))
     (is (= {:event events/connector-control-drag
             :connector-name "Connector1"}
-           (:on-mouse-dragged control-point)))
+           (:on-mouse-dragged control-handle)))
     (is (= {:event events/connector-control-drag-end
             :connector-name "Connector1"}
-           (:on-mouse-released control-point)))
-    (is (= (:on-mouse-pressed control-point)
-           (:on-mouse-pressed hit-control-point)))
-    (is (= (:on-mouse-dragged control-point)
-           (:on-mouse-dragged hit-control-point)))
-    (is (= (:on-mouse-released control-point)
-           (:on-mouse-released hit-control-point)))
+           (:on-mouse-released control-handle)))
     (is (> (distance [(:control-x connector-curve) (:control-y connector-curve)] [2000.0 2000.0])
            (distance chord-midpoint [2000.0 2000.0])))
     (is (empty? connector-polygons))
@@ -458,7 +466,7 @@
     (is (= {:event events/selection-click
             :object-kind :connector
             :object-name "Connector1"}
-           (:on-mouse-clicked control-point)))
+           (:on-mouse-clicked control-handle)))
     (is (> (:stroke-width flow-line) (:stroke-width connector-curve)))))
 
 (deftest canvas-renders-stock-connectors-dashed-test
