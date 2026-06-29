@@ -43,7 +43,8 @@
 (def flow-pipe-stroke-width 8)
 (def connector-stroke-width 1)
 (def ^:private connector-arrow-size 8)
-(def ^:private flow-boundary-radius (* flow-pipe-stroke-width 1.0))
+(def ^:private flow-arrow-size 14)
+(def ^:private flow-boundary-radius (* flow-pipe-stroke-width 1.5))
 (def ^:private preview-opacity 0.55)
 (def ^:private canvas-center [2000.0 2000.0])
 (def ^:private connector-control-radius 3)
@@ -224,35 +225,51 @@
         :opacity opacity}
        stroke-dash-array)])))
 
+(defn- flow-arrowhead
+  [tip-x tip-y base-x base-y]
+  (let [[ux uy] (unit-vector base-x base-y tip-x tip-y)
+        px (- uy)
+        py ux
+        wing (/ flow-arrow-size 2.0)]
+    {:fx/type :polygon
+     :points [tip-x tip-y
+              (+ base-x (* px wing)) (+ base-y (* py wing))
+              (- base-x (* px wing)) (- base-y (* py wing))]
+     :fill "#555"}))
+
 (defn- flow-pipe-body
   [selected? start-x start-y end-x end-y]
-  (filterv map?
-           [(when selected?
+  (let [[ux uy] (unit-vector start-x start-y end-x end-y)
+        base-x (- end-x (* ux flow-arrow-size))
+        base-y (- end-y (* uy flow-arrow-size))]
+    (filterv map?
+             [(when selected?
+                {:fx/type :line
+                 :start-x start-x
+                 :start-y start-y
+                 :end-x base-x
+                 :end-y base-y
+                 :stroke "#2f80ed"
+                 :stroke-width 16
+                 :stroke-line-cap :round
+                 :opacity 0.35})
               {:fx/type :line
                :start-x start-x
                :start-y start-y
-               :end-x end-x
-               :end-y end-y
-               :stroke "#2f80ed"
-               :stroke-width 16
-               :stroke-line-cap :round
-               :opacity 0.35})
-            {:fx/type :line
-             :start-x start-x
-             :start-y start-y
-             :end-x end-x
-             :end-y end-y
-             :stroke "#555"
-             :stroke-width 10
-             :stroke-line-cap :round}
-            {:fx/type :line
-             :start-x start-x
-             :start-y start-y
-             :end-x end-x
-             :end-y end-y
-             :stroke "#eef4f7"
-             :stroke-width flow-pipe-stroke-width
-             :stroke-line-cap :round}]))
+               :end-x base-x
+               :end-y base-y
+               :stroke "#555"
+               :stroke-width 10
+               :stroke-line-cap :round}
+              {:fx/type :line
+               :start-x start-x
+               :start-y start-y
+               :end-x base-x
+               :end-y base-y
+               :stroke "#eef4f7"
+               :stroke-width flow-pipe-stroke-width
+               :stroke-line-cap :round}
+              (flow-arrowhead end-x end-y base-x base-y)])))
 
 (defn- flow-hit-line
   [start-x start-y end-x end-y]
