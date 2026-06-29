@@ -72,3 +72,19 @@
         [stock flow] (:children desc)]
     (is (re-find #"#2f80ed" (:style (background flow))))
     (is (not (re-find #"#2f80ed" (:style (background stock)))))))
+
+(deftest palette-tool-stays-active-after-placing-test
+  (let [shell (-> (cmd/default-shell! nil)
+                  (cmd/arm-stock-placement-on-shell!)
+                  (cmd/place-stock-on-shell! 200 150))
+        desc (palette/palette-desc shell)
+        [stock] (:children desc)]
+    (is (re-find #"#2f80ed" (:style (background stock))))))
+
+(deftest palette-switches-active-tool-when-another-is-clicked-test
+  (let [shell (cmd/arm-flow-placement-on-shell!
+                (cmd/arm-stock-placement-on-shell! (cmd/default-shell! nil)))
+        desc (palette/palette-desc shell)
+        [stock flow] (:children desc)]
+    (is (re-find #"#2f80ed" (:style (background flow))))
+    (is (not (re-find #"#2f80ed" (:style (background stock)))))))

@@ -16,7 +16,9 @@
                     (model/connect-connector :flow "Flow1"))]
     (is (model/connector-exists? diagram "Connector1"))
     (is (= {:kind :converter :id "Converter1"} (model/connector-from diagram "Connector1")))
-    (is (= {:kind :flow :id "Flow1"} (model/connector-to diagram "Connector1")))))
+    (is (= {:kind :flow :id "Flow1"} (model/connector-to diagram "Connector1")))
+    (is (model/connector-placement-armed? diagram))
+    (is (nil? (:connector-draft diagram)))))
 
 (deftest stock-to-converter-connector-test
   (let [diagram (-> (diagram-with-fixtures)

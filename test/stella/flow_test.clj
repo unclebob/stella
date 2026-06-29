@@ -15,7 +15,19 @@
     (is (model/flow-exists? diagram "Flow1"))
     (is (= ["Stock1" "Stock2"] (model/flow-endpoints diagram "Flow1")))
     (is (= "0" (model/flow-rate diagram "Flow1")))
-    (is (model/placement-disarmed? diagram))))
+    (is (model/flow-placement-armed? diagram))
+    (is (nil? (:flow-draft diagram)))))
+
+(deftest connect-multiple-flows-without-rearming-test
+  (let [diagram (-> (diagram-with-stocks)
+                    (model/fixture-stock "Stock3" 500 200)
+                    (model/arm-flow-placement)
+                    (model/select-flow-source :stock "Stock1")
+                    (model/connect-flow :stock "Stock2")
+                    (model/select-flow-source :stock "Stock2")
+                    (model/connect-flow :stock "Stock3"))]
+    (is (= 2 (model/flow-count diagram)))
+    (is (model/flow-placement-armed? diagram))))
 
 (deftest same-stock-rejected-test
   (let [diagram (-> (diagram-with-stocks)

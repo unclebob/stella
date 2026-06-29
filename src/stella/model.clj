@@ -291,7 +291,6 @@
           stock {:name name :initial-value "0" :min-value "0" :max-value nil :x x :y y}]
       (-> diagram
           (assoc-in [:stocks id] stock)
-          (assoc :placement-mode :idle)
           (update :next-stock-num inc)))
     diagram))
 
@@ -456,7 +455,6 @@
           id (keyword (str id-prefix num))]
       (-> diagram
           (assoc-in [collection id] {:name name :x x :y y})
-          (assoc :placement-mode :idle)
           (update next-key inc)))
     diagram))
 
@@ -596,7 +594,7 @@
         id (keyword (str id-prefix num))]
     (-> diagram
         (assoc-in [collection id] (assoc item :name name :from from :to to))
-        (assoc :placement-mode :idle draft-key nil)
+        (assoc draft-key nil)
         (update counter inc))))
 
 (defn- create-flow!
@@ -743,7 +741,6 @@
           id (keyword (str "converter-" num))]
       (-> diagram
           (assoc-in [:converters id] {:name name :value "0" :x x :y y})
-          (assoc :placement-mode :idle)
           (update :next-converter-num inc)))
     diagram))
 
