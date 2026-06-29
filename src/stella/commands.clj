@@ -328,15 +328,10 @@
   [shell]
   (update shell :diagram clear-selection!))
 
-(defn disarm-placement!
-  [diagram]
-  (model/disarm-placement diagram))
-
 (defn cancel-on-escape-on-shell!
   [shell]
   (-> shell
-      (update-diagram-and-clear-preview disarm-placement!)
-      clear-canvas-preview-on-shell!
+      (update-diagram-and-clear-preview model/disarm-placement)
       clear-selection-on-shell!))
 
 (defn delete-selection-on-shell!
