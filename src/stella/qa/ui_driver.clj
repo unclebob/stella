@@ -5,6 +5,7 @@
             [stella.app :as app]
             [stella.events :as events]
             [stella.model :as model]
+            [stella.simulation :as simulation]
             [stella.fx.nodes :as fx-nodes]
             [stella.qa.hit-test :as hit-test]
             [stella.ui.canvas :as canvas])
@@ -711,6 +712,39 @@
   [^Stage stage kind element-name label-text]
   (some #(= (str label-text) %) (or (element-icon-labels stage kind element-name) [])))
 
+(defn wait-for-element-icon-label!
+  [^Stage stage kind element-name label-text & {:keys [attempts] :or {attempts 30}}]
+  (loop [n attempts]
+    (if (element-icon-label-equals? stage kind element-name label-text)
+      true
+      (when (pos? n)
+        (Thread/sleep 100)
+        (recur (dec n))))))
+
+(defn stock-label-equals?
+  "True when the stock icon shows the given label text."
+  [stock-name text]
+  (or (when-let [^Parent group (fx-nodes/find-by-id-in-windows (str "stock-" stock-name))]
+        (some #(= (str text) %) (hit-test/label-texts group)))
+      (when-let [diagram (:diagram @app/*state)]
+        (when-let [[x y] (model/stock-position diagram stock-name)]
+          (when-let [^Parent canvas (fx-nodes/find-by-id-in-windows "canvas")]
+            (when-let [group (fx-nodes/find-stock-group-on-canvas canvas stock-name x y)]
+              (some #(= (str text) %) (hit-test/label-texts group))))))))
+
+(defn wait-for-stock-label!
+  [stock-name text & {:keys [attempts] :or {attempts 30}}]
+  (loop [n attempts]
+    (if (stock-label-equals? stock-name text)
+      true
+      (when (pos? n)
+        (Thread/sleep 100)
+        (recur (dec n))))))
+
+(defn diagram-stock-value
+  [stock-name]
+  (simulation/stock-value (:diagram @app/*state) stock-name))
+
 (defn element-icon-shows?
   [^Stage stage kind element-name text]
   (some #(str/includes? % (str text)) (or (element-icon-labels stage kind element-name) [])))
@@ -741,6 +775,15 @@
   [^Stage stage _kind name text]
   (some #(and (str/includes? % name) (str/includes? % (str text)))
         (visible-text stage)))
+
+(defn wait-for-element-shows!
+  [^Stage stage kind name text & {:keys [attempts] :or {attempts 30}}]
+  (loop [n attempts]
+    (if (element-shows? stage kind name text)
+      true
+      (when (pos? n)
+        (Thread/sleep 100)
+        (recur (dec n))))))
 
 (defn element-not-shows?
   [^Stage stage kind name text]

@@ -1,3 +1,8 @@
+# mutation-stamp: sha256=36d163bc8228c2a2f4fa6c6cd020b0f8be66fa0a16bd5f68a7d401307cf50c81
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-06-30T15:44:22.790737Z","feature_name":"Fractional flow rate","feature_path":"features/model/fractional-flow-rate.feature","background_hash":"ba597956270d81fe363acacd37c96ac101b54cfa8ce1e3162680b710b921e415","implementation_hash":"unknown","scenarios":[{"index":0,"name":"Fractional source flow accumulates stock value","scenario_hash":"ce2c96131948804e8b5af8882f28884ad465fd9cdb64c9f9e78b832a898f1a6b","mutation_count":8,"result":{"Total":8,"Killed":8,"Survived":0,"Errors":0},"tested_at":"2026-06-30T15:44:22.790737Z"},{"index":1,"name":"Fractional stock flow transfers between stocks","scenario_hash":"f19bc95c21523ddfcdbfa613f4937ab440f9c8899862bca367dcb532f4508f2c","mutation_count":5,"result":{"Total":5,"Killed":5,"Survived":0,"Errors":0},"tested_at":"2026-06-30T15:44:22.790737Z"}]}
+# acceptance-mutation-manifest-end
+
 Feature: Fractional flow rate
 
 Background:

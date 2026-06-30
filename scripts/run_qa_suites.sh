@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 
 suites=(qa-auto-close shell-launch shell-menus shell-about shell-resize shell-quit
         control-panel place-stock connect-flow cloud-palette cloud-endpoints connectors edit-stock edit-flow
-        edit-converter drag-stock drag-converter select-objects delete-selection run-simulation
+        edit-converter drag-stock drag-converter select-objects delete-selection run-simulation fractional-flow-rate
         stock-thermometer)
 
 for suite in "${suites[@]}"; do

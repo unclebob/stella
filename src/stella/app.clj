@@ -70,6 +70,21 @@
   [shell]
   (on-fx-thread! #(apply-stock-thermometer-fills! shell)))
 
+(def ^:private stock-value-label-x 24.0)
+
+(defn- sync-stock-value-labels!
+  [shell]
+  (on-fx-thread!
+   (when-let [^Parent canvas (fx-nodes/find-by-id-in-windows "canvas")]
+     (let [diagram (:diagram shell)]
+       (doseq [{:keys [name x y]} (model/stocks diagram)]
+         (when-let [labels (thermometer/stock-canvas-labels diagram name)]
+           (when-let [group (fx-nodes/find-stock-group-on-canvas canvas name x y)]
+             (doseq [^Label label (.getChildrenUnmodifiable group)]
+               (when (and (instance? Label label)
+                          (= stock-value-label-x (.getLayoutX label)))
+                 (.setText label (:value labels)))))))))))
+
 (defn sync-ui-thermometer-fills!
   "Refreshes stock thermometer fill rectangles on the live canvas."
   []
@@ -81,7 +96,8 @@
             (contains? diagram-sync-events etype))
     (fx-overlay/sync-diagram-overlay! (:diagram shell)))
   (when (= events/simulation-step etype)
-    (sync-simulation-time-display! shell))
+    (sync-simulation-time-display! shell)
+    (sync-stock-value-labels! shell))
   (when (or (= events/simulation-step etype)
             (contains? diagram-sync-events etype)
             (dispatch/diagram-event? etype))

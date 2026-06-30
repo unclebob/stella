@@ -757,6 +757,53 @@
       (ui/quit-app! stage)
       (pass! "run-simulation" "Quit requested"))))
 
+(defn- click-step-n-times!
+  [stage n]
+  (dotimes [_ n]
+    (ui/click-step-button! stage)))
+
+(defn- run-fractional-flow-rate! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (ui/click-palette! stage "Source")
+      (ui/click-in-region! stage :canvas [-150 0])
+      (when-not (ui/wait-for-element! stage :source "Source1")
+        (fail! "Source1 did not appear"))
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas :center)
+      (when-not (ui/wait-for-element! stage :stock "Stock1")
+        (fail! "Stock1 did not appear"))
+      (ui/click-palette! stage "Flow")
+      (ui/click-element! stage :source "Source1")
+      (ui/click-element! stage :stock "Stock1")
+      (assert-flow! stage "Flow1" "Source1" "Stock1"
+                    :suite "fractional-flow-rate" :show-name? false)
+      (ui/right-click-element! stage :flow "Flow1")
+      (when-not (ui/wait-for-dialog! "Edit Flow" :attempts 50)
+        (fail! "Edit Flow dialog did not appear"))
+      (ui/type-into-dialog-field! "Rate" "0.1")
+      (ui/click-ok-on-dialog! "Edit Flow")
+      (when-not (ui/element-shows? stage :flow "Flow1" "0.1")
+        (fail! "Flow1 rate not set to 0.1"))
+      (pass! "fractional-flow-rate" "Flow1 rate set to 0.1")
+      (when-not (ui/element-shows? stage :stock "Stock1" "0")
+        (fail! "Stock1 value not 0 before stepping"))
+      (pass! "fractional-flow-rate" "Stock1 value 0 before stepping")
+      (click-step-n-times! stage 10)
+      (when-not (ui/wait-for-region-text! stage :control-panel "1")
+        (fail! "Simulation time not 1 after 10 steps"))
+      (when-not (ui/wait-for-element-shows! stage :stock "Stock1" "0.1")
+        (fail! "Stock1 value not 0.1 after 10 steps"))
+      (pass! "fractional-flow-rate" "Stock1 value 0.1 after 10 steps")
+      (click-step-n-times! stage 10)
+      (when-not (ui/wait-for-region-text! stage :control-panel "2")
+        (fail! "Simulation time not 2 after 20 steps"))
+      (when-not (ui/wait-for-stock-label! "Stock1" "0.2" :attempts 50)
+        (fail! "Stock1 value not 0.2 after 20 steps"))
+      (pass! "fractional-flow-rate" "Stock1 value 0.2 after 20 steps")
+      (ui/quit-app! stage)
+      (pass! "fractional-flow-rate" "Quit requested"))))
+
 (defn- run-stock-thermometer! []
   (with-app! {}
     (fn [^Stage stage]
@@ -892,6 +939,7 @@
    "delete-selection" run-delete-selection!
    "control-panel" run-control-panel!
    "run-simulation" run-run-simulation!
+   "fractional-flow-rate" run-fractional-flow-rate!
    "stock-thermometer" run-stock-thermometer!})
 
 (defn -main [& args]
