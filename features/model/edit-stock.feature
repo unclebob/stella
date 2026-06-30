@@ -71,3 +71,20 @@ Scenario: Reject initial value above maximum
   Then the stock edit should be rejected
   And stock Stock1 maximum should be 39
   And stock Stock1 initial value should be 0
+
+# edit-stock-08
+Scenario: Edit stock current value
+  When I set stock Stock1 current value to 25
+  Then stock Stock1 current value should be 25
+
+# edit-stock-09
+Scenario: Current value below minimum clamps to minimum
+  When I set stock Stock1 minimum to 10
+  And I set stock Stock1 current value to 5
+  Then stock Stock1 current value should be 10
+
+# edit-stock-10
+Scenario: Current value above maximum clamps to maximum
+  When I set stock Stock1 maximum to 40
+  And I set stock Stock1 current value to 50
+  Then stock Stock1 current value should be 40

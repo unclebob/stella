@@ -197,6 +197,56 @@
         }
       ],
       "examples": []
+    },
+    {
+      "name": "Edit stock current value",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 current value to 25"
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 current value should be 25"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Current value below minimum clamps to minimum",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 minimum to 10"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock1 current value to 5"
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 current value should be 10"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Current value above maximum clamps to maximum",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 maximum to 40"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock1 current value to 50"
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 current value should be 40"
+        }
+      ],
+      "examples": []
     }
   ]
 }
