@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-fractional-flow/rate.feature",
+  "ir_path": "build/acceptance/ir/model-fractional-flow-rate.json",
+  "implementation_hash": "sha256:d958f5961aa05942055bb11729835225c626ea35113db8efbbb83511f009a597",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_fractional_flow_rate_feature_test.clj"]
+}
