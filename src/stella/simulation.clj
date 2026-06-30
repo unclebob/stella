@@ -21,10 +21,12 @@
 
 (defn- stock-value-number
   [diagram name]
-  (numeric-value
-   (or (get-in diagram [:simulation :stock-values name])
-       (model/stock-initial-value diagram name)
-       "0")))
+  (let [raw (or (get-in diagram [:simulation :stock-values name])
+                (model/stock-initial-value diagram name)
+                "0")]
+    (if (number? raw)
+      (double raw)
+      (numeric-value raw))))
 
 (defn stock-value
   [diagram name]
@@ -69,9 +71,8 @@
 (defn step
   [diagram]
   (let [new-values (step-values diagram)
-        formatted (into {} (map (fn [[k v]] [k (model/format-display-number v)]) new-values))
         new-time (round-time (+ (simulation-time diagram) dt))]
-    (assoc diagram :simulation {:time new-time :stock-values formatted})))
+    (assoc diagram :simulation {:time new-time :stock-values new-values})))
 
 (defn run-steps
   [diagram n]

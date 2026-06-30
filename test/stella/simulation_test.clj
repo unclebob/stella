@@ -82,3 +82,15 @@
   (let [diagram (cmd/run-simulation-steps! (diagram-with-stock-flow) 1)]
     (is (= "99" (simulation/stock-value diagram "Stock1")))
     (is (= 0.1 (simulation/simulation-time diagram)))))
+
+(deftest fractional-flow-rate-accumulates-test
+  (let [diagram (-> (model/default-diagram)
+                    (model/fixture-stock "Stock1" 100 100)
+                    (model/fixture-source "Source1" 50 100)
+                    (model/fixture-flow-from-source "Flow1" "Source1" "Stock1")
+                    (model/set-stock-initial-value "Stock1" "0")
+                    (model/set-flow-rate "Flow1" "0.1"))
+        after-ten (simulation/run-steps diagram 10)
+        after-twenty (simulation/run-steps diagram 20)]
+    (is (= "0.1" (simulation/stock-value after-ten "Stock1")))
+    (is (= "0.2" (simulation/stock-value after-twenty "Stock1")))))
