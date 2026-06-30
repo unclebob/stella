@@ -28,3 +28,7 @@
     :fn (fn [world [_ name height] _]
           (support/assert-stock-canvas-thermometer world name :track-height
                                                    (Integer/parseInt height)))}])
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-30T09:56:34.71591-05:00", :module-hash "-607384243", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 2, :hash "905350211"} {:id "def/thermometer-handlers", :kind "def", :line 4, :end-line 30, :hash "-1253389199"}]}
+;; clj-mutate-manifest-end
