@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/shell-simulation/run.feature",
+  "ir_path": "build/acceptance/ir/shell-simulation-run.json",
+  "implementation_hash": "sha256:a7a007c2358eaab1a5275c802c1f9a9f0f2b5d37417b0a57463f3c5ece63b792",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_shell_simulation_run_feature_test.clj"]
+}

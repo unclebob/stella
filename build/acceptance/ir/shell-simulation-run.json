@@ -1,0 +1,202 @@
+{
+  "name": "Simulation run",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "a default shell application"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Control panel shows speed slider and Run button",
+      "steps": [
+        {
+          "keyword": "Then",
+          "text": "the control panel should be visible"
+        },
+        {
+          "keyword": "And",
+          "text": "the Step button should be visible"
+        },
+        {
+          "keyword": "And",
+          "text": "the speed slider should be visible"
+        },
+        {
+          "keyword": "And",
+          "text": "the simulation tick delay display should show 1"
+        },
+        {
+          "keyword": "And",
+          "text": "the Run button should show Run"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Set simulation tick delay on speed slider",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set simulation tick delay to \u003cdelay\u003e",
+          "parameters": [
+            "delay"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the simulation tick delay display should show \u003cdelay\u003e",
+          "parameters": [
+            "delay"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "delay": "1"
+        },
+        {
+          "delay": "0.5"
+        },
+        {
+          "delay": "0"
+        }
+      ]
+    },
+    {
+      "name": "Run toggles to Stop while simulation is running",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I click Run"
+        },
+        {
+          "keyword": "Then",
+          "text": "simulation run should be active"
+        },
+        {
+          "keyword": "And",
+          "text": "the Run button should show Stop"
+        },
+        {
+          "keyword": "When",
+          "text": "I click Stop"
+        },
+        {
+          "keyword": "Then",
+          "text": "simulation run should be stopped"
+        },
+        {
+          "keyword": "And",
+          "text": "the Run button should show Run"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Running simulation advances time on timer ticks",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "a diagram model with stock Stock1 at 100 100"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 at 300 200"
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 runs from stock Stock1 to stock Stock2"
+        },
+        {
+          "keyword": "When",
+          "text": "I set simulation tick delay to 0"
+        },
+        {
+          "keyword": "And",
+          "text": "I click Run"
+        },
+        {
+          "keyword": "And",
+          "text": "\u003cticks\u003e simulation run ticks elapse",
+          "parameters": [
+            "ticks"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the simulation time display should show \u003ctime\u003e",
+          "parameters": [
+            "time"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "simulation run should be active"
+        }
+      ],
+      "examples": [
+        {
+          "ticks": "1",
+          "time": "0.1"
+        },
+        {
+          "ticks": "3",
+          "time": "0.3"
+        }
+      ]
+    },
+    {
+      "name": "Stop halts automatic stepping",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "a diagram model with stock Stock1 at 100 100"
+        },
+        {
+          "keyword": "When",
+          "text": "I set simulation tick delay to 0"
+        },
+        {
+          "keyword": "And",
+          "text": "I click Run"
+        },
+        {
+          "keyword": "And",
+          "text": "2 simulation run ticks elapse"
+        },
+        {
+          "keyword": "When",
+          "text": "I click Stop"
+        },
+        {
+          "keyword": "And",
+          "text": "3 simulation run ticks elapse"
+        },
+        {
+          "keyword": "Then",
+          "text": "the simulation time display should show 0.2"
+        },
+        {
+          "keyword": "And",
+          "text": "simulation run should be stopped"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Step still advances time while run is stopped",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I click Step 1 times"
+        },
+        {
+          "keyword": "Then",
+          "text": "the simulation time display should show 0.1"
+        }
+      ],
+      "examples": []
+    }
+  ]
+}
