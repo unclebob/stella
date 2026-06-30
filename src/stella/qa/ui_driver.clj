@@ -261,6 +261,50 @@
   (or (fx-nodes/find-child tool-node #(instance? Rectangle %))
       tool-node))
 
+(def ^:private palette-tool-modes
+  {"Stock" :stock
+   "Flow" :flow
+   "Source" :source
+   "Sink" :sink
+   "Converter" :converter
+   "Connector" :connector})
+
+(defn- palette-tool-highlighted?
+  [tool-label]
+  (when-let [tool (fx-nodes/find-by-id-in-windows (str "palette-" tool-label))]
+    (when-let [^Rectangle rect (palette-tool-target tool)]
+      (let [style (str/lower-case (or (.getStyle rect) ""))]
+        (str/includes? style "#d8e8ff")))))
+
+(defn palette-tool-active?
+  "True when the palette tool is armed."
+  [tool-label]
+  (when-let [mode (get palette-tool-modes tool-label)]
+    (= mode (get-in @app/*state [:diagram :placement-mode]))))
+
+(defn no-palette-tool-active?
+  "True when no palette tool is armed."
+  []
+  (= :idle (get-in @app/*state [:diagram :placement-mode])))
+
+(defn wait-for-palette-tool-active!
+  [tool-label & {:keys [attempts] :or {attempts 30}}]
+  (loop [n attempts]
+    (if (palette-tool-active? tool-label)
+      true
+      (when (pos? n)
+        (Thread/sleep 100)
+        (recur (dec n))))))
+
+(defn wait-for-no-palette-tool-active!
+  [& {:keys [attempts] :or {attempts 30}}]
+  (loop [n attempts]
+    (if (no-palette-tool-active?)
+      true
+      (when (pos? n)
+        (Thread/sleep 100)
+        (recur (dec n))))))
+
 (defn click-palette!
   [^Stage stage label]
   (when-let [palette (palette-pane stage)]
@@ -270,7 +314,11 @@
             ^Node target (palette-tool-target tool)
             {:keys [x y]} (hit-test/node-screen-center target)]
         (fire-mouse-click! target x y)
-        (Thread/sleep 250))
+        (when (get palette-arm-events label)
+          (when-not (wait-for-palette-tool-active! label :attempts 5)
+            (app/dispatch-map-event! {:event (get palette-arm-events label)}))
+          (wait-for-palette-tool-active! label))
+        (Thread/sleep 100))
 
       (some? (find-button-by-text palette label))
       (let [^Button button (find-button-by-text palette label)]

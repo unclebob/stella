@@ -235,6 +235,44 @@
       (ui/quit-app! stage)
       (pass! "connect-flow" "Quit requested"))))
 
+(defn- run-cloud-palette! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (ui/click-palette! stage "Source")
+      (when-not (ui/wait-for-palette-tool-active! "Source")
+        (fail! "Source palette not active after arming"))
+      (when (ui/palette-tool-active? "Sink")
+        (fail! "Sink palette active while Source armed"))
+      (pass! "cloud-palette" "Source armed and highlighted")
+      (ui/click-in-region! stage :canvas [-150 0])
+      (when-not (ui/wait-for-element! stage :source "Source1")
+        (fail! "Source1 did not appear"))
+      (pass! "cloud-palette" "Source1 placed")
+      (when-not (ui/wait-for-no-palette-tool-active!)
+        (fail! "Palette still active after placing Source1"))
+      (pass! "cloud-palette" "Palette disarmed after Source placement")
+      (ui/click-palette! stage "Sink")
+      (when-not (ui/wait-for-palette-tool-active! "Sink")
+        (fail! "Sink palette not active after arming"))
+      (pass! "cloud-palette" "Sink armed and highlighted")
+      (ui/click-in-region! stage :canvas [150 0])
+      (when-not (ui/wait-for-element! stage :sink "Sink1")
+        (fail! "Sink1 did not appear"))
+      (pass! "cloud-palette" "Sink1 placed")
+      (when-not (ui/wait-for-no-palette-tool-active!)
+        (fail! "Palette still active after placing Sink1"))
+      (pass! "cloud-palette" "Palette disarmed after first Sink placement")
+      (ui/click-palette! stage "Sink")
+      (ui/click-in-region! stage :canvas [200 40])
+      (when-not (ui/wait-for-element! stage :sink "Sink2")
+        (fail! "Sink2 did not appear"))
+      (pass! "cloud-palette" "Sink2 placed after re-arming Sink")
+      (when-not (ui/wait-for-no-palette-tool-active!)
+        (fail! "Palette still active after placing Sink2"))
+      (pass! "cloud-palette" "Palette disarmed after second Sink placement")
+      (ui/quit-app! stage)
+      (pass! "cloud-palette" "Quit requested"))))
+
 (defn- run-cloud-endpoints! []
   (with-app! {}
     (fn [^Stage stage]
@@ -842,6 +880,7 @@
    "shell-quit" run-shell-quit!
    "place-stock" run-place-stock!
    "connect-flow" run-connect-flow!
+   "cloud-palette" run-cloud-palette!
    "cloud-endpoints" run-cloud-endpoints!
    "connectors" run-connectors!
    "edit-stock" run-edit-stock!
