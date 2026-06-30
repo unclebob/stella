@@ -264,3 +264,27 @@ Scenario Outline: clamp bounds connected stock value
     | stock1 | value |
     | 100    | 10    |
     | 3      | 3     |
+
+# converter-flow-rate-21
+Scenario Outline: Unary minus on constants
+  When I set converter Converter1 formula to <formula>
+  Then converter Converter1 value should be <value>
+  And flow Flow1 rate should be <value>
+
+  Examples:
+    | formula | value |
+    | -5      | -5    |
+    | -3.5    | -3.5  |
+
+# converter-flow-rate-22
+Scenario Outline: Unary minus on connected stock values
+  Given connector Connector2 runs from stock Stock1 to converter Converter1
+  When I set stock Stock1 initial value to <stock1>
+  And I set converter Converter1 formula to <formula>
+  Then converter Converter1 value should be <value>
+  And flow Flow1 rate should be <value>
+
+  Examples:
+    | stock1 | formula         | value |
+    | 7      | -Stock1         | -7    |
+    | 3      | -(Stock1 + 2)  | -5    |

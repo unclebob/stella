@@ -956,6 +956,91 @@
           "value": "3"
         }
       ]
+    },
+    {
+      "name": "Unary minus on constants",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "formula": "-5",
+          "value": "-5"
+        },
+        {
+          "formula": "-3.5",
+          "value": "-3.5"
+        }
+      ]
+    },
+    {
+      "name": "Unary minus on connected stock values",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "connector Connector2 runs from stock Stock1 to converter Converter1"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "formula": "-Stock1",
+          "stock1": "7",
+          "value": "-7"
+        },
+        {
+          "formula": "-(Stock1 + 2)",
+          "stock1": "3",
+          "value": "-5"
+        }
+      ]
     }
   ]
 }
