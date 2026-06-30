@@ -744,6 +744,218 @@
           "min": "0"
         }
       ]
+    },
+    {
+      "name": "Inverse trig mod and percent on constants",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "formula": "asin(0)",
+          "value": "0"
+        },
+        {
+          "formula": "acos(1)",
+          "value": "0"
+        },
+        {
+          "formula": "atan(1)",
+          "value": "0.8"
+        },
+        {
+          "formula": "mod(7, 3)",
+          "value": "1"
+        },
+        {
+          "formula": "7 % 3",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "name": "sign and clamp on constants",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "formula": "sign(-5)",
+          "value": "-1"
+        },
+        {
+          "formula": "sign(0)",
+          "value": "0"
+        },
+        {
+          "formula": "sign(12)",
+          "value": "1"
+        },
+        {
+          "formula": "clamp(15, 0, 10)",
+          "value": "10"
+        },
+        {
+          "formula": "clamp(-2, 0, 10)",
+          "value": "0"
+        },
+        {
+          "formula": "clamp(5, 0, 10)",
+          "value": "5"
+        }
+      ]
+    },
+    {
+      "name": "hypot atan2 and mod with connected stocks",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "connector Connector2 runs from stock Stock1 to converter Converter1"
+        },
+        {
+          "keyword": "And",
+          "text": "connector Connector3 runs from stock Stock2 to converter Converter1"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock2 initial value to \u003cstock2\u003e",
+          "parameters": [
+            "stock2"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "formula": "hypot(Stock1, Stock2)",
+          "stock1": "3",
+          "stock2": "4",
+          "value": "5"
+        },
+        {
+          "formula": "atan2(Stock1, Stock2)",
+          "stock1": "3",
+          "stock2": "4",
+          "value": "0.6"
+        },
+        {
+          "formula": "mod(Stock1, Stock2)",
+          "stock1": "7",
+          "stock2": "3",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "name": "clamp bounds connected stock value",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "connector Connector2 runs from stock Stock1 to converter Converter1"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set converter Converter1 formula to clamp(Stock1, 0, 10)"
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "stock1": "100",
+          "value": "10"
+        },
+        {
+          "stock1": "3",
+          "value": "3"
+        }
+      ]
     }
   ]
 }

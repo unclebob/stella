@@ -206,3 +206,61 @@ Scenario Outline: Random literal in unit interval
     | formula | min | max |
     | ?       | 0   | 1   |
     | ? * 10  | 0   | 10  |
+
+# converter-flow-rate-17
+Scenario Outline: Inverse trig mod and percent on constants
+  When I set converter Converter1 formula to <formula>
+  Then converter Converter1 value should be <value>
+  And flow Flow1 rate should be <value>
+
+  Examples:
+    | formula  | value |
+    | asin(0)  | 0     |
+    | acos(1)  | 0     |
+    | atan(1)  | 0.8   |
+    | mod(7, 3) | 1    |
+    | 7 % 3    | 1     |
+
+# converter-flow-rate-18
+Scenario Outline: sign and clamp on constants
+  When I set converter Converter1 formula to <formula>
+  Then converter Converter1 value should be <value>
+  And flow Flow1 rate should be <value>
+
+  Examples:
+    | formula           | value |
+    | sign(-5)          | -1    |
+    | sign(0)           | 0     |
+    | sign(12)          | 1     |
+    | clamp(15, 0, 10)  | 10    |
+    | clamp(-2, 0, 10)  | 0     |
+    | clamp(5, 0, 10)   | 5     |
+
+# converter-flow-rate-19
+Scenario Outline: hypot atan2 and mod with connected stocks
+  Given connector Connector2 runs from stock Stock1 to converter Converter1
+  And connector Connector3 runs from stock Stock2 to converter Converter1
+  When I set stock Stock1 initial value to <stock1>
+  And I set stock Stock2 initial value to <stock2>
+  And I set converter Converter1 formula to <formula>
+  Then converter Converter1 value should be <value>
+  And flow Flow1 rate should be <value>
+
+  Examples:
+    | stock1 | stock2 | formula              | value |
+    | 3      | 4      | hypot(Stock1, Stock2) | 5    |
+    | 3      | 4      | atan2(Stock1, Stock2) | 0.6  |
+    | 7      | 3      | mod(Stock1, Stock2)   | 1    |
+
+# converter-flow-rate-20
+Scenario Outline: clamp bounds connected stock value
+  Given connector Connector2 runs from stock Stock1 to converter Converter1
+  When I set stock Stock1 initial value to <stock1>
+  And I set converter Converter1 formula to clamp(Stock1, 0, 10)
+  Then converter Converter1 value should be <value>
+  And flow Flow1 rate should be <value>
+
+  Examples:
+    | stock1 | value |
+    | 100    | 10    |
+    | 3      | 3     |
