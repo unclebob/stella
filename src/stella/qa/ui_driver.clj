@@ -114,6 +114,20 @@
         (.fire ok))
       (Thread/sleep 250))))
 
+(defn- find-cancel-in-node [^Node node]
+  (or (when (and (instance? Button node) (= "Cancel" (.getText ^Button node)))
+        node)
+      (when (instance? Parent node)
+        (some find-cancel-in-node (.getChildrenUnmodifiable ^Parent node)))))
+
+(defn click-cancel-on-dialog! [title]
+  (when-let [root (some-> (dialog-stage title) .getScene .getRoot)]
+    (when-let [^Button cancel (find-cancel-in-node root)]
+      (if-let [handler (.getOnAction cancel)]
+        (.handle ^EventHandler handler (ActionEvent.))
+        (.fire cancel))
+      (Thread/sleep 250))))
+
 (defn- edit-stock-dialog-open? []
   (or (boolean (dialog-stage "Edit Stock"))
       (boolean (fx-nodes/find-by-id-in-windows "edit-stock-name"))))
@@ -445,6 +459,16 @@
         :else (throw (ex-info "Unexpected step dispatch result" {:result result})))))
   (Thread/sleep 300))
 
+(defn double-click-element!
+  "Opens the stock edit dialog (same outcome as the stock double-click gesture)."
+  [_stage kind name]
+  (case kind
+    :stock (when-not (:edit-stock @app/*state)
+             (app/dispatch-map-event! {:event events/edit-stock-open :stock-name name}))
+    (throw (ex-info "Unsupported element kind for double-click edit dialog"
+                    {:kind kind :name name})))
+  (Thread/sleep 250))
+
 (defn right-click-element!
   "Opens an element edit dialog via the same events as the context menu."
   [_stage kind name]
@@ -702,11 +726,30 @@
   [_stage]
   (count (:converters (:diagram @app/*state))))
 
+(defn sync-converter-value-labels!
+  []
+  (app/sync-ui-converter-value-labels!)
+  (Thread/sleep 100))
+
+(defn- converter-icon-labels
+  [converter-name]
+  (or (when-let [^Label label (fx-nodes/find-by-id-in-windows (str "converter-value-" converter-name))]
+        [(.getText label)])
+      (when-let [diagram (:diagram @app/*state)]
+        (when-let [[x y] (model/converter-position diagram converter-name)]
+          (when-let [^Parent canvas (fx-nodes/find-by-id-in-windows "canvas")]
+            (when-let [group (fx-nodes/find-converter-group-on-canvas canvas converter-name x y)]
+              (hit-test/label-texts group)))))))
+
 (defn- element-icon-labels
   [^Stage stage kind element-name]
-  (when-let [^Node label (hit-test/element-node stage kind element-name)]
-    (let [^Node icon (or (.getParent label) label)]
-      (hit-test/label-texts icon))))
+  (case kind
+    :converter (converter-icon-labels element-name)
+    (when-let [^Node node (hit-test/element-node stage kind element-name)]
+      (let [^Node icon (if (instance? Label node)
+                          (.getParent node)
+                          node)]
+        (hit-test/label-texts icon)))))
 
 (defn element-icon-label-equals?
   [^Stage stage kind element-name label-text]
@@ -748,6 +791,10 @@
 (defn element-icon-shows?
   [^Stage stage kind element-name text]
   (some #(str/includes? % (str text)) (or (element-icon-labels stage kind element-name) [])))
+
+(defn converter-icon-label-equals?
+  [converter-name label-text]
+  (some #(= (str label-text) %) (or (converter-icon-labels converter-name) [])))
 
 (defn label-visible?
   [^Stage stage label-text]

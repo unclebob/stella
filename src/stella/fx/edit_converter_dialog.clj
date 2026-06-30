@@ -14,7 +14,9 @@
    :formula (.getText formula-field)})
 
 (defn show!
-  [draft on-event!]
+  ([draft on-event!]
+   (show! draft on-event! (constantly true)))
+  ([draft on-event! should-close-after-ok?]
   (let [^TextField name-field (doto (TextField.)
                                  (.setId "edit-converter-name")
                                  (.setText (str (:name draft))))
@@ -40,11 +42,12 @@
                         (handle [_event]
                           (on-event! {:event events/edit-converter-apply
                                       :draft (read-draft name-field formula-field)})
-                          (.close dialog)))))
+                          (when (should-close-after-ok?)
+                            (.close dialog))))))
       (when-let [^Button cancel-button (.lookupButton pane ButtonType/CANCEL)]
         (.setOnAction cancel-button
                       (proxy [EventHandler] []
                         (handle [_event]
                           (on-event! {:event events/edit-converter-cancel})
                           (.close dialog))))))
-    (.show dialog)))
+    (.show dialog))))

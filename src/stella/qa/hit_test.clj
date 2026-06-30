@@ -113,11 +113,11 @@
    #(and (instance? Label %) (= text (.getText ^Label %)))))
 
 (defn element-node
-  "Finds a diagram element node by matching its primary name label."
-  [^Stage stage kind element-name]
-  (when-let [root (some-> stage .getScene .getRoot)]
-    (or (fx-nodes/find-by-id root (str (name kind) "-" element-name))
-        (find-label-node root element-name))))
+  "Finds a diagram element node by id, falling back to a name label on the canvas."
+  [stage kind element-name]
+  (or (fx-nodes/find-by-id-in-windows (str (name kind) "-" element-name))
+      (when-let [^Node canvas (region-node stage :canvas)]
+        (find-label-node canvas element-name))))
 
 (defn- link-target
   [from-pos to-pos width height]

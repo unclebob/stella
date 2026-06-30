@@ -46,6 +46,10 @@
   [^Node node stock-name]
   (and (instance? Label node) (= stock-name (.getText ^Label node))))
 
+(defn- converter-name-label?
+  [^Node node converter-name]
+  (and (instance? Label node) (= converter-name (.getText ^Label node))))
+
 (defn find-stock-group-on-canvas
   ([^Parent canvas stock-x stock-y]
    (find-child canvas #(and (instance? Group %) (layout-coords-match? % stock-x stock-y))))
@@ -54,6 +58,16 @@
        (find-child canvas
                    #(and (instance? Group %)
                          (boolean (find-child % (fn [n] (stock-name-label? n stock-name)))))))))
+
+(defn find-converter-group-on-canvas
+  ([^Parent canvas converter-x converter-y]
+   (find-child canvas #(and (instance? Group %) (layout-coords-match? % converter-x converter-y))))
+  ([^Parent canvas converter-name converter-x converter-y]
+   (or (find-by-id canvas (str "converter-" converter-name))
+       (find-child canvas
+                   #(and (instance? Group %)
+                         (boolean (find-child % (fn [n] (converter-name-label? n converter-name))))))
+       (find-converter-group-on-canvas canvas converter-x converter-y))))
 
 (defn find-stock-thermometer-fill-by-name
   [stock-name]

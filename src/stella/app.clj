@@ -13,8 +13,10 @@
             [stella.model :as model]
             [stella.qa.auto-close :as qa-auto-close]
             [stella.thermometer :as thermometer]
+            [stella.ui.canvas :as canvas]
             [stella.ui.root :as root])
   (:import [javafx.application Platform]
+           [javafx.geometry Pos]
            [javafx.scene Parent]
            [javafx.scene.control Label]
            [javafx.scene.shape Rectangle]))
@@ -71,6 +73,8 @@
   (on-fx-thread! #(apply-stock-thermometer-fills! shell)))
 
 (def ^:private stock-value-label-x 24.0)
+(def ^:private converter-value-label-y 18.0)
+(def ^:private converter-value-label-style "-fx-font-size: 10px;")
 
 (defn- sync-stock-value-labels!
   [shell]
@@ -85,10 +89,67 @@
                           (= stock-value-label-x (.getLayoutX label)))
                  (.setText label (:value labels)))))))))))
 
+(defn- upsert-converter-value-label!
+  [^Parent canvas diagram name x y]
+  (let [value (or (model/converter-value diagram name) "0")
+        label-id (str "converter-value-" name)]
+    (if-let [^Label label (fx-nodes/find-by-id canvas label-id)]
+      (do (.setText label value)
+          (.setVisible label true)
+          label)
+      (let [^Label label (Label. value)]
+        (.setId label label-id)
+        (.setLayoutX label (double x))
+        (.setLayoutY label (+ (double y) converter-value-label-y))
+        (.setPrefWidth label 50.0)
+        (.setAlignment label Pos/CENTER)
+        (.setStyle label converter-value-label-style)
+        (.setMouseTransparent label true)
+        (.add (.getChildren canvas) label)
+        label))))
+
+(defn- apply-converter-value-labels!
+  [shell]
+  (when-let [^Parent canvas (fx-nodes/find-by-id-in-windows "canvas")]
+    (let [diagram (:diagram shell)]
+      (doseq [{:keys [name x y]} (model/converters diagram)]
+        (let [value (or (model/converter-value diagram name) "0")
+              group (or (fx-nodes/find-by-id canvas (str "converter-" name))
+                        (fx-nodes/find-converter-group-on-canvas canvas name x y))]
+          (if group
+            (doseq [^Label label (.getChildrenUnmodifiable group)]
+              (when (and (instance? Label label)
+                         (= converter-value-label-y (.getLayoutY label)))
+                (.setText label value)))
+            (upsert-converter-value-label! canvas diagram name x y)))))))
+
+(defn- sync-converter-value-labels!
+  [shell]
+  (on-fx-thread! #(apply-converter-value-labels! shell)))
+
+(defn- sync-flow-rate-labels!
+  [shell]
+  (on-fx-thread!
+   (when-let [^Parent canvas (fx-nodes/find-by-id-in-windows "canvas")]
+     (let [diagram (:diagram shell)]
+       (doseq [{:keys [name]} (model/flows diagram)]
+         (when-let [labels (canvas/flow-canvas-labels diagram name)]
+           (when-let [group (fx-nodes/find-by-id canvas (str "flow-" name))]
+             (let [rate (str (:rate labels))]
+               (doseq [^Label label (.getChildrenUnmodifiable group)]
+                 (when (and (instance? Label label)
+                            (not= (.getText label) name))
+                   (.setText label rate)))))))))))
+
 (defn sync-ui-thermometer-fills!
   "Refreshes stock thermometer fill rectangles on the live canvas."
   []
   (on-fx-thread! #(apply-stock-thermometer-fills! @*state)))
+
+(defn sync-ui-converter-value-labels!
+  "Refreshes converter center value labels on the live canvas."
+  []
+  (on-fx-thread! #(apply-converter-value-labels! @*state)))
 
 (defn- sync-diagram-after-event!
   [etype shell]
@@ -97,7 +158,15 @@
     (fx-overlay/sync-diagram-overlay! (:diagram shell)))
   (when (= events/simulation-step etype)
     (sync-simulation-time-display! shell)
-    (sync-stock-value-labels! shell))
+    (sync-stock-value-labels! shell)
+    (sync-converter-value-labels! shell)
+    (sync-flow-rate-labels! shell))
+  (when (or (= events/simulation-step etype)
+            (= events/edit-converter-apply etype)
+            (contains? diagram-sync-events etype)
+            (dispatch/diagram-event? etype))
+    (sync-converter-value-labels! shell)
+    (sync-flow-rate-labels! shell))
   (when (or (= events/simulation-step etype)
             (contains? diagram-sync-events etype)
             (dispatch/diagram-event? etype))
@@ -110,6 +179,16 @@
            (fn [dialog-event]
              (dispatch-map-event! dialog-event state-atom)))))
 
+(defn- show-edit-converter-dialog!
+  [state-atom draft]
+  (on-fx-thread!
+   (fn []
+     (edit-converter-dialog/show!
+      draft
+      (fn [dialog-event]
+        (dispatch-map-event! dialog-event state-atom))
+      (fn [] (nil? (:edit-converter @state-atom)))))))
+
 (defn- show-dialogs-after-event!
   [etype shell state-atom]
   (cond
@@ -120,7 +199,7 @@
     (show-edit-dialog! state-atom (:edit-flow shell) edit-flow-dialog/show!)
 
     (and (= events/edit-converter-open etype) (:edit-converter shell))
-    (show-edit-dialog! state-atom (:edit-converter shell) edit-converter-dialog/show!)))
+    (show-edit-converter-dialog! state-atom (:edit-converter shell))))
 
 (defn dispatch-map-event!
   ([event] (dispatch-map-event! event *state))

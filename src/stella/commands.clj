@@ -1,5 +1,7 @@
 (ns stella.commands
-  (:require [stella.model :as model]
+  (:require [clojure.string :as str]
+            [stella.formula :as formula]
+            [stella.model :as model]
             [stella.simulation :as simulation]))
 
 (defn default-shell!
@@ -585,14 +587,32 @@
   [shell]
   (dissoc shell :edit-converter))
 
+(defn- converter-formula-edit-rejected?
+  [diagram converter-name {:keys [formula]}]
+  (let [prior-formula (or (model/converter-connector-formula diagram converter-name) "")
+        formula-text (str/trim (str formula))
+        stock-names (set (map :name (model/stocks diagram)))]
+    (and (seq formula-text)
+         (not= formula-text prior-formula)
+         (not (formula/valid-for-stocks? formula-text stock-names)))))
+
 (defn apply-edit-converter-on-shell!
   [shell draft]
   (let [converter-name (:converter-name (:edit-converter shell))
         diagram (:diagram shell)
+        formula-rejected? (converter-formula-edit-rejected? diagram converter-name draft)
         updated (apply-converter-edit! diagram converter-name draft)]
-    (-> shell
-        (cond-> (not= updated diagram) (assoc :diagram updated))
-        (dissoc :edit-converter))))
+    (cond
+      formula-rejected?
+      shell
+
+      (= updated diagram)
+      (dissoc shell :edit-converter)
+
+      :else
+      (-> shell
+          (assoc :diagram updated)
+          (dissoc :edit-converter)))))
 
 (defn arm-connector-placement!
   [diagram]
