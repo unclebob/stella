@@ -29,6 +29,15 @@
   (let [diagram (cmd/set-stock-initial-value! (diagram-with-stock) "Stock1" "25")]
     (is (= "25" (model/stock-initial-value diagram "Stock1")))))
 
+(deftest set-rational-stock-values-test
+  (let [diagram (-> (diagram-with-stock)
+                    (cmd/set-stock-min! "Stock1" "1/4")
+                    (cmd/set-stock-max! "Stock1" "3/4")
+                    (cmd/set-stock-initial-value! "Stock1" "1/2"))]
+    (is (= "1/4" (model/stock-min-value diagram "Stock1")))
+    (is (= "3/4" (model/stock-max-value diagram "Stock1")))
+    (is (= "1/2" (model/stock-initial-value diagram "Stock1")))))
+
 (deftest reject-initial-below-minimum-test
   (let [diagram (-> (diagram-with-stock)
                     (cmd/set-stock-min! "Stock1" "10")

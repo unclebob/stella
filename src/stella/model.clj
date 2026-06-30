@@ -1,4 +1,5 @@
-(ns stella.model)
+(ns stella.model
+  (:require [stella.numbers :as numbers]))
 
 (defn- menu-item [label disabled]
   {:label label :disabled disabled})
@@ -181,7 +182,7 @@
 
 (defn- numeric-value
   [value]
-  (Double/parseDouble (str value)))
+  (numbers/parse-number value))
 
 (defn- value-within-bounds?
   [value min-value max-value]
@@ -234,7 +235,7 @@
   [diagram name value]
   (if-let [[id stock] (stock-entry-by-name diagram name)]
     (if (value-within-bounds? value (:min-value stock "0") (:max-value stock))
-      (assoc-in diagram [:stocks id :initial-value] (str value))
+      (assoc-in diagram [:stocks id :initial-value] (numbers/normalize-number-string value))
       diagram)
     diagram))
 
@@ -242,7 +243,7 @@
   [diagram name bound-key value valid?]
   (if-let [[id stock] (stock-entry-by-name diagram name)]
     (if (valid? stock value)
-      (assoc-in diagram [:stocks id bound-key] (str value))
+      (assoc-in diagram [:stocks id bound-key] (numbers/normalize-number-string value))
       diagram)
     diagram))
 
@@ -577,19 +578,11 @@
           (assoc-in [:flows id :name] new-name)
           (rename-endpoints-in-connectors :flow old-name new-name)))))
 
-(defn- parseable-number?
-  [value]
-  (and (seq (str value))
-       (try
-         (numeric-value value)
-         true
-         (catch Exception _ false))))
-
 (defn set-flow-rate
   [diagram name rate]
   (if-let [[id _] (flow-entry-by-name diagram name)]
-    (if (parseable-number? rate)
-      (assoc-in diagram [:flows id :rate] (str rate))
+    (if (numbers/parseable-number? rate)
+      (assoc-in diagram [:flows id :rate] (numbers/normalize-number-string rate))
       diagram)
     diagram))
 
@@ -601,7 +594,7 @@
     (if (and (not= name flow-name) (= after-name diagram))
       diagram
       (let [target (if (= after-name diagram) flow-name name)]
-        (if (parseable-number? rate)
+        (if (numbers/parseable-number? rate)
           (set-flow-rate after-name target rate)
           after-name)))))
 

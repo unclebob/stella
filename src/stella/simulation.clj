@@ -1,11 +1,12 @@
 (ns stella.simulation
-  (:require [stella.model :as model]))
+  (:require [stella.model :as model]
+            [stella.numbers :as numbers]))
 
 (def ^:private dt 0.1)
 
 (defn- numeric-value
   [value]
-  (Double/parseDouble (str value)))
+  (numbers/parse-number value))
 
 (defn- round-time
   [time]

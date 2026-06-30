@@ -83,6 +83,16 @@
     (is (= "99" (simulation/stock-value diagram "Stock1")))
     (is (= 0.1 (simulation/simulation-time diagram)))))
 
+(deftest rational-flow-rate-simulation-test
+  (let [diagram (-> (model/default-diagram)
+                    (model/fixture-stock "Stock1" 100 100)
+                    (model/fixture-source "Source1" 50 100)
+                    (model/fixture-flow-from-source "Flow1" "Source1" "Stock1")
+                    (model/set-stock-initial-value "Stock1" "0")
+                    (model/set-flow-rate "Flow1" "1/2"))
+        after-two (simulation/run-steps diagram 2)]
+    (is (= "0.1" (simulation/stock-value after-two "Stock1")))))
+
 (deftest fractional-flow-rate-accumulates-test
   (let [diagram (-> (model/default-diagram)
                     (model/fixture-stock "Stock1" 100 100)

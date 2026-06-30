@@ -2,6 +2,7 @@
   (:require [clojure.string :as str]
             [stella.events :as events]
             [stella.model :as model]
+            [stella.numbers :as numbers]
             [stella.simulation :as simulation]))
 
 (defn- endpoint-click
@@ -442,10 +443,10 @@
 
 (defn- thermometer-fill-width
   [diagram stock-name]
-  (let [value (Double/parseDouble (simulation/stock-value diagram stock-name))
-        min-value (Double/parseDouble (str (or (model/stock-min-value diagram stock-name) "0")))
+  (let [value (numbers/parse-number (simulation/stock-value diagram stock-name))
+        min-value (numbers/parse-number (or (model/stock-min-value diagram stock-name) "0"))
         max-value (if-let [max-v (model/stock-max-value diagram stock-name)]
-                    (Double/parseDouble (str max-v))
+                    (numbers/parse-number max-v)
                     unbounded-thermometer-scale)
         scale-range (- max-value min-value)]
     (if (or (<= scale-range 0.0) (<= value min-value))

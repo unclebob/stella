@@ -26,6 +26,10 @@
   (let [diagram (cmd/set-flow-rate! (diagram-with-flow) "Flow1" "5")]
     (is (= "5" (model/flow-rate diagram "Flow1")))))
 
+(deftest set-rational-flow-rate-test
+  (let [diagram (cmd/set-flow-rate! (diagram-with-flow) "Flow1" " 1/2 ")]
+    (is (= "1/2" (model/flow-rate diagram "Flow1")))))
+
 (deftest reject-non-numeric-flow-rate-test
   (let [diagram (cmd/set-flow-rate! (diagram-with-flow) "Flow1" "abc")]
     (is (= "0" (model/flow-rate diagram "Flow1")))))
