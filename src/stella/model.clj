@@ -111,6 +111,23 @@
   [_shell]
   true)
 
+(def ^:private palette-tool-modes
+  {"Stock" :stock
+   "Flow" :flow
+   "Source" :source
+   "Sink" :sink
+   "Converter" :converter
+   "Connector" :connector})
+
+(defn palette-tool-active?
+  [shell tool-label]
+  (when-let [mode (get palette-tool-modes tool-label)]
+    (= mode (get-in shell [:diagram :placement-mode]))))
+
+(defn no-palette-tool-active?
+  [shell]
+  (= :idle (get-in shell [:diagram :placement-mode])))
+
 (defn format-display-number
   [n]
   (let [rounded (/ (Math/round (* n 10)) 10.0)]

@@ -1,5 +1,6 @@
 (ns stella.ui.palette
-  (:require [stella.events :as events]))
+  (:require [stella.events :as events]
+            [stella.model :as model]))
 
 (def ^:private tool-width 82)
 (def ^:private tool-height 58)
@@ -149,19 +150,29 @@
     :stroke "#666"
     :stroke-width 1}])
 
+(def ^:private icon-builders
+  {:stock stock-icon
+   :flow flow-icon
+   :source source-icon
+   :sink sink-icon
+   :converter converter-icon
+   :connector connector-icon})
+
 (defn- icon-nodes
   [kind]
-  (case kind
-    :stock (stock-icon)
-    :flow (flow-icon)
-    :source (source-icon)
-    :sink (sink-icon)
-    :converter (converter-icon)
-    :connector (connector-icon)))
+  ((icon-builders kind)))
 
 (defn- active?
   [shell mode]
   (= mode (get-in shell [:diagram :placement-mode])))
+
+(defn palette-tool-active?
+  [shell tool-label]
+  (model/palette-tool-active? shell tool-label))
+
+(defn no-palette-tool-active?
+  [shell]
+  (model/no-palette-tool-active? shell))
 
 (defn- mouse-transparent
   [desc]
