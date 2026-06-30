@@ -520,6 +520,230 @@
         }
       ],
       "examples": []
+    },
+    {
+      "name": "Unary math functions on constants",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "formula": "abs(-5)",
+          "value": "5"
+        },
+        {
+          "formula": "floor(3.7)",
+          "value": "3"
+        },
+        {
+          "formula": "ceil(3.2)",
+          "value": "4"
+        },
+        {
+          "formula": "round(3.6)",
+          "value": "4"
+        },
+        {
+          "formula": "log(100)",
+          "value": "2"
+        },
+        {
+          "formula": "pi",
+          "value": "3.1"
+        },
+        {
+          "formula": "e",
+          "value": "2.7"
+        }
+      ]
+    },
+    {
+      "name": "abs log and round with connected stock",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "connector Connector2 runs from stock Stock1 to converter Converter1"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "formula": "abs(Stock1 - 10)",
+          "stock1": "7",
+          "value": "3"
+        },
+        {
+          "formula": "log(Stock1)",
+          "stock1": "100",
+          "value": "2"
+        },
+        {
+          "formula": "round(Stock1)",
+          "stock1": "3.6",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "name": "min and max with two connected stocks",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "connector Connector2 runs from stock Stock1 to converter Converter1"
+        },
+        {
+          "keyword": "And",
+          "text": "connector Connector3 runs from stock Stock2 to converter Converter1"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock2 initial value to \u003cstock2\u003e",
+          "parameters": [
+            "stock2"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "formula": "min(Stock1, Stock2)",
+          "stock1": "30",
+          "stock2": "20",
+          "value": "20"
+        },
+        {
+          "formula": "max(Stock1, Stock2)",
+          "stock1": "30",
+          "stock2": "20",
+          "value": "30"
+        }
+      ]
+    },
+    {
+      "name": "Random literal in unit interval",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be at least \u003cmin\u003e",
+          "parameters": [
+            "min"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "converter Converter1 value should be less than \u003cmax\u003e",
+          "parameters": [
+            "max"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be at least \u003cmin\u003e",
+          "parameters": [
+            "min"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be less than \u003cmax\u003e",
+          "parameters": [
+            "max"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "formula": "?",
+          "max": "1",
+          "min": "0"
+        },
+        {
+          "formula": "? * 10",
+          "max": "10",
+          "min": "0"
+        }
+      ]
     }
   ]
 }

@@ -148,3 +148,61 @@ Scenario: Converter without flow link shows zero value
   Given converter Converter2 at 300 250
   Then converter Converter2 value should be 0
   And converter Converter2 canvas value should be 0
+
+# converter-flow-rate-13
+Scenario Outline: Unary math functions on constants
+  When I set converter Converter1 formula to <formula>
+  Then converter Converter1 value should be <value>
+  And flow Flow1 rate should be <value>
+
+  Examples:
+    | formula    | value |
+    | abs(-5)    | 5     |
+    | floor(3.7) | 3     |
+    | ceil(3.2)  | 4     |
+    | round(3.6) | 4     |
+    | log(100)   | 2     |
+    | pi         | 3.1   |
+    | e          | 2.7   |
+
+# converter-flow-rate-14
+Scenario Outline: abs log and round with connected stock
+  Given connector Connector2 runs from stock Stock1 to converter Converter1
+  When I set stock Stock1 initial value to <stock1>
+  And I set converter Converter1 formula to <formula>
+  Then converter Converter1 value should be <value>
+  And flow Flow1 rate should be <value>
+
+  Examples:
+    | stock1 | formula           | value |
+    | 7      | abs(Stock1 - 10)  | 3     |
+    | 100    | log(Stock1)         | 2     |
+    | 3.6    | round(Stock1)       | 4     |
+
+# converter-flow-rate-15
+Scenario Outline: min and max with two connected stocks
+  Given connector Connector2 runs from stock Stock1 to converter Converter1
+  And connector Connector3 runs from stock Stock2 to converter Converter1
+  When I set stock Stock1 initial value to <stock1>
+  And I set stock Stock2 initial value to <stock2>
+  And I set converter Converter1 formula to <formula>
+  Then converter Converter1 value should be <value>
+  And flow Flow1 rate should be <value>
+
+  Examples:
+    | stock1 | stock2 | formula            | value |
+    | 30     | 20     | min(Stock1, Stock2) | 20   |
+    | 30     | 20     | max(Stock1, Stock2) | 30   |
+
+# converter-flow-rate-16
+Scenario Outline: Random literal in unit interval
+  When I set converter Converter1 formula to <formula>
+  Then converter Converter1 value should be at least <min>
+  And converter Converter1 value should be less than <max>
+  And flow Flow1 rate should be at least <min>
+  And flow Flow1 rate should be less than <max>
+
+  Examples:
+    | formula | min | max |
+    | ?       | 0   | 1   |
+    | ? * 10  | 0   | 10  |

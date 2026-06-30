@@ -52,11 +52,27 @@ Verify stock-to-converter connectors supply named values for converter formulas,
 38. Assert element `:converter "Converter1"` shows `9` centered on the icon.
 39. Right-click element `:converter "Converter1"`.
 40. Wait until dialog titled `Edit Converter` is visible (timeout 2 seconds).
-41. Type `foo(1)` into dialog field `Formula`.
+41. Type `abs(Stock1 - 10)` into dialog field `Formula`.
 42. Click `OK` on the `Edit Converter` dialog.
-43. Assert dialog titled `Edit Converter` is still visible (unknown function rejected).
-44. Click `Cancel` on the `Edit Converter` dialog.
-45. Quit the application using `File` → `Quit`.
+43. Assert element `:converter "Converter1"` shows `7` centered on the icon.
+44. Right-click element `:converter "Converter1"`.
+45. Wait until dialog titled `Edit Converter` is visible (timeout 2 seconds).
+46. Type `floor(3.7)` into dialog field `Formula`.
+47. Click `OK` on the `Edit Converter` dialog.
+48. Assert element `:converter "Converter1"` shows `3` centered on the icon.
+49. Right-click element `:converter "Converter1"`.
+50. Wait until dialog titled `Edit Converter` is visible (timeout 2 seconds).
+51. Type `?` into dialog field `Formula`.
+52. Click `OK` on the `Edit Converter` dialog.
+53. Assert converter computed value is at least `0` and less than `1`.
+54. Assert flow `Flow1` rate is at least `0` and less than `1`.
+55. Right-click element `:converter "Converter1"`.
+56. Wait until dialog titled `Edit Converter` is visible (timeout 2 seconds).
+57. Type `foo(1)` into dialog field `Formula`.
+58. Click `OK` on the `Edit Converter` dialog.
+59. Assert dialog titled `Edit Converter` is still visible (unknown function rejected).
+60. Click `Cancel` on the `Edit Converter` dialog.
+61. Quit the application using `File` → `Quit`.
 
 ## Pass criteria
 
@@ -64,7 +80,8 @@ Verify stock-to-converter connectors supply named values for converter formulas,
 - Converter center shows computed numeric value; name remains on the label below the circle.
 - Connected flow rate label matches the converter computed value.
 - Converter-to-flow connector arrow still shows the formula text.
-- Formulas support `+`, `-`, `*`, `/`, `^`, parentheses, and functions `sqrt`, `exp`, `ln`, `sin`, `cos`, and `tan`.
+- Formulas support `+`, `-`, `*`, `/`, `^`, parentheses, constants `pi` and `e`, random `?` in `[0, 1)`, and functions `sqrt`, `exp`, `ln`, `log` (base 10), `sin`, `cos`, `tan`, `abs`, `floor`, `ceil`, `round`, `min`, and `max`.
+- `?` draws a new value on each formula evaluation (including each simulation step).
 - Simulation transfers stock using the computed rate, and the displayed rate updates as stock values change.
 - Unbound names, unknown names, unknown functions, and malformed operators are rejected in the Edit Converter dialog.
 - No project API used.
