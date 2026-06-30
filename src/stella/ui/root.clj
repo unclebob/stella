@@ -1,6 +1,7 @@
 (ns stella.ui.root
   (:require [stella.events :as events]
             [stella.ui.canvas :as canvas]
+            [stella.ui.control-panel :as control-panel]
             [stella.ui.menu :as menu]
             [stella.ui.palette :as palette]))
 
@@ -23,7 +24,9 @@
    :scene {:fx/type :scene
            :on-key-pressed {:event events/scene-key-pressed}
            :root {:fx/type :border-pane
-                  :top (menu/menu-bar-desc shell)
+                  :top {:fx/type :vbox
+                        :children [(menu/menu-bar-desc shell)
+                                   (control-panel/control-panel-desc shell)]}
                   :left (palette/palette-desc shell)
                   :center (canvas/canvas-stack shell)
                   :bottom {:fx/type :label

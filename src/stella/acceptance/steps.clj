@@ -2,12 +2,14 @@
   (:require [stella.acceptance.step-handlers-connect :as connect-handlers]
             [stella.acceptance.step-handlers-placement :as placement-handlers]
             [stella.acceptance.step-handlers-selection :as selection-handlers]
+            [stella.acceptance.step-handlers-simulation :as simulation-handlers]
             [stella.acceptance.step-support :as support]))
 
 (def step-handlers
   (into placement-handlers/placement-handlers
         (into connect-handlers/connect-handlers
-              selection-handlers/selection-handlers)))
+              (into selection-handlers/selection-handlers
+                    simulation-handlers/simulation-handlers))))
 
 (defn dispatch-step
   [world step example]

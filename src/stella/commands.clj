@@ -1,5 +1,6 @@
 (ns stella.commands
-  (:require [stella.model :as model]))
+  (:require [stella.model :as model]
+            [stella.simulation :as simulation]))
 
 (defn default-shell!
   [_]
@@ -470,6 +471,34 @@
 (defn fixture-flow!
   [diagram flow-name from-stock to-stock]
   (model/fixture-flow diagram flow-name from-stock to-stock))
+
+(defn fixture-flow-from-source!
+  [diagram flow-name source-name stock-name]
+  (model/fixture-flow-from-source diagram flow-name source-name stock-name))
+
+(defn fixture-flow-to-sink!
+  [diagram flow-name stock-name sink-name]
+  (model/fixture-flow-to-sink diagram flow-name stock-name sink-name))
+
+(defn step-simulation!
+  [diagram]
+  (simulation/step diagram))
+
+(defn run-simulation-steps!
+  [diagram steps]
+  (simulation/run-steps diagram steps))
+
+(defn click-in-control-panel-on-shell!
+  [shell]
+  shell)
+
+(defn drag-stock-within-control-panel-on-shell!
+  [shell _stock-name]
+  shell)
+
+(defn step-simulation-on-shell!
+  [shell]
+  (update shell :diagram simulation/step))
 
 (defn set-flow-name!
   [diagram old-name new-name]

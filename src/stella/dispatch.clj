@@ -155,7 +155,9 @@
                                   (cmd/delete-selection-on-shell! shell)
                                   shell)
 
-                                :else shell))})
+                                :else shell))
+   events/simulation-step (fn [shell _]
+                            (cmd/step-simulation-on-shell! shell))})
 
 (defn diagram-event?
   [event-type]

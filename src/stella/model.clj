@@ -45,6 +45,7 @@
    :placement-mode :idle
    :flow-draft nil
    :connector-draft nil
+   :simulation {:time 0.0 :stock-values {}}
    :next-stock-num 1
    :next-source-num 1
    :next-sink-num 1
@@ -100,6 +101,14 @@
 (defn diagram-empty?
   [shell]
   (empty? (:stocks (:diagram shell))))
+
+(defn control-panel-visible?
+  [_shell]
+  true)
+
+(defn step-button-visible?
+  [_shell]
+  true)
 
 (defn stock-count
   [diagram]
@@ -610,6 +619,16 @@
   [diagram flow-name from-stock to-stock]
   (fixture-endpoint-link diagram "Flow" :next-flow-num "flow-" :flows flow-name
                          :stock from-stock :stock to-stock {:rate "0"}))
+
+(defn fixture-flow-from-source
+  [diagram flow-name source-name stock-name]
+  (fixture-endpoint-link diagram "Flow" :next-flow-num "flow-" :flows flow-name
+                         :source source-name :stock stock-name {:rate "0"}))
+
+(defn fixture-flow-to-sink
+  [diagram flow-name stock-name sink-name]
+  (fixture-endpoint-link diagram "Flow" :next-flow-num "flow-" :flows flow-name
+                         :stock stock-name :sink sink-name {:rate "0"}))
 
 (defn- valid-flow-pair?
   [from to]

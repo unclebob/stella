@@ -77,3 +77,5 @@
 (def clear-selection ::clear-selection)
 
 (def scene-key-pressed ::scene-key-pressed)
+
+(def simulation-step ::simulation-step)
