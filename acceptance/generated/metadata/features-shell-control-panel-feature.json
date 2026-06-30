@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/shell-control/panel.feature",
+  "ir_path": "build/acceptance/ir/shell-control-panel.json",
+  "implementation_hash": "sha256:8eaa2fd467072aecaca7c649e81b5575a31960cf6441810a3177088298f2bb45",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_shell_control_panel_feature_test.clj"]
+}

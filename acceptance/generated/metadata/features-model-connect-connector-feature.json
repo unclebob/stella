@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-connect/connector.feature",
+  "ir_path": "build/acceptance/ir/model-connect-connector.json",
+  "implementation_hash": "sha256:1d1e6735ce1da420c85f8760f0dee4167a566a765269dae4036737021d0ffae1",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_connect_connector_feature_test.clj"]
+}

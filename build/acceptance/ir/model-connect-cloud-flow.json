@@ -1,0 +1,206 @@
+{
+  "name": "Connect cloud flow",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "a diagram model with stock Stock1 at 200 150"
+    },
+    {
+      "keyword": "And",
+      "text": "source Source1 at 50 150"
+    },
+    {
+      "keyword": "And",
+      "text": "sink Sink1 at 400 150"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Connect source to stock with flow",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the flow placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select source \u003cfrom\u003e as the flow source",
+          "parameters": [
+            "from"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I select stock \u003cto\u003e as the flow destination",
+          "parameters": [
+            "to"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain flow \u003cflow\u003e",
+          "parameters": [
+            "flow"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow \u003cflow\u003e should run from source \u003cfrom\u003e to stock \u003cto\u003e",
+          "parameters": [
+            "flow",
+            "from",
+            "to"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow \u003cflow\u003e rate should be \u003crate\u003e",
+          "parameters": [
+            "flow",
+            "rate"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "flow": "Flow1",
+          "from": "Source1",
+          "rate": "0",
+          "to": "Stock1"
+        }
+      ]
+    },
+    {
+      "name": "Connect stock to sink with flow",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the flow placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select stock \u003cfrom\u003e as the flow source",
+          "parameters": [
+            "from"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I select sink \u003cto\u003e as the flow destination",
+          "parameters": [
+            "to"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain flow \u003cflow\u003e",
+          "parameters": [
+            "flow"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow \u003cflow\u003e should run from stock \u003cfrom\u003e to sink \u003cto\u003e",
+          "parameters": [
+            "flow",
+            "from",
+            "to"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow \u003cflow\u003e rate should be \u003crate\u003e",
+          "parameters": [
+            "flow",
+            "rate"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "flow": "Flow1",
+          "from": "Stock1",
+          "rate": "0",
+          "to": "Sink1"
+        }
+      ]
+    },
+    {
+      "name": "Reject sink as flow source",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the flow placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select sink Sink1 as the flow source"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram flow count should be 0"
+        },
+        {
+          "keyword": "And",
+          "text": "the flow placement tool should be armed"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Reject source as flow destination",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the flow placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select stock Stock1 as the flow source"
+        },
+        {
+          "keyword": "And",
+          "text": "I select source Source1 as the flow destination"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram flow count should be 0"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Completing cloud flow keeps the flow tool armed",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the flow placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select source \u003cfrom\u003e as the flow source",
+          "parameters": [
+            "from"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I select stock \u003cto\u003e as the flow destination",
+          "parameters": [
+            "to"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the flow placement tool should be armed"
+        }
+      ],
+      "examples": [
+        {
+          "from": "Source1",
+          "to": "Stock1"
+        }
+      ]
+    }
+  ]
+}

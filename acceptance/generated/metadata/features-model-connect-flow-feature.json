@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-connect/flow.feature",
+  "ir_path": "build/acceptance/ir/model-connect-flow.json",
+  "implementation_hash": "sha256:f4a918a6bc699eef3b2540864ddb14477c3b28c6fdd8f22f132822e342d03eef",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_connect_flow_feature_test.clj"]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "Shell diagram canvas",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "a default shell application"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Diagram canvas starts empty",
+      "steps": [
+        {
+          "keyword": "Then",
+          "text": "the diagram canvas should be empty"
+        }
+      ],
+      "examples": []
+    }
+  ]
+}

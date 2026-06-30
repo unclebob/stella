@@ -1,0 +1,199 @@
+{
+  "name": "Delete selection",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "a diagram model with stock Stock1 at 100 100"
+    },
+    {
+      "keyword": "And",
+      "text": "stock Stock2 at 300 200"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Delete selected stock",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I click select stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "I delete the selection"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should not contain stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram stock count should be 1"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain stock Stock2"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Deleting stock removes attached flows",
+      "steps": [
+        {
+          "keyword": "And",
+          "text": "flow Flow1 runs from stock Stock1 to stock Stock2"
+        },
+        {
+          "keyword": "When",
+          "text": "I click select stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "I delete the selection"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should not contain stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should not contain flow Flow1"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain stock Stock2"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Deleting flow removes connectors on that flow",
+      "steps": [
+        {
+          "keyword": "And",
+          "text": "flow Flow1 runs from stock Stock1 to stock Stock2"
+        },
+        {
+          "keyword": "And",
+          "text": "converter Converter1 at 100 250"
+        },
+        {
+          "keyword": "And",
+          "text": "connector Connector1 runs from converter Converter1 to flow Flow1"
+        },
+        {
+          "keyword": "When",
+          "text": "I click select flow Flow1"
+        },
+        {
+          "keyword": "And",
+          "text": "I delete the selection"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should not contain flow Flow1"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should not contain connector Connector1"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain converter Converter1"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Deleting converter removes its connectors",
+      "steps": [
+        {
+          "keyword": "And",
+          "text": "converter Converter1 at 100 250"
+        },
+        {
+          "keyword": "And",
+          "text": "connector Connector1 runs from stock Stock1 to converter Converter1"
+        },
+        {
+          "keyword": "When",
+          "text": "I click select converter Converter1"
+        },
+        {
+          "keyword": "And",
+          "text": "I delete the selection"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should not contain converter Converter1"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should not contain connector Connector1"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain stock Stock1"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Delete multiple selected objects",
+      "steps": [
+        {
+          "keyword": "And",
+          "text": "flow Flow1 runs from stock Stock1 to stock Stock2"
+        },
+        {
+          "keyword": "When",
+          "text": "I click select stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "I shift click select stock Stock2"
+        },
+        {
+          "keyword": "And",
+          "text": "I delete the selection"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram stock count should be 0"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should not contain flow Flow1"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Delete with empty selection does nothing",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I delete the selection"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram stock count should be 2"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain stock Stock2"
+        }
+      ],
+      "examples": []
+    }
+  ]
+}

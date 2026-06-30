@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/shell/canvas.feature",
+  "ir_path": "build/acceptance/ir/shell-canvas.json",
+  "implementation_hash": "sha256:4cf36e4ac436c5697253eccaaaee4c0e1253629999fa5a7ca2f3d57a76fb6e99",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_shell_canvas_feature_test.clj"]
+}

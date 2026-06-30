@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-place/stock.feature",
+  "ir_path": "build/acceptance/ir/model-place-stock.json",
+  "implementation_hash": "sha256:76a923dded873df1780a33f82d24bcbbc05f9c63a088a5c93ba1a10fb0b6b807",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_place_stock_feature_test.clj"]
+}

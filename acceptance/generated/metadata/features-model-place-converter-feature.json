@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-place/converter.feature",
+  "ir_path": "build/acceptance/ir/model-place-converter.json",
+  "implementation_hash": "sha256:15059985e470af90ad38f7a2a74a153f5e2cff8a8f03e114863e298820d9c0f0",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_place_converter_feature_test.clj"]
+}

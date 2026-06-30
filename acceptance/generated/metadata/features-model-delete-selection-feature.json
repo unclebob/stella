@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-delete/selection.feature",
+  "ir_path": "build/acceptance/ir/model-delete-selection.json",
+  "implementation_hash": "sha256:3bee08567982894653ff547a2927e249a9237a697944a90fc3c0a8292b63df32",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_delete_selection_feature_test.clj"]
+}

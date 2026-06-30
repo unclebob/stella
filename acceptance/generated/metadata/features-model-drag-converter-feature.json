@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-drag/converter.feature",
+  "ir_path": "build/acceptance/ir/model-drag-converter.json",
+  "implementation_hash": "sha256:f0a4163612ee05f5c141c9890f4ed46c18aa243cd5ad424ff55a2873f5d326c7",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_drag_converter_feature_test.clj"]
+}

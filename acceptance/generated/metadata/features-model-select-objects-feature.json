@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-select/objects.feature",
+  "ir_path": "build/acceptance/ir/model-select-objects.json",
+  "implementation_hash": "sha256:09b9c303fa288c7250108722c2da56b464482ccf4108e6d9fb51c634252a920d",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_select_objects_feature_test.clj"]
+}

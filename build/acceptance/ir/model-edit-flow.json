@@ -1,0 +1,151 @@
+{
+  "name": "Edit flow",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "a diagram model with stock Stock1 at 100 100"
+    },
+    {
+      "keyword": "And",
+      "text": "stock Stock2 at 300 200"
+    },
+    {
+      "keyword": "And",
+      "text": "flow Flow1 runs from stock Stock1 to stock Stock2"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Rename flow",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set flow Flow1 name to \u003cnew_name\u003e",
+          "parameters": [
+            "new_name"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain flow Drain"
+        },
+        {
+          "keyword": "And",
+          "text": "flow Drain canvas name should be Drain"
+        },
+        {
+          "keyword": "And",
+          "text": "flow Drain rate should be 0"
+        }
+      ],
+      "examples": [
+        {
+          "new_name": "Drain"
+        }
+      ]
+    },
+    {
+      "name": "Edit constant flow rate",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set flow Flow1 rate to \u003crate\u003e",
+          "parameters": [
+            "rate"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "flow Flow1 rate should be 5"
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 canvas rate should be 5"
+        }
+      ],
+      "examples": [
+        {
+          "rate": "5"
+        }
+      ]
+    },
+    {
+      "name": "Reject duplicate flow name",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "flow Flow2 runs from stock Stock2 to stock Stock1"
+        },
+        {
+          "keyword": "When",
+          "text": "I set flow Flow1 name to Flow2"
+        },
+        {
+          "keyword": "Then",
+          "text": "the flow edit should be rejected"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain flow Flow1"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain flow Flow2"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Reject non-numeric flow rate",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set flow Flow1 rate to abc"
+        },
+        {
+          "keyword": "Then",
+          "text": "the flow edit should be rejected"
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be 0"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Renaming flow updates connector references",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "converter Converter1 at 100 250"
+        },
+        {
+          "keyword": "When",
+          "text": "I arm the connector placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select converter Converter1 as the connector origin"
+        },
+        {
+          "keyword": "And",
+          "text": "I select flow Flow1 as the connector destination"
+        },
+        {
+          "keyword": "And",
+          "text": "I set flow Flow1 name to Drain"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain flow Drain"
+        },
+        {
+          "keyword": "And",
+          "text": "connector Connector1 should run from converter Converter1 to flow Drain"
+        }
+      ],
+      "examples": []
+    }
+  ]
+}

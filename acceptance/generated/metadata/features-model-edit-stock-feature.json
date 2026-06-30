@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-edit/stock.feature",
+  "ir_path": "build/acceptance/ir/model-edit-stock.json",
+  "implementation_hash": "sha256:d3645a2df05399da3745bab6130742f6caabf9ccbdc525bedd8aa95d200b6b63",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_edit_stock_feature_test.clj"]
+}

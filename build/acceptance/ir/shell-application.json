@@ -1,0 +1,71 @@
+{
+  "name": "Shell application",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "a default shell application"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Default shell is visible with titled window",
+      "steps": [
+        {
+          "keyword": "Then",
+          "text": "the shell window title should be \u003ctitle\u003e",
+          "parameters": [
+            "title"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "the shell should be showing"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Stella"
+        }
+      ]
+    },
+    {
+      "name": "Showing the about dialog",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I show the about dialog"
+        },
+        {
+          "keyword": "Then",
+          "text": "the about dialog should be visible"
+        },
+        {
+          "keyword": "And",
+          "text": "the about dialog text should include \u003capp_name\u003e",
+          "parameters": [
+            "app_name"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "app_name": "Stella"
+        }
+      ]
+    },
+    {
+      "name": "Quitting the shell application",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I quit the shell application"
+        },
+        {
+          "keyword": "Then",
+          "text": "the shell should not be showing"
+        }
+      ],
+      "examples": []
+    }
+  ]
+}

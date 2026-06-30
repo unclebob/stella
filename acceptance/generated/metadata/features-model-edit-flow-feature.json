@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-edit/flow.feature",
+  "ir_path": "build/acceptance/ir/model-edit-flow.json",
+  "implementation_hash": "sha256:e613c8785ce618e9a6d9b46128dc1bf888d66c9a1ee73f6ee2c5eebbffcc7c74",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_edit_flow_feature_test.clj"]
+}

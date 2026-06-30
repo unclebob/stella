@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-edit/converter.feature",
+  "ir_path": "build/acceptance/ir/model-edit-converter.json",
+  "implementation_hash": "sha256:f379d701d99444b279f2d9ac2bb0f765f2729cf42676b870dba1703682cb5cd8",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_edit_converter_feature_test.clj"]
+}

@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-connect-cloud/flow.feature",
+  "ir_path": "build/acceptance/ir/model-connect-cloud-flow.json",
+  "implementation_hash": "sha256:1f803b48874a629b9a111b6b575fc17c1fbf6b07ec11c069ec8c8f904ab7e095",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_connect_cloud_flow_feature_test.clj"]
+}

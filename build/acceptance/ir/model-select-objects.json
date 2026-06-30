@@ -1,0 +1,209 @@
+{
+  "name": "Select objects",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "a diagram model with stock Stock1 at 100 100"
+    },
+    {
+      "keyword": "And",
+      "text": "stock Stock2 at 300 200"
+    },
+    {
+      "keyword": "And",
+      "text": "converter Converter1 at 100 250"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Click selects stock",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I click select stock Stock1"
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 should be selected"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Click selects converter",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I click select converter Converter1"
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 should be selected"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Clicking a selected object deselects it",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I click select stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "I click select stock Stock1"
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 should not be selected"
+        },
+        {
+          "keyword": "And",
+          "text": "the selection count should be 0"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Plain click replaces the current selection",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I click select stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "I click select stock Stock2"
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 should not be selected"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 should be selected"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Shift click adds to the selection",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I click select stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "I shift click select stock Stock2"
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 should be selected"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 should be selected"
+        },
+        {
+          "keyword": "And",
+          "text": "the selection count should be 2"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Shift clicking a selected object removes it from the selection",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I click select stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "I shift click select stock Stock2"
+        },
+        {
+          "keyword": "And",
+          "text": "I shift click select stock Stock1"
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 should not be selected"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 should be selected"
+        },
+        {
+          "keyword": "And",
+          "text": "the selection count should be 1"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Marquee select chooses intersecting objects",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I marquee select from 50 50 to 200 200"
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 should be selected"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 should not be selected"
+        },
+        {
+          "keyword": "And",
+          "text": "converter Converter1 should not be selected"
+        },
+        {
+          "keyword": "And",
+          "text": "the selection count should be 1"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Escape clears the selection",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I click select stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "I clear the selection"
+        },
+        {
+          "keyword": "Then",
+          "text": "nothing should be selected"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Selection is disabled while a placement tool is armed",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the flow placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I click select stock Stock1"
+        },
+        {
+          "keyword": "Then",
+          "text": "nothing should be selected"
+        }
+      ],
+      "examples": []
+    }
+  ]
+}

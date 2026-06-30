@@ -1,0 +1,210 @@
+{
+  "name": "Connect connector",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "a diagram model with stock Stock1 at 200 150"
+    },
+    {
+      "keyword": "And",
+      "text": "stock Stock2 at 350 150"
+    },
+    {
+      "keyword": "And",
+      "text": "flow Flow1 runs from stock Stock1 to stock Stock2"
+    },
+    {
+      "keyword": "And",
+      "text": "converter Converter1 at 100 250"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Connect converter to flow with connector",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the connector placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select converter \u003cfrom\u003e as the connector origin",
+          "parameters": [
+            "from"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I select flow \u003cto\u003e as the connector destination",
+          "parameters": [
+            "to"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain connector \u003cconnector\u003e",
+          "parameters": [
+            "connector"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "connector \u003cconnector\u003e should run from converter \u003cfrom\u003e to flow \u003cto\u003e",
+          "parameters": [
+            "connector",
+            "from",
+            "to"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "connector": "Connector1",
+          "from": "Converter1",
+          "to": "Flow1"
+        }
+      ]
+    },
+    {
+      "name": "Connect stock to converter with connector",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the connector placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select stock \u003cfrom\u003e as the connector origin",
+          "parameters": [
+            "from"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I select converter \u003cto\u003e as the connector destination",
+          "parameters": [
+            "to"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain connector \u003cconnector\u003e",
+          "parameters": [
+            "connector"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "connector \u003cconnector\u003e should run from stock \u003cfrom\u003e to converter \u003cto\u003e",
+          "parameters": [
+            "connector",
+            "from",
+            "to"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "connector": "Connector1",
+          "from": "Stock1",
+          "to": "Converter1"
+        }
+      ]
+    },
+    {
+      "name": "Reject flow as connector origin",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the connector placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select flow Flow1 as the connector origin"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram connector count should be 0"
+        },
+        {
+          "keyword": "And",
+          "text": "the connector placement tool should be armed"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Reject source as connector endpoint",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "source Source1 at 50 150"
+        },
+        {
+          "keyword": "When",
+          "text": "I arm the connector placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select converter Converter1 as the connector origin"
+        },
+        {
+          "keyword": "And",
+          "text": "I select source Source1 as the connector destination"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram connector count should be 0"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Arming connector without selecting elements connects nothing",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the connector placement tool"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram connector count should be 0"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Completing connector keeps the tool armed",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the connector placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select converter \u003cfrom\u003e as the connector origin",
+          "parameters": [
+            "from"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I select flow \u003cto\u003e as the connector destination",
+          "parameters": [
+            "to"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the connector placement tool should be armed"
+        }
+      ],
+      "examples": [
+        {
+          "from": "Converter1",
+          "to": "Flow1"
+        }
+      ]
+    }
+  ]
+}

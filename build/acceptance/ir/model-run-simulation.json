@@ -1,0 +1,353 @@
+{
+  "name": "Run simulation",
+  "scenarios": [
+    {
+      "name": "Stock flow transfers value between stocks",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "a diagram model with stock Stock1 at 100 100"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 at 300 200"
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 runs from stock Stock1 to stock Stock2"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to 100"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock2 initial value to 0"
+        },
+        {
+          "keyword": "And",
+          "text": "I set flow Flow1 rate to 10"
+        },
+        {
+          "keyword": "And",
+          "text": "I run the simulation for \u003csteps\u003e steps",
+          "parameters": [
+            "steps"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 value should be \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 value should be \u003cstock2\u003e",
+          "parameters": [
+            "stock2"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "simulation time should be \u003ctime\u003e",
+          "parameters": [
+            "time"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "steps": "1",
+          "stock1": "99",
+          "stock2": "1",
+          "time": "0.1"
+        },
+        {
+          "steps": "5",
+          "stock1": "95",
+          "stock2": "5",
+          "time": "0.5"
+        }
+      ]
+    },
+    {
+      "name": "Source flow increases stock value",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "a diagram model with stock Stock1 at 200 150"
+        },
+        {
+          "keyword": "And",
+          "text": "source Source1 at 50 150"
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 runs from source Source1 to stock Stock1"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to 0"
+        },
+        {
+          "keyword": "And",
+          "text": "I set flow Flow1 rate to 10"
+        },
+        {
+          "keyword": "And",
+          "text": "I run the simulation for \u003csteps\u003e steps",
+          "parameters": [
+            "steps"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 value should be \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "simulation time should be \u003ctime\u003e",
+          "parameters": [
+            "time"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "steps": "1",
+          "stock1": "1",
+          "time": "0.1"
+        },
+        {
+          "steps": "5",
+          "stock1": "5",
+          "time": "0.5"
+        }
+      ]
+    },
+    {
+      "name": "Sink flow decreases stock value",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "a diagram model with stock Stock1 at 200 150"
+        },
+        {
+          "keyword": "And",
+          "text": "sink Sink1 at 400 150"
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 runs from stock Stock1 to sink Sink1"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to 100"
+        },
+        {
+          "keyword": "And",
+          "text": "I set flow Flow1 rate to 10"
+        },
+        {
+          "keyword": "And",
+          "text": "I run the simulation for \u003csteps\u003e steps",
+          "parameters": [
+            "steps"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 value should be \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "simulation time should be \u003ctime\u003e",
+          "parameters": [
+            "time"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "steps": "1",
+          "stock1": "99",
+          "time": "0.1"
+        },
+        {
+          "steps": "5",
+          "stock1": "95",
+          "time": "0.5"
+        }
+      ]
+    },
+    {
+      "name": "Source and sink flows net on stock value",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "a diagram model with stock Stock1 at 200 150"
+        },
+        {
+          "keyword": "And",
+          "text": "source Source1 at 50 150"
+        },
+        {
+          "keyword": "And",
+          "text": "sink Sink1 at 400 150"
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 runs from source Source1 to stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow2 runs from stock Stock1 to sink Sink1"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to 0"
+        },
+        {
+          "keyword": "And",
+          "text": "I set flow Flow1 rate to 10"
+        },
+        {
+          "keyword": "And",
+          "text": "I set flow Flow2 rate to 5"
+        },
+        {
+          "keyword": "And",
+          "text": "I run the simulation for \u003csteps\u003e steps",
+          "parameters": [
+            "steps"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 value should be \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "simulation time should be \u003ctime\u003e",
+          "parameters": [
+            "time"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "steps": "1",
+          "stock1": "0.5",
+          "time": "0.1"
+        },
+        {
+          "steps": "2",
+          "stock1": "1",
+          "time": "0.2"
+        }
+      ]
+    },
+    {
+      "name": "Zero rate flow leaves stock values unchanged",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "a diagram model with stock Stock1 at 100 100"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 at 300 200"
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 runs from stock Stock1 to stock Stock2"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to 50"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock2 initial value to 20"
+        },
+        {
+          "keyword": "And",
+          "text": "I set flow Flow1 rate to 0"
+        },
+        {
+          "keyword": "And",
+          "text": "I run the simulation for \u003csteps\u003e steps",
+          "parameters": [
+            "steps"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 value should be 50"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 value should be 20"
+        },
+        {
+          "keyword": "And",
+          "text": "simulation time should be \u003ctime\u003e",
+          "parameters": [
+            "time"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "steps": "3",
+          "time": "0.3"
+        }
+      ]
+    },
+    {
+      "name": "Stock value equals initial value before simulation runs",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "a diagram model with stock Stock1 at 100 100"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 at 300 200"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to 42"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock2 initial value to 7"
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 value should be 42"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 value should be 7"
+        },
+        {
+          "keyword": "And",
+          "text": "simulation time should be 0"
+        }
+      ],
+      "examples": []
+    }
+  ]
+}

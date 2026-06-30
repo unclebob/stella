@@ -1,0 +1,171 @@
+{
+  "name": "Connect flow",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "a diagram model with stock Stock1 at 100 100"
+    },
+    {
+      "keyword": "And",
+      "text": "stock Stock2 at 300 200"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Connect two stocks with a flow",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the flow placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select stock \u003cfrom\u003e as the flow source",
+          "parameters": [
+            "from"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I select stock \u003cto\u003e as the flow destination",
+          "parameters": [
+            "to"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain flow \u003cflow\u003e",
+          "parameters": [
+            "flow"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow \u003cflow\u003e should run from stock \u003cfrom\u003e to stock \u003cto\u003e",
+          "parameters": [
+            "flow",
+            "from",
+            "to"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow \u003cflow\u003e rate should be \u003crate\u003e",
+          "parameters": [
+            "flow",
+            "rate"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "flow": "Flow1",
+          "from": "Stock1",
+          "rate": "0",
+          "to": "Stock2"
+        }
+      ]
+    },
+    {
+      "name": "Second flow without re-arming the placement tool",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "flow Flow1 runs from stock Stock1 to stock Stock2"
+        },
+        {
+          "keyword": "When",
+          "text": "I arm the flow placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select stock \u003cto\u003e as the flow source",
+          "parameters": [
+            "to"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I select stock \u003cfrom\u003e as the flow destination",
+          "parameters": [
+            "from"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain flow Flow1"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain flow \u003cflow2\u003e",
+          "parameters": [
+            "flow2"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow \u003cflow2\u003e should run from stock \u003cto\u003e to stock \u003cfrom\u003e",
+          "parameters": [
+            "flow2",
+            "to",
+            "from"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "flow2": "Flow2",
+          "from": "Stock1",
+          "to": "Stock2"
+        }
+      ]
+    },
+    {
+      "name": "Arming without selecting stocks connects nothing",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the flow placement tool"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram flow count should be 0"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Completing a connection keeps the flow tool armed",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the flow placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I select stock \u003cfrom\u003e as the flow source",
+          "parameters": [
+            "from"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I select stock \u003cto\u003e as the flow destination",
+          "parameters": [
+            "to"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the flow placement tool should be armed"
+        }
+      ],
+      "examples": [
+        {
+          "from": "Stock1",
+          "to": "Stock2"
+        }
+      ]
+    }
+  ]
+}

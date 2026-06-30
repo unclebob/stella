@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/shell/menu.feature",
+  "ir_path": "build/acceptance/ir/shell-menu.json",
+  "implementation_hash": "sha256:63097cda6dcccfc50199d212e490c9206dc3cf694e47d5e60451cc6f9525c9c0",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_shell_menu_feature_test.clj"]
+}

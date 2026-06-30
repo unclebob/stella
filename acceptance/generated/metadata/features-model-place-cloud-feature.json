@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-place/cloud.feature",
+  "ir_path": "build/acceptance/ir/model-place-cloud.json",
+  "implementation_hash": "sha256:156933c230c640ca23dc6ed5383612a4b4eaf75a190a6fd7cda7ec89d7e1faff",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_place_cloud_feature_test.clj"]
+}

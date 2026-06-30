@@ -1,0 +1,202 @@
+{
+  "name": "Edit stock",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "a diagram model with stock Stock1 at 200 150"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Rename stock",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 name to \u003cnew_name\u003e",
+          "parameters": [
+            "new_name"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain stock Cats"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Cats canvas name should be Cats"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Cats initial value should be 0"
+        }
+      ],
+      "examples": [
+        {
+          "new_name": "Cats"
+        }
+      ]
+    },
+    {
+      "name": "Edit stock initial value",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 initial value should be 25"
+        }
+      ],
+      "examples": [
+        {
+          "value": "25"
+        }
+      ]
+    },
+    {
+      "name": "Set stock value bounds",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 minimum to \u003cmin\u003e",
+          "parameters": [
+            "min"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock1 maximum to \u003cmax\u003e",
+          "parameters": [
+            "max"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 minimum should be 0"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 maximum should be 100"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 canvas minimum should be 0"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 canvas maximum should be 100"
+        }
+      ],
+      "examples": [
+        {
+          "max": "100",
+          "min": "0"
+        }
+      ]
+    },
+    {
+      "name": "Clear stock maximum bound",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 maximum to 50"
+        },
+        {
+          "keyword": "And",
+          "text": "I clear stock Stock1 maximum"
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 should have no maximum"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 should display no maximum on canvas"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Reject duplicate stock name",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "a diagram model with stock Stock2 at 300 200"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 name to Stock2"
+        },
+        {
+          "keyword": "Then",
+          "text": "the stock edit should be rejected"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain stock Stock2"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Reject initial value below minimum",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 minimum to 11"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock1 initial value to 10"
+        },
+        {
+          "keyword": "Then",
+          "text": "the stock edit should be rejected"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 minimum should be 11"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 initial value should be 0"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Reject initial value above maximum",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 maximum to 39"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock1 initial value to 40"
+        },
+        {
+          "keyword": "Then",
+          "text": "the stock edit should be rejected"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 maximum should be 39"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 initial value should be 0"
+        }
+      ],
+      "examples": []
+    }
+  ]
+}

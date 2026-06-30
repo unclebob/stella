@@ -1,0 +1,255 @@
+{
+  "name": "Place cloud",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "an empty diagram model"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Place source on diagram",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the source placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a source at \u003cx\u003e \u003cy\u003e",
+          "parameters": [
+            "x",
+            "y"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain source Source1"
+        },
+        {
+          "keyword": "And",
+          "text": "source Source1 should be at position 50 150"
+        }
+      ],
+      "examples": [
+        {
+          "x": "50",
+          "y": "150"
+        }
+      ]
+    },
+    {
+      "name": "Place sink on diagram",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the sink placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a sink at \u003cx\u003e \u003cy\u003e",
+          "parameters": [
+            "x",
+            "y"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain sink Sink1"
+        },
+        {
+          "keyword": "And",
+          "text": "sink Sink1 should be at position 400 150"
+        }
+      ],
+      "examples": [
+        {
+          "x": "400",
+          "y": "150"
+        }
+      ]
+    },
+    {
+      "name": "Arming source without a canvas click places nothing",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the source placement tool"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram source count should be 0"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Source placement disarms the tool",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the source placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a source at \u003cx\u003e \u003cy\u003e",
+          "parameters": [
+            "x",
+            "y"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "source Source1 should be at position 50 150"
+        },
+        {
+          "keyword": "And",
+          "text": "the source placement tool should be disarmed"
+        }
+      ],
+      "examples": [
+        {
+          "x": "50",
+          "y": "150"
+        }
+      ]
+    },
+    {
+      "name": "Sink placement disarms the tool",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the sink placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a sink at \u003cx\u003e \u003cy\u003e",
+          "parameters": [
+            "x",
+            "y"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "sink Sink1 should be at position 400 150"
+        },
+        {
+          "keyword": "And",
+          "text": "the sink placement tool should be disarmed"
+        }
+      ],
+      "examples": [
+        {
+          "x": "400",
+          "y": "150"
+        }
+      ]
+    },
+    {
+      "name": "Second source requires re-arming the placement tool",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the source placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a source at \u003cx1\u003e \u003cy1\u003e",
+          "parameters": [
+            "x1",
+            "y1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I arm the source placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a source at \u003cx2\u003e \u003cy2\u003e",
+          "parameters": [
+            "x2",
+            "y2"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain source Source1"
+        },
+        {
+          "keyword": "And",
+          "text": "source Source1 should be at position 50 150"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain source Source2"
+        },
+        {
+          "keyword": "And",
+          "text": "source Source2 should be at position 450 150"
+        }
+      ],
+      "examples": [
+        {
+          "x1": "50",
+          "x2": "450",
+          "y1": "150",
+          "y2": "150"
+        }
+      ]
+    },
+    {
+      "name": "Second sink requires re-arming the placement tool",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the sink placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a sink at \u003cx1\u003e \u003cy1\u003e",
+          "parameters": [
+            "x1",
+            "y1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I arm the sink placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a sink at \u003cx2\u003e \u003cy2\u003e",
+          "parameters": [
+            "x2",
+            "y2"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain sink Sink1"
+        },
+        {
+          "keyword": "And",
+          "text": "sink Sink1 should be at position 400 150"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain sink Sink2"
+        },
+        {
+          "keyword": "And",
+          "text": "sink Sink2 should be at position 550 150"
+        }
+      ],
+      "examples": [
+        {
+          "x1": "400",
+          "x2": "550",
+          "y1": "150",
+          "y2": "150"
+        }
+      ]
+    }
+  ]
+}

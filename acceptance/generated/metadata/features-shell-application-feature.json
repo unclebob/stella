@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/shell/application.feature",
+  "ir_path": "build/acceptance/ir/shell-application.json",
+  "implementation_hash": "sha256:ee7a8a16a01cd604da905beef8321ef3512a1688fcd9569b4a72083ca0c25dc2",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_shell_application_feature_test.clj"]
+}

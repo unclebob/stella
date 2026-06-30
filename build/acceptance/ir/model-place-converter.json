@@ -1,0 +1,136 @@
+{
+  "name": "Place converter",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "an empty diagram model"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Place converter on diagram",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the converter placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a converter at \u003cx\u003e \u003cy\u003e",
+          "parameters": [
+            "x",
+            "y"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain converter Converter1"
+        },
+        {
+          "keyword": "And",
+          "text": "converter Converter1 should be at position 100 250"
+        },
+        {
+          "keyword": "And",
+          "text": "converter Converter1 value should be 0"
+        }
+      ],
+      "examples": [
+        {
+          "x": "100",
+          "y": "250"
+        }
+      ]
+    },
+    {
+      "name": "Arming converter without a canvas click places nothing",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the converter placement tool"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram converter count should be 0"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Converter placement keeps the tool armed",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the converter placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a converter at \u003cx\u003e \u003cy\u003e",
+          "parameters": [
+            "x",
+            "y"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 should be at position 100 250"
+        },
+        {
+          "keyword": "And",
+          "text": "the converter placement tool should be armed"
+        }
+      ],
+      "examples": [
+        {
+          "x": "100",
+          "y": "250"
+        }
+      ]
+    },
+    {
+      "name": "Second converter without re-arming the placement tool",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the converter placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a converter at \u003cx1\u003e \u003cy1\u003e",
+          "parameters": [
+            "x1",
+            "y1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I place a converter at \u003cx2\u003e \u003cy2\u003e",
+          "parameters": [
+            "x2",
+            "y2"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain converter Converter2"
+        },
+        {
+          "keyword": "And",
+          "text": "converter Converter1 should be at position 100 250"
+        },
+        {
+          "keyword": "And",
+          "text": "converter Converter2 should be at position 300 250"
+        }
+      ],
+      "examples": [
+        {
+          "x1": "100",
+          "x2": "300",
+          "y1": "250",
+          "y2": "250"
+        }
+      ]
+    }
+  ]
+}

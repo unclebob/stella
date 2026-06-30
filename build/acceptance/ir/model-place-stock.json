@@ -1,0 +1,144 @@
+{
+  "name": "Place stock",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "an empty diagram model"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Place first stock on empty diagram",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the stock placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a stock at \u003cx\u003e \u003cy\u003e",
+          "parameters": [
+            "x",
+            "y"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 should be at position 200 150"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 initial value should be 0"
+        }
+      ],
+      "examples": [
+        {
+          "x": "200",
+          "y": "150"
+        }
+      ]
+    },
+    {
+      "name": "Second stock without re-arming the placement tool",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the stock placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a stock at \u003cx1\u003e \u003cy1\u003e",
+          "parameters": [
+            "x1",
+            "y1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I place a stock at \u003cx2\u003e \u003cy2\u003e",
+          "parameters": [
+            "x2",
+            "y2"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram should contain stock Stock1"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 should be at position 100 100"
+        },
+        {
+          "keyword": "And",
+          "text": "the diagram should contain stock Stock2"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 should be at position 300 200"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 initial value should be 0"
+        }
+      ],
+      "examples": [
+        {
+          "x1": "100",
+          "x2": "300",
+          "y1": "100",
+          "y2": "200"
+        }
+      ]
+    },
+    {
+      "name": "Arming without a canvas click places no stock",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the stock placement tool"
+        },
+        {
+          "keyword": "Then",
+          "text": "the diagram stock count should be 0"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Placement keeps the stock tool armed",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I arm the stock placement tool"
+        },
+        {
+          "keyword": "And",
+          "text": "I place a stock at \u003cx\u003e \u003cy\u003e",
+          "parameters": [
+            "x",
+            "y"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 should be at position 200 150"
+        },
+        {
+          "keyword": "And",
+          "text": "the stock placement tool should be armed"
+        }
+      ],
+      "examples": [
+        {
+          "x": "200",
+          "y": "150"
+        }
+      ]
+    }
+  ]
+}

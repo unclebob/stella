@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-drag/stock.feature",
+  "ir_path": "build/acceptance/ir/model-drag-stock.json",
+  "implementation_hash": "sha256:af54746256c750365f19dc91c941dac791289059cc5d9bc8de2940058a6b9d8e",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_drag_stock_feature_test.clj"]
+}

@@ -1,0 +1,107 @@
+{
+  "name": "Shell menu bar",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "a default shell application"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Default shell exposes standard menus",
+      "steps": [
+        {
+          "keyword": "Then",
+          "text": "the shell menu bar should include \u003cmenu\u003e",
+          "parameters": [
+            "menu"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "menu": "File"
+        },
+        {
+          "menu": "Edit"
+        },
+        {
+          "menu": "View"
+        },
+        {
+          "menu": "Help"
+        }
+      ]
+    },
+    {
+      "name": "Stub menu items are disabled",
+      "steps": [
+        {
+          "keyword": "Then",
+          "text": "the shell menu item \u003citem\u003e should be disabled",
+          "parameters": [
+            "item"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "item": "New"
+        },
+        {
+          "item": "Open..."
+        },
+        {
+          "item": "Save"
+        },
+        {
+          "item": "Save As..."
+        },
+        {
+          "item": "Undo"
+        },
+        {
+          "item": "Redo"
+        },
+        {
+          "item": "Cut"
+        },
+        {
+          "item": "Copy"
+        },
+        {
+          "item": "Paste"
+        },
+        {
+          "item": "Zoom In"
+        },
+        {
+          "item": "Zoom Out"
+        },
+        {
+          "item": "Reset Zoom"
+        }
+      ]
+    },
+    {
+      "name": "Essential menu items are enabled",
+      "steps": [
+        {
+          "keyword": "Then",
+          "text": "the shell menu item \u003citem\u003e should be enabled",
+          "parameters": [
+            "item"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "item": "Quit"
+        },
+        {
+          "item": "About Stella"
+        }
+      ]
+    }
+  ]
+}
