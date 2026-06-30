@@ -23,13 +23,13 @@
     (= (model/default-diagram)
        (model/place-stock (model/default-diagram) x y))))
 
-(defspec arm-then-place-disarms-placement
+(defspec arm-then-place-keeps-placement-armed
   50
   (for-all [[x y] coord-gen]
     (let [diagram (-> (model/default-diagram)
                       (model/arm-stock-placement)
                       (model/place-stock x y))]
-      (model/placement-disarmed? diagram))))
+      (= :stock (:placement-mode diagram)))))
 
 (defspec placed-stock-retains-coordinates
   50

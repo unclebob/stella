@@ -1,6 +1,6 @@
 (ns stella.ui.control-panel
   (:require [stella.events :as events]
-            [stella.simulation :as simulation]))
+            [stella.model :as model]))
 
 (defn control-panel-desc
   [shell]
@@ -15,4 +15,4 @@
                :on-action {:event events/simulation-step}}
               {:fx/type :label
                :id "simulation-time-display"
-               :text (simulation/shell-time-display shell)}]})
+               :text (model/simulation-time-display shell)}]})

@@ -110,6 +110,19 @@
   [_shell]
   true)
 
+(defn- format-simulation-number
+  [n]
+  (let [rounded (/ (Math/round (* n 10)) 10.0)]
+    (if (= rounded (double (long rounded)))
+      (str (long rounded))
+      (str rounded))))
+
+(defn simulation-time-display
+  [shell]
+  (let [time (get-in shell [:diagram :simulation :time] 0.0)
+        rounded (/ (Math/round (* time 10)) 10.0)]
+    (if (zero? rounded) "0" (format-simulation-number rounded))))
+
 (defn stock-count
   [diagram]
   (count (:stocks diagram)))

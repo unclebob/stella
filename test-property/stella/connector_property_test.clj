@@ -31,14 +31,14 @@
                 (model/arm-connector-placement)
                 (model/select-connector-origin :flow "Flow1"))))))
 
-(defspec successful-connector-disarms-placement
+(defspec successful-connector-keeps-placement-armed
   25
   (prop/for-all [_ gen/int]
     (let [diagram (-> (diagram-with-fixtures)
                       (model/arm-connector-placement)
                       (model/select-connector-origin :stock "Stock1")
                       (model/connect-connector :converter "Converter1"))]
-      (model/placement-disarmed? diagram))))
+      (model/connector-placement-armed? diagram))))
 
 (deftest invalid-connector-pair-clears-draft
   (let [diagram (-> (diagram-with-fixtures)

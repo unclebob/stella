@@ -40,9 +40,15 @@
    {:label "Domain model must not depend on UI, app shell, or FX adapters"
     :ns-pattern #"^stella\.model$"
     :forbidden #"^stella\.(ui|app|fx|cljfx)"}
-   {:label "Commands must depend only on the domain model"
+   {:label "Commands must depend only on the domain model and simulation"
     :ns-pattern #"^stella\.commands$"
     :forbidden #"^stella\.(ui|app|fx|actions|dispatch|cljfx)"}
+   {:label "Simulation must depend only on the domain model"
+    :ns-pattern #"^stella\.simulation$"
+    :forbidden #"^stella\.(ui|app|fx|actions|dispatch|commands|cljfx)"}
+   {:label "UI modules must not depend on simulation"
+    :ns-pattern #"^stella\.ui"
+    :forbidden #"^stella\.(app|fx|simulation)"}
    {:label "Core policy must not depend on UI, app shell, or FX adapters"
     :ns-pattern #"^stella\.(actions|dispatch)$"
     :forbidden #"^stella\.(ui|app|fx|cljfx)"}

@@ -83,7 +83,3 @@
 (defn run-steps
   [diagram n]
   (reduce (fn [d _] (step d)) diagram (range n)))
-
-(defn shell-time-display
-  [shell]
-  (format-time (simulation-time (:diagram shell))))

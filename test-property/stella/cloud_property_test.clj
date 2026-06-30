@@ -9,23 +9,23 @@
   (gen/tuple (gen/large-integer* {:min 0 :max 500})
              (gen/large-integer* {:min 0 :max 500})))
 
-(defspec source-placement-disarms
+(defspec source-placement-keeps-tool-armed
   25
   (for-all [[x y] coord-gen]
     (let [diagram (-> (model/default-diagram)
                       (model/arm-source-placement)
                       (model/place-source x y))]
       (and (model/source-exists? diagram "Source1")
-           (model/placement-disarmed? diagram)))))
+           (= :source (:placement-mode diagram))))))
 
-(defspec sink-placement-disarms
+(defspec sink-placement-keeps-tool-armed
   25
   (for-all [[x y] coord-gen]
     (let [diagram (-> (model/default-diagram)
                       (model/arm-sink-placement)
                       (model/place-sink x y))]
       (and (model/sink-exists? diagram "Sink1")
-           (model/placement-disarmed? diagram)))))
+           (= :sink (:placement-mode diagram))))))
 
 (defspec source-to-stock-flow-valid
   25

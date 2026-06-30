@@ -46,7 +46,7 @@
 
 (defn- assert-simulation-time-display
   [world expected]
-  (let [actual (simulation/shell-time-display (:shell world))]
+  (let [actual (model/simulation-time-display (:shell world))]
     (when-not (= (str expected) actual)
       (support/fail! (str "simulation time display " actual " expected " expected)))
     world))

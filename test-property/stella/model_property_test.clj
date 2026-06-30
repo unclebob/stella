@@ -39,4 +39,7 @@
 (deftest default-shell-shows-and-empty-canvas
   (let [shell (model/default-shell)]
     (is (model/showing? shell))
-    (is (model/diagram-empty? shell))))
+    (is (model/diagram-empty? shell))
+    (is (model/control-panel-visible? shell))
+    (is (model/step-button-visible? shell))
+    (is (= "0" (model/simulation-time-display shell)))))

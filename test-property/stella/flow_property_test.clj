@@ -28,14 +28,14 @@
                 (model/select-flow-source :stock "Stock1")
                 (model/connect-flow :stock "Stock1"))))))
 
-(defspec successful-connection-disarms-placement
+(defspec successful-connection-keeps-placement-armed
   25
   (prop/for-all [_ gen/int]
     (let [diagram (-> (diagram-with-stocks)
                       (model/arm-flow-placement)
                       (model/select-flow-source :stock "Stock1")
                       (model/connect-flow :stock "Stock2"))]
-      (model/flow-placement-disarmed? diagram))))
+      (model/flow-placement-armed? diagram))))
 
 (defspec flow-endpoints-match-selection
   25
