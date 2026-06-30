@@ -10,18 +10,45 @@
     (update world :shell assoc :diagram diagram)
     world))
 
+(defn- update-world-diagram
+  [world diagram]
+  (-> world
+      (assoc :diagram diagram)
+      (sync-shell-diagram diagram)))
+
 (defn- step-world
   [world]
-  (let [diagram (cmd/step-simulation! (support/diagram-from world))]
-    (-> world
-        (assoc :diagram diagram)
-        (sync-shell-diagram diagram))))
+  (update-world-diagram world (cmd/step-simulation! (support/diagram-from world))))
+
+(defn- run-simulation-world
+  [world steps]
+  (update-world-diagram world
+                        (cmd/run-simulation-steps! (support/diagram-from world) steps)))
+
+(defn- click-step-times
+  [world clicks]
+  (reduce (fn [w _] (step-world w)) world (repeat clicks nil)))
 
 (defn- assert-stock-value
   [world name expected]
   (let [actual (simulation/stock-value (support/diagram-from world) name)]
     (when-not (= (str expected) actual)
       (support/fail! (str "stock " name " value " actual " expected " expected)))
+    world))
+
+(defn- assert-simulation-time
+  [world expected]
+  (let [actual (simulation/format-time
+                (simulation/simulation-time (support/diagram-from world)))]
+    (when-not (= (str expected) actual)
+      (support/fail! (str "simulation time " actual " expected " expected)))
+    world))
+
+(defn- assert-simulation-time-display
+  [world expected]
+  (let [actual (simulation/shell-time-display (:shell world))]
+    (when-not (= (str expected) actual)
+      (support/fail! (str "simulation time display " actual " expected " expected)))
     world))
 
 (def simulation-handlers
@@ -35,18 +62,12 @@
             (assoc world :diagram (cmd/fixture-flow-to-sink! diagram flow stock sink))))}
    {:pattern #"^I run the simulation for <([A-Za-z0-9_]+)> steps$"
     :fn (fn [world [_ steps-param] example]
-          (let [steps (support/parse-int (support/require-value example steps-param) "steps")
-                diagram (cmd/run-simulation-steps! (support/diagram-from world) steps)]
-            (-> world
-                (assoc :diagram diagram)
-                (sync-shell-diagram diagram))))}
+          (run-simulation-world world
+                                (support/parse-int (support/require-value example steps-param)
+                                                   "steps")))}
    {:pattern #"^I run the simulation for (\d+) steps$"
     :fn (fn [world [_ steps-str] _]
-          (let [steps (support/parse-int steps-str "steps")
-                diagram (cmd/run-simulation-steps! (support/diagram-from world) steps)]
-            (-> world
-                (assoc :diagram diagram)
-                (sync-shell-diagram diagram))))}
+          (run-simulation-world world (support/parse-int steps-str "steps")))}
    {:pattern #"^stock ([A-Za-z0-9]+) value should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name value-param] example]
           (assert-stock-value world name (support/require-value example value-param)))}
@@ -55,19 +76,10 @@
           (assert-stock-value world name value))}
    {:pattern #"^simulation time should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ time-param] example]
-          (let [expected (support/require-value example time-param)
-                actual (simulation/format-time
-                        (simulation/simulation-time (support/diagram-from world)))]
-            (when-not (= (str expected) actual)
-              (support/fail! (str "simulation time " actual " expected " expected)))
-            world))}
+          (assert-simulation-time world (support/require-value example time-param)))}
    {:pattern #"^simulation time should be ([0-9.]+)$"
     :fn (fn [world [_ time] _]
-          (let [actual (simulation/format-time
-                        (simulation/simulation-time (support/diagram-from world)))]
-            (when-not (= time actual)
-              (support/fail! (str "simulation time " actual " expected " time)))
-            world))}
+          (assert-simulation-time world time))}
    {:pattern #"^the control panel should be visible$"
     :fn (fn [world _ _]
           (when-not (model/control-panel-visible? (:shell world))
@@ -80,17 +92,10 @@
           world)}
    {:pattern #"^the simulation time display should show <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ time-param] example]
-          (let [expected (support/require-value example time-param)
-                actual (simulation/shell-time-display (:shell world))]
-            (when-not (= (str expected) actual)
-              (support/fail! (str "simulation time display " actual " expected " expected)))
-            world))}
+          (assert-simulation-time-display world (support/require-value example time-param)))}
    {:pattern #"^the simulation time display should show ([0-9.]+)$"
     :fn (fn [world [_ time] _]
-          (let [actual (simulation/shell-time-display (:shell world))]
-            (when-not (= time actual)
-              (support/fail! (str "simulation time display " actual " expected " time)))
-            world))}
+          (assert-simulation-time-display world time))}
    {:pattern #"^I click in the control panel$"
     :fn (fn [world _ _]
           (if (:shell world)
@@ -103,9 +108,9 @@
             world))}
    {:pattern #"^I click Step <([A-Za-z0-9_]+)> times$"
     :fn (fn [world [_ clicks-param] example]
-          (let [clicks (support/parse-int (support/require-value example clicks-param) "clicks")]
-            (reduce (fn [w _] (step-world w)) world (repeat clicks nil))))}
+          (click-step-times world
+                            (support/parse-int (support/require-value example clicks-param)
+                                               "clicks")))}
    {:pattern #"^I click Step (\d+) times$"
     :fn (fn [world [_ clicks-str] _]
-          (let [clicks (support/parse-int clicks-str "clicks")]
-            (reduce (fn [w _] (step-world w)) world (repeat clicks nil))))}])
+          (click-step-times world (support/parse-int clicks-str "clicks")))}])
