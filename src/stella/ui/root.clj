@@ -24,7 +24,7 @@
    :scene {:fx/type :scene
            :on-key-pressed {:event events/scene-key-pressed}
            :root {:fx/type :border-pane
-                  :top {:fx/type :vbox
+                  :top {:fx/type :v-box
                         :children [(menu/menu-bar-desc shell)
                                    (control-panel/control-panel-desc shell)]}
                   :left (palette/palette-desc shell)

@@ -476,6 +476,7 @@
       (ui/click-in-region! stage :canvas :center)
       (when-not (ui/wait-for-element! stage :stock "Stock1" :attempts 20)
         (fail! "Stock1 did not appear"))
+      (ui/press-escape! stage)
       (let [initial-bounds (ui/element-bounds stage :stock "Stock1")]
         (ui/drag-element! stage :stock "Stock1" :canvas [120 60])
         (when-not (ui/wait-for-bounds-change! stage :stock "Stock1" initial-bounds :attempts 20)
@@ -493,6 +494,7 @@
         (ui/click-element! stage :stock "Stock1")
         (ui/click-element! stage :stock "Stock2")
         (assert-flow! stage "Flow1" "Stock1" "Stock2" :suite "drag-stock")
+        (ui/press-escape! stage)
         (let [stock2-before (ui/element-bounds stage :stock "Stock2")]
           (ui/drag-element! stage :stock "Stock1" :canvas [40 -20])
           (Thread/sleep 300)
@@ -532,6 +534,7 @@
       (when-not (ui/wait-for-element! stage :flow "Flow1" :attempts 20)
         (fail! "Flow1 did not appear"))
       (pass! "delete-selection" "Flow1 connects Stock1 to Stock2")
+      (ui/press-escape! stage)
       (ui/click-element! stage :stock "Stock1")
       (when-not (ui/element-selected? stage :stock "Stock1")
         (fail! "Stock1 not selected before delete"))
@@ -553,6 +556,7 @@
       (when-not (ui/wait-for-element! stage :connector "Connector1" :attempts 20)
         (fail! "Connector1 did not appear"))
       (pass! "delete-selection" "Connector1 links Stock2 to Converter1")
+      (ui/press-escape! stage)
       (ui/click-element! stage :converter "Converter1")
       (when-not (ui/element-selected? stage :converter "Converter1")
         (fail! "Converter1 not selected before backspace"))
@@ -584,6 +588,7 @@
       (when-not (ui/wait-for-element! stage :stock "Stock2" :attempts 20)
         (fail! "Stock2 did not appear"))
       (pass! "select-objects" "Stock1 and Stock2 placed")
+      (ui/press-escape! stage)
       (ui/click-element! stage :stock "Stock1")
       (when-not (ui/element-selected? stage :stock "Stock1")
         (fail! "Stock1 not selected after click"))
@@ -625,6 +630,90 @@
       (ui/quit-app! stage)
       (pass! "select-objects" "Quit requested"))))
 
+(defn- run-control-panel! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (when-not (ui/region-bounds stage :control-panel)
+        (fail! "Control panel region :control-panel is not visible"))
+      (pass! "control-panel" "Control panel region is visible")
+      (when-not (ui/step-button-visible? stage)
+        (fail! "Step button not visible"))
+      (pass! "control-panel" "Step button is visible")
+      (when-not (ui/region-text-includes? stage :control-panel "0")
+        (fail! "Simulation time 0 not visible in control panel"))
+      (pass! "control-panel" "Simulation time 0 visible at start")
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :control-panel :center)
+      (when-not (zero? (ui/diagram-stock-count stage))
+        (fail! "Stock placed when clicking control panel with placement armed"))
+      (pass! "control-panel" "Control panel click ignored during stock placement")
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas :center)
+      (when-not (ui/wait-for-element! stage :stock "Stock1")
+        (fail! "Stock1 did not appear"))
+      (let [initial-bounds (ui/element-bounds stage :stock "Stock1")]
+        (ui/drag-in-region! stage :control-panel :center [100 0])
+        (Thread/sleep 300)
+        (when-not (ui/bounds-unchanged? stage :stock "Stock1" initial-bounds)
+          (fail! "Stock1 moved after drag within control panel"))
+        (pass! "control-panel" "Stock drag ignored when pointer starts in control panel"))
+      (ui/quit-app! stage)
+      (pass! "control-panel" "Quit requested"))))
+
+(defn- run-run-simulation! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (ui/click-palette! stage "Source")
+      (ui/click-in-region! stage :canvas [-150 0])
+      (when-not (ui/wait-for-element! stage :source "Source1")
+        (fail! "Source1 did not appear"))
+      (ui/click-palette! stage "Sink")
+      (ui/click-in-region! stage :canvas [150 0])
+      (when-not (ui/wait-for-element! stage :sink "Sink1")
+        (fail! "Sink1 did not appear"))
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas :center)
+      (when-not (ui/wait-for-element! stage :stock "Stock1")
+        (fail! "Stock1 did not appear"))
+      (pass! "run-simulation" "Source-stock-sink diagram placed")
+      (ui/click-palette! stage "Flow")
+      (ui/click-element! stage :source "Source1")
+      (ui/click-element! stage :stock "Stock1")
+      (assert-flow! stage "Flow1" "Source1" "Stock1"
+                    :suite "run-simulation" :show-name? false)
+      (ui/click-palette! stage "Flow")
+      (ui/click-element! stage :stock "Stock1")
+      (ui/click-element! stage :sink "Sink1")
+      (assert-flow! stage "Flow2" "Stock1" "Sink1"
+                    :suite "run-simulation" :show-name? false)
+      (ui/right-click-element! stage :flow "Flow1")
+      (when-not (ui/wait-for-dialog! "Edit Flow" :attempts 50)
+        (fail! "Edit Flow dialog did not appear for Flow1"))
+      (ui/type-into-dialog-field! "Rate" "10")
+      (ui/click-ok-on-dialog! "Edit Flow")
+      (when-not (ui/element-shows? stage :flow "Flow1" "10")
+        (fail! "Flow1 rate not set to 10"))
+      (ui/right-click-element! stage :flow "Flow2")
+      (when-not (ui/wait-for-dialog! "Edit Flow")
+        (fail! "Edit Flow dialog did not appear for Flow2"))
+      (ui/type-into-dialog-field! "Rate" "5")
+      (ui/click-ok-on-dialog! "Edit Flow")
+      (when-not (ui/element-shows? stage :flow "Flow2" "5")
+        (fail! "Flow2 rate not set to 5"))
+      (pass! "run-simulation" "Flow rates set to 10 and 5")
+      (when-not (ui/region-text-includes? stage :control-panel "0")
+        (fail! "Simulation time 0 not visible before stepping"))
+      (ui/click-step-button! stage)
+      (when-not (ui/wait-for-region-text! stage :control-panel "0.1")
+        (fail! "Simulation time 0.1 not visible after first Step"))
+      (pass! "run-simulation" "First Step advanced time to 0.1")
+      (ui/click-step-button! stage)
+      (when-not (ui/wait-for-region-text! stage :control-panel "0.2")
+        (fail! "Simulation time 0.2 not visible after second Step"))
+      (pass! "run-simulation" "Second Step advanced time to 0.2")
+      (ui/quit-app! stage)
+      (pass! "run-simulation" "Quit requested"))))
+
 (defn- run-drag-converter! []
   (with-app! {}
     (fn [^Stage stage]
@@ -632,6 +721,7 @@
       (ui/click-in-region! stage :canvas :center)
       (when-not (ui/wait-for-element! stage :converter "Converter1" :attempts 20)
         (fail! "Converter1 did not appear"))
+      (ui/press-escape! stage)
       (let [initial-bounds (ui/element-bounds stage :converter "Converter1")]
         (ui/drag-element! stage :converter "Converter1" :canvas [100 80])
         (when-not (ui/wait-for-bounds-change! stage :converter "Converter1" initial-bounds :attempts 20)
@@ -652,6 +742,7 @@
         (when-not (ui/wait-for-element! stage :connector "Connector1" :attempts 20)
           (fail! "Connector1 did not appear"))
         (pass! "drag-converter" "Connector1 links Converter1 to Flow1")
+        (ui/press-escape! stage)
         (ui/drag-element! stage :converter "Converter1" :canvas [-40 120])
         (Thread/sleep 300)
         (when-not (ui/element-visible? stage :connector "Connector1")
@@ -693,7 +784,9 @@
    "drag-stock" run-drag-stock!
    "drag-converter" run-drag-converter!
    "select-objects" run-select-objects!
-   "delete-selection" run-delete-selection!})
+   "delete-selection" run-delete-selection!
+   "control-panel" run-control-panel!
+   "run-simulation" run-run-simulation!})
 
 (defn -main [& args]
   (let [{:keys [qa-seconds args]} (qa-args/parse-qa-flag args)

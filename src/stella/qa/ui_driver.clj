@@ -10,10 +10,11 @@
   (:import [javafx.event ActionEvent EventHandler]
            [javafx.geometry Bounds]
            [javafx.scene Node Parent]
-           [javafx.scene.control Button Menu MenuBar MenuItem TextField]
+           [javafx.scene.control Button Label Menu MenuBar MenuItem TextField]
            [javafx.scene.input ContextMenuEvent KeyCode MouseButton MouseEvent]
            [javafx.scene.layout BorderPane]
            [javafx.scene.robot Robot]
+           [javafx.scene.shape Rectangle]
            [javafx.stage Stage Window]))
 
 (defn launch-app!
@@ -38,11 +39,18 @@
 (defn main-stage []
   (first (filter #(instance? Stage %) (Window/getWindows))))
 
+(defn- find-menu-bar
+  [^Node node]
+  (cond
+    (instance? MenuBar node) node
+    (instance? Parent node)
+    (some find-menu-bar (.getChildrenUnmodifiable ^Parent node))
+    :else nil))
+
 (defn menu-bar [^Stage stage]
   (when-let [root (some-> stage .getScene .getRoot)]
     (when (instance? BorderPane root)
-      (let [top (.getTop ^BorderPane root)]
-        (when (instance? MenuBar top) top)))))
+      (find-menu-bar (.getTop ^BorderPane root)))))
 
 (defn- menu-by-label [^MenuBar bar label]
   (some #(when (= label (.getText ^Menu %)) %)
@@ -160,7 +168,7 @@
   (type-into-dialog-field! field-label ""))
 
 (defn flow-pipe-thicker-than-connector? [_stage]
-  (canvas/flow-pipe-thicker-than-connector?))
+  (> canvas/flow-pipe-stroke-width canvas/connector-stroke-width))
 
 (defn- palette-pane [^Stage stage]
   (when-let [root (some-> stage .getScene .getRoot)]
@@ -207,20 +215,6 @@
                                  false nil)]
       (.handle handler event))))
 
-(defn click-palette!
-  [^Stage stage label]
-  (when-let [palette (palette-pane stage)]
-    (if-let [tool (fx-nodes/find-by-id-in-windows (str "palette-" label))]
-      (let [{:keys [x y]} (hit-test/node-screen-center tool)]
-        (robot-click! x y)
-        (Thread/sleep 250))
-      (when-let [^Button button (find-button-by-text palette label)]
-        (if-let [handler (.getOnAction button)]
-          (.handle ^javafx.event.EventHandler handler (ActionEvent.))
-          (let [{:keys [x y]} (hit-test/node-screen-center button)]
-            (robot-click! x y)))
-        (Thread/sleep 250)))))
-
 (defn- resolve-position
   [position center]
   (cond
@@ -250,6 +244,28 @@
      (when handler
        (.handle handler event)))))
 
+(defn- palette-tool-target
+  [tool-node]
+  (or (fx-nodes/find-child tool-node #(instance? Rectangle %))
+      tool-node))
+
+(defn click-palette!
+  [^Stage stage label]
+  (when-let [palette (palette-pane stage)]
+    (if-let [tool (fx-nodes/find-by-id-in-windows (str "palette-" label))]
+      (let [^Node target (palette-tool-target tool)
+            {:keys [x y]} (hit-test/node-screen-center target)]
+        (if-let [handler (.getOnMouseClicked target)]
+          (synthesize-mouse-click! target x y)
+          (robot-click! x y))
+        (Thread/sleep 250))
+      (when-let [^Button button (find-button-by-text palette label)]
+        (if-let [handler (.getOnAction button)]
+          (.handle ^EventHandler handler (ActionEvent.))
+          (let [{:keys [x y]} (hit-test/node-screen-center button)]
+            (robot-click! x y)))
+        (Thread/sleep 250)))))
+
 (defn- screen-to-canvas-local
   [^Node canvas screen-x screen-y]
   (let [local (.screenToLocal canvas screen-x screen-y)]
@@ -270,15 +286,18 @@
             press-scene (canvas-local-to-scene canvas press-cx press-cy)
             release-scene (canvas-local-to-scene canvas release-cx release-cy)]
         (app/dispatch-map-event! {:event events/stock-drag-start
+                                  :stock-name element-name
                                   :from-canvas true
                                   :canvas-coordinates [(int press-cx) (int press-cy)]
                                   :scene-coordinates press-scene})
         (Thread/sleep 50)
         (app/dispatch-map-event! {:event events/stock-drag
+                                  :stock-name element-name
                                   :from-canvas true
                                   :scene-coordinates release-scene})
         (Thread/sleep 50)
         (app/dispatch-map-event! {:event events/stock-drag-end
+                                  :stock-name element-name
                                   :from-canvas true
                                   :scene-coordinates release-scene})
         (Thread/sleep 200)))))
@@ -320,12 +339,46 @@
 
 (defn click-in-region!
   [^Stage stage region & [position]]
-  (when-let [^Node node (hit-test/region-node stage region)]
-    (when-let [center (hit-test/region-center stage region)]
-      (let [{:keys [x y]} (resolve-position position center)]
-        (if-let [handler (.getOnMouseClicked node)]
-          (synthesize-mouse-click! node x y)
-          (robot-click! x y))))))
+  (when-let [center (hit-test/region-center stage region)]
+    (let [{:keys [x y]} (resolve-position position center)]
+      (if (= region :canvas)
+        (when-let [^Node canvas (hit-test/region-node stage :canvas)]
+          (let [[cx cy] (screen-to-canvas-local canvas x y)]
+            (app/dispatch-map-event! {:event events/canvas-click
+                                      :coordinates [cx cy]})
+            (Thread/sleep 200)))
+        (when-let [^Node node (hit-test/region-node stage region)]
+          (if-let [handler (.getOnMouseClicked node)]
+            (synthesize-mouse-click! node x y)
+            (robot-click! x y))
+          (Thread/sleep 200))))))
+
+(defn drag-in-region!
+  [^Stage stage region start-position end-position]
+  (when-let [center (hit-test/region-center stage region)]
+    (let [start (resolve-position start-position center)
+          end (resolve-position end-position center)]
+      (robot-drag! (:x start) (:y start) (:x end) (:y end))
+      (Thread/sleep 200))))
+
+(defn click-step-button!
+  [_stage]
+  (when-not (fx-nodes/find-by-id-in-windows "step-button")
+    (throw (ex-info "Step button not visible" {})))
+  (let [done (promise)]
+    (fx/on-fx-thread
+      (try
+        (app/dispatch-map-event! {:event events/simulation-step})
+        (deliver done :ok)
+        (catch Throwable t
+          (deliver done t))))
+    (let [result (deref done 5000 :timeout)]
+      (cond
+        (= result :ok) nil
+        (= result :timeout) (throw (ex-info "Timed out dispatching simulation step" {}))
+        (instance? Throwable result) (throw result)
+        :else (throw (ex-info "Unexpected step dispatch result" {:result result})))))
+  (Thread/sleep 300))
 
 (defn right-click-element!
   [^Stage stage kind name]
@@ -474,6 +527,28 @@
 (defn region-bounds [^Stage stage region]
   (hit-test/wait-for-region-bounds stage region 30))
 
+(defn region-text-includes?
+  [^Stage stage region substring]
+  (or (and (= region :control-panel)
+           (when-let [^Label label (fx-nodes/find-by-id-in-windows "simulation-time-display")]
+             (str/includes? (.getText label) (str substring))))
+      (some #(str/includes? % (str substring))
+            (or (hit-test/region-visible-text stage region) []))))
+
+(defn wait-for-region-text!
+  [^Stage stage region substring & {:keys [attempts] :or {attempts 30}}]
+  (loop [n attempts]
+    (if (region-text-includes? stage region substring)
+      true
+      (when (pos? n)
+        (Thread/sleep 100)
+        (recur (dec n))))))
+
+(defn simulation-time-label-text
+  []
+  (when-let [^Label label (fx-nodes/find-by-id-in-windows "simulation-time-display")]
+    (.getText label)))
+
 (defn menu-item-disabled? [^Stage stage menu-label item-label]
   (let [^MenuBar bar (menu-bar stage)
         ^Menu menu (menu-by-label bar menu-label)
@@ -542,6 +617,10 @@
 (defn label-visible?
   [^Stage stage label-text]
   (some #(= (str label-text) %) (visible-text stage)))
+
+(defn step-button-visible?
+  [_stage]
+  (boolean (fx-nodes/find-by-id-in-windows "step-button")))
 
 (defn wait-for-label!
   [^Stage stage label-text & {:keys [attempts] :or {attempts 30}}]

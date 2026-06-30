@@ -62,7 +62,8 @@
   [event]
   (cond
     (#{events/canvas-click events/canvas-move} (event-type event))
-    (assoc event :coordinates (or (canvas-coordinates event)
+    (assoc event :coordinates (or (:coordinates event)
+                                  (canvas-coordinates event)
                                   (click-coordinates event)))
 
     (#{events/stock-drag-start events/stock-drag events/stock-drag-end

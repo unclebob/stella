@@ -4,9 +4,8 @@
 
 (defn control-panel-desc
   [shell]
-  {:fx/type :hbox
+  {:fx/type :h-box
    :id "control-panel"
-   :alignment :center-left
    :style "-fx-background-color: #f0f0f0; -fx-padding: 8;"
    :spacing 12
    :children [{:fx/type :button

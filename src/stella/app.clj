@@ -8,10 +8,13 @@
             [stella.fx.edit-stock-dialog :as edit-stock-dialog]
             [stella.fx.effects :as fx-effects]
             [stella.fx.input :as fx-input]
+            [stella.fx.nodes :as fx-nodes]
             [stella.fx.overlay :as fx-overlay]
+            [stella.model :as model]
             [stella.qa.auto-close :as qa-auto-close]
             [stella.ui.root :as root])
-  (:import [javafx.application Platform]))
+  (:import [javafx.application Platform]
+           [javafx.scene.control Label]))
 
 (defonce *state
   (atom (cmd/default-shell! nil)))
@@ -23,17 +26,25 @@
     events/edit-flow-apply
     events/edit-converter-apply})
 
-(defn- sync-diagram-after-event!
-  [etype shell]
-  (when (or (dispatch/diagram-event? etype)
-            (contains? diagram-sync-events etype))
-    (fx-overlay/sync-diagram-overlay! (:diagram shell))))
-
 (defn- on-fx-thread!
   [f]
   (if (Platform/isFxApplicationThread)
     (f)
     (Platform/runLater f)))
+
+(defn- sync-simulation-time-display!
+  [shell]
+  (on-fx-thread!
+   #(when-let [^Label label (fx-nodes/find-by-id-in-windows "simulation-time-display")]
+      (.setText label (model/simulation-time-display shell)))))
+
+(defn- sync-diagram-after-event!
+  [etype shell]
+  (when (or (dispatch/diagram-event? etype)
+            (contains? diagram-sync-events etype))
+    (fx-overlay/sync-diagram-overlay! (:diagram shell)))
+  (when (= events/simulation-step etype)
+    (sync-simulation-time-display! shell)))
 
 (defn- show-edit-dialog!
   [state-atom dialog-state show!]

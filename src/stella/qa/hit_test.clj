@@ -27,10 +27,16 @@
                    (seq (.getChildren ^Parent center)))
               (first (.getChildren ^Parent center))))))))
 
+(defn- control-panel-node
+  [^Node root]
+  (fx-nodes/find-by-id root "control-panel"))
+
 (defn region-node
   [^Stage stage region]
   (case region
     :canvas (canvas-node stage)
+    :control-panel (when-let [root (some-> stage .getScene .getRoot)]
+                     (control-panel-node root))
     nil))
 
 (defn region-bounds
@@ -82,6 +88,11 @@
     (set (concat (label-texts root)
                  (when-let [canvas (find-canvas-node root)]
                    (label-texts canvas))))))
+
+(defn region-visible-text
+  [^Stage stage region]
+  (when-let [^Node node (region-node stage region)]
+    (set (label-texts node))))
 
 (defn- find-label-node
   [^Node node text]
