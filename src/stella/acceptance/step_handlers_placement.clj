@@ -564,3 +564,7 @@
               (support/fail! (str "flow " flow " to mismatch")))
             world))}
   ])
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-30T11:23:50.682198-05:00", :module-hash "-969656619", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-1666922602"} {:id "def/placement-handlers", :kind "def", :line 7, :end-line 566, :hash "1051998448"}]}
+;; clj-mutate-manifest-end

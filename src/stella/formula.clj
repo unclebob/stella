@@ -79,3 +79,7 @@
        (let [tokens (tokenize formula)
              stocks (filter stock-token? tokens)]
          (every? stock-names stocks))))
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-30T11:22:31.689898-05:00", :module-hash "-532523093", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 3, :hash "282585715"} {:id "def/token-pattern", :kind "def", :line 5, :end-line 6, :hash "-1255527670"} {:id "defn-/tokenize", :kind "defn-", :line 8, :end-line 17, :hash "1599254320"} {:id "defn-/stock-token?", :kind "defn-", :line 19, :end-line 21, :hash "-1566555243"} {:id "defn-/parse-factor", :kind "defn-", :line 23, :end-line 37, :hash "1688837602"} {:id "defn-/parse-term", :kind "defn-", :line 39, :end-line 47, :hash "-253635061"} {:id "defn-/parse-expr", :kind "defn-", :line 49, :end-line 63, :hash "1787569189"} {:id "defn/evaluate", :kind "defn", :line 65, :end-line 67, :hash "1450074755"} {:id "defn/valid-syntax?", :kind "defn", :line 69, :end-line 74, :hash "-1478954409"} {:id "defn/valid-for-stocks?", :kind "defn", :line 76, :end-line 81, :hash "14519027"}]}
+;; clj-mutate-manifest-end
