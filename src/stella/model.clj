@@ -1,5 +1,9 @@
 (ns stella.model
-  (:require [stella.numbers :as numbers]))
+  (:require [clojure.string :as str]
+            [stella.formula :as formula]
+            [stella.numbers :as numbers]))
+
+(declare refresh-converter-rates)
 
 (defn- menu-item [label disabled]
   {:label label :disabled disabled})
@@ -201,6 +205,15 @@
   [value]
   (numbers/parse-number value))
 
+(defn stock-numeric-value
+  [diagram name]
+  (let [raw (or (get-in diagram [:simulation :stock-values name])
+                (stock-initial-value diagram name)
+                "0")]
+    (if (number? raw)
+      (double raw)
+      (numeric-value raw))))
+
 (defn- value-within-bounds?
   [value min-value max-value]
   (let [num (numeric-value value)
@@ -252,7 +265,10 @@
   [diagram name value]
   (if-let [[id stock] (stock-entry-by-name diagram name)]
     (if (value-within-bounds? value (:min-value stock "0") (:max-value stock))
-      (assoc-in diagram [:stocks id :initial-value] (numbers/normalize-number-string value))
+      (-> diagram
+          (assoc-in [:stocks id :initial-value]
+                    (numbers/normalize-number-string value))
+          refresh-converter-rates)
       diagram)
     diagram))
 
@@ -260,7 +276,8 @@
   [diagram name bound-key value valid?]
   (if-let [[id stock] (stock-entry-by-name diagram name)]
     (if (valid? stock value)
-      (assoc-in diagram [:stocks id bound-key] (numbers/normalize-number-string value))
+      (assoc-in diagram [:stocks id bound-key]
+                (numbers/normalize-number-string value))
       diagram)
     diagram))
 
@@ -877,12 +894,54 @@
             id))
         (:connectors diagram)))
 
+(defn- stock-names
+  [diagram]
+  (set (map :name (stocks diagram))))
+
+(defn- formula-stock-value
+  [diagram]
+  (fn [stock-name]
+    (stock-numeric-value diagram stock-name)))
+
+(defn- format-computed-value
+  [value]
+  (format-display-number value))
+
+(defn- refresh-converter
+  [diagram converter-name]
+  (if-let [connector-id (converter-to-flow-connector-id diagram converter-name)]
+    (let [formula-text (get-in diagram [:connectors connector-id :formula] "")
+          [converter-id _] (converter-entry-by-name diagram converter-name)
+          flow-name (:id (:to (get-in diagram [:connectors connector-id])))
+          [flow-id _] (flow-entry-by-name diagram flow-name)
+          computed (if (seq formula-text)
+                     (format-computed-value
+                      (formula/evaluate formula-text (formula-stock-value diagram)))
+                     "0")]
+      (-> diagram
+          (assoc-in [:converters converter-id :value] computed)
+          (assoc-in [:flows flow-id :rate] computed)))
+    diagram))
+
+(defn refresh-converter-rates
+  [diagram]
+  (reduce refresh-converter diagram (map :name (converters diagram))))
+
 (defn set-converter-formula
   [diagram converter-name formula]
-  (if (seq (str formula))
-    (if-let [id (converter-to-flow-connector-id diagram converter-name)]
-      (assoc-in diagram [:connectors id :formula] (str formula))
-      diagram)
+  (if-let [id (converter-to-flow-connector-id diagram converter-name)]
+    (let [formula-text (str/trim (str formula))]
+      (cond
+        (empty? formula-text)
+        diagram
+
+        (not (formula/valid-for-stocks? formula-text (stock-names diagram)))
+        diagram
+
+        :else
+        (-> diagram
+            (assoc-in [:connectors id :formula] formula-text)
+            (refresh-converter converter-name))))
     diagram))
 
 (defn converter-connector-formula

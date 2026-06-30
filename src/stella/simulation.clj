@@ -73,7 +73,9 @@
   [diagram]
   (let [new-values (step-values diagram)
         new-time (round-time (+ (simulation-time diagram) dt))]
-    (assoc diagram :simulation {:time new-time :stock-values new-values})))
+    (-> diagram
+        (assoc :simulation {:time new-time :stock-values new-values})
+        model/refresh-converter-rates)))
 
 (defn run-steps
   [diagram n]

@@ -412,9 +412,10 @@
 
 (defn converter-canvas-labels
   [diagram converter-name]
-  (when-let [{:keys [name]} (first (filter #(= converter-name (:name %))
-                                            (model/converters diagram)))]
-    {:name name}))
+  (when-let [{:keys [name value]} (first (filter #(= converter-name (:name %))
+                                                 (model/converters diagram)))]
+    {:name name
+     :value (or value "0")}))
 
 (defn converter-canvas-position
   [diagram converter-name]
@@ -563,6 +564,15 @@
                 :center-y 25
                 :radius 25
                 :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
+               {:fx/type :label
+                :layout-x 0
+                :layout-y 18
+                :pref-width 50
+                :pref-height 14
+                :alignment :center
+                :text-alignment :center
+                :style "-fx-font-size: 10px;"
+                :text (or (model/converter-value diagram name) "0")}
                {:fx/type :label
                 :layout-x (- 25 (/ converter-label-width 2.0))
                 :layout-y (+ 50 converter-label-gap)

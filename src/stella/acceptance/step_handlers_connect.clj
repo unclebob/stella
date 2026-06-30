@@ -203,12 +203,31 @@
             (when-not (= value actual)
               (support/fail! (str "converter " name " value " actual " expected " value)))
             world))}
-   {:pattern #"^converter ([A-Za-z0-9]+) value should be ([A-Za-z0-9]+)$"
+   {:pattern #"^converter ([A-Za-z0-9]+) value should be ([0-9.]+)$"
     :fn (fn [world [_ name value] _]
           (let [actual (model/converter-value (support/diagram-from world) name)]
             (when-not (= value actual)
               (support/fail! (str "converter " name " value " actual " expected " value)))
             world))}
+   {:pattern #"^converter ([A-Za-z0-9]+) value should be <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name value-param] example]
+          (let [value (support/require-value example value-param)
+                actual (model/converter-value (support/diagram-from world) name)]
+            (when-not (= value actual)
+              (support/fail! (str "converter " name " value " actual " expected " value)))
+            world))}
+   {:pattern #"^converter <([A-Za-z0-9_]+)> canvas value should be <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name-param value-param] example]
+          (let [name (support/require-value example name-param)
+                value (support/require-value example value-param)]
+            (support/assert-converter-canvas-label world name :value value)))}
+   {:pattern #"^converter ([A-Za-z0-9]+) canvas value should be ([0-9.]+)$"
+    :fn (fn [world [_ name value] _]
+          (support/assert-converter-canvas-label world name :value value))}
+   {:pattern #"^converter ([A-Za-z0-9]+) canvas value should be <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ name value-param] example]
+          (let [value (support/require-value example value-param)]
+            (support/assert-converter-canvas-label world name :value value)))}
    {:pattern #"^I set converter <([A-Za-z0-9_]+)> name to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param new-name-param] example]
           (let [name (support/require-value example name-param)

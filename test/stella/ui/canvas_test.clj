@@ -356,7 +356,8 @@
   (let [diagram (-> (cmd/default-diagram! nil)
                     (cmd/fixture-converter! "Converter1" 100 250)
                     (cmd/set-converter-name! "Converter1" "Growth"))]
-    (is (= {:name "Growth"} (canvas/converter-canvas-labels diagram "Growth")))))
+    (is (= {:name "Growth" :value "0"}
+           (canvas/converter-canvas-labels diagram "Growth")))))
 
 (deftest canvas-renders-converter-name-below-circle-test
   (let [diagram (-> (cmd/default-diagram! nil)
@@ -364,7 +365,9 @@
         shell (assoc (cmd/default-shell! nil) :diagram diagram)
         converter (first (filter #(= "converter-Converter1" (:id %))
                                  (:children (canvas/canvas-desc shell))))
-        label (first (filter #(= :label (:fx/type %)) (:children converter)))]
+        label (first (filter #(and (= :label (:fx/type %))
+                                    (= "Converter1" (:text %)))
+                             (:children converter)))]
     (is (= "Converter1" (:text label)))
     (is (= -25.0 (:layout-x label)))
     (is (= 56 (:layout-y label)))
