@@ -88,3 +88,14 @@
   [world connector-name field expected]
   (assert-canvas-label world connector-name "connector"
                        canvas/connector-canvas-labels field expected))
+
+(defn assert-stock-canvas-thermometer
+  [world stock-name field expected]
+  (let [therm (canvas/stock-canvas-thermometer (diagram-from world) stock-name)]
+    (when-not therm
+      (fail! (str "stock " stock-name " not on canvas")))
+    (let [actual (get therm field)]
+      (when-not (= expected actual)
+        (fail! (str "stock " stock-name " canvas thermometer "
+                    (name field) " " actual " expected " expected))))
+    world))

@@ -7,10 +7,13 @@
 (defn- diagram-with-stock []
   (cmd/fixture-stock! (cmd/default-diagram! nil) "Stock1" 200 150))
 
+(defn- bounded-diagram-with-stock []
+  (-> (diagram-with-stock)
+      (cmd/set-stock-min! "Stock1" "0")
+      (cmd/set-stock-max! "Stock1" "100")))
+
 (deftest bounded-thermometer-fill-width-test
-  (let [diagram (-> (diagram-with-stock)
-                    (cmd/set-stock-min! "Stock1" "0")
-                    (cmd/set-stock-max! "Stock1" "100"))]
+  (let [diagram (bounded-diagram-with-stock)]
     (is (= 0 (get (canvas/stock-canvas-thermometer diagram "Stock1") :fill-width)))
     (is (= 36 (get (canvas/stock-canvas-thermometer
                     (cmd/set-stock-initial-value! diagram "Stock1" "50")
@@ -28,21 +31,13 @@
     (is (= 18 (get (canvas/stock-canvas-thermometer diagram "Stock1") :fill-width)))))
 
 (deftest thermometer-track-dimensions-test
-  (let [therm (canvas/stock-canvas-thermometer
-               (-> (diagram-with-stock)
-                   (cmd/set-stock-min! "Stock1" "0")
-                   (cmd/set-stock-max! "Stock1" "100"))
-               "Stock1")]
+  (let [therm (canvas/stock-canvas-thermometer (bounded-diagram-with-stock) "Stock1")]
     (is (= 72 (:track-width therm)))
     (is (= 8 (:track-height therm)))
     (is (= "light blue" (:fill-color therm)))))
 
 (deftest thermometer-layout-test
-  (let [therm (canvas/stock-canvas-thermometer
-               (-> (diagram-with-stock)
-                   (cmd/set-stock-min! "Stock1" "0")
-                   (cmd/set-stock-max! "Stock1" "100"))
-               "Stock1")]
+  (let [therm (canvas/stock-canvas-thermometer (bounded-diagram-with-stock) "Stock1")]
     (is (:name-at-top therm))
     (is (:thermometer-below-name therm))))
 

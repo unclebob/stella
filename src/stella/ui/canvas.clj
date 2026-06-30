@@ -465,25 +465,26 @@
      :name-y stock-name-y
      :thermometer-y thermometer-track-y}))
 
+(defn- thermometer-rectangle
+  [width style & {:keys [id mouse-transparent?]}]
+  (cond-> {:fx/type :rectangle
+           :width width
+           :height thermometer-track-height
+           :layout-x thermometer-track-x
+           :layout-y thermometer-track-y
+           :style style}
+    id (assoc :fx/key id :id id)
+    mouse-transparent? (assoc :mouse-transparent true)))
+
 (defn- thermometer-nodes
   [diagram stock-name]
-  (let [fill-width (thermometer-fill-width diagram stock-name)]
-    (into [{:fx/type :rectangle
-            :width thermometer-track-width
-            :height thermometer-track-height
-            :layout-x thermometer-track-x
-            :layout-y thermometer-track-y
-            :style thermometer-track-style}]
+  (let [fill-width (thermometer-fill-width diagram stock-name)
+        fill-id (str "stock-thermometer-fill-" stock-name)]
+    (into [(thermometer-rectangle thermometer-track-width thermometer-track-style)]
           (when (pos? fill-width)
-            [{:fx/type :rectangle
-              :fx/key (str "stock-thermometer-fill-" stock-name)
-              :id (str "stock-thermometer-fill-" stock-name)
-              :width fill-width
-              :height thermometer-track-height
-              :layout-x thermometer-track-x
-              :layout-y thermometer-track-y
-              :mouse-transparent true
-              :style thermometer-fill-style}]))))
+            [(thermometer-rectangle fill-width thermometer-fill-style
+                                   :id fill-id
+                                   :mouse-transparent? true)]))))
 
 (defn stock-icon-labels
   [diagram {:keys [name min-value max-value]}]
