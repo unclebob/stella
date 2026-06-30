@@ -36,20 +36,32 @@ Scenario: Arming source without a canvas click places nothing
   Then the diagram source count should be 0
 
 # place-cloud-04
-Scenario Outline: Source placement keeps the tool armed
+Scenario Outline: Source placement disarms the tool
   When I arm the source placement tool
   And I place a source at <x> <y>
   Then source Source1 should be at position 50 150
-  And the source placement tool should be armed
+  And the source placement tool should be disarmed
 
   Examples:
     | x  | y   |
     | 50 | 150 |
 
 # place-cloud-05
-Scenario Outline: Second source without re-arming the placement tool
+Scenario Outline: Sink placement disarms the tool
+  When I arm the sink placement tool
+  And I place a sink at <x> <y>
+  Then sink Sink1 should be at position 400 150
+  And the sink placement tool should be disarmed
+
+  Examples:
+    | x   | y   |
+    | 400 | 150 |
+
+# place-cloud-06
+Scenario Outline: Second source requires re-arming the placement tool
   When I arm the source placement tool
   And I place a source at <x1> <y1>
+  And I arm the source placement tool
   And I place a source at <x2> <y2>
   Then the diagram should contain source Source1
   And source Source1 should be at position 50 150

@@ -509,7 +509,8 @@
           id (keyword (str id-prefix num))]
       (-> diagram
           (assoc-in [collection id] {:name name :x x :y y})
-          (update next-key inc)))
+          (update next-key inc)
+          disarm-placement))
     diagram))
 
 (defn place-source

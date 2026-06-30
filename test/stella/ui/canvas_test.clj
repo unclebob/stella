@@ -206,17 +206,16 @@
             :cloud-name "Sink1"}
            (:on-mouse-released sink)))))
 
-(deftest canvas-selected-clouds-render-ellipse-outline-test
+(deftest canvas-selected-clouds-render-connector-style-highlight-test
   (let [diagram (-> (cmd/default-diagram! nil)
                     (cmd/fixture-source! "Source1" 50 80)
                     (cmd/click-select! :source "Source1"))
         shell (assoc (cmd/default-shell! nil) :diagram diagram)
         source (first (filter #(= "source-Source1" (:id %))
                               (:children (canvas/canvas-desc shell))))
-        outline (first (:children source))]
-    (is (= :ellipse (:fx/type outline)))
-    (is (= 42 (:radius-x outline)))
-    (is (= 27 (:radius-y outline)))))
+        highlights (filter #(= "#2f80ed" (:stroke %)) (:children source))]
+    (is (= 6 (count highlights)))
+    (is (every? #(= 0.35 (:opacity %)) highlights))))
 
 (deftest canvas-renders-live-marquee-test
   (let [shell (assoc (cmd/default-shell! nil)

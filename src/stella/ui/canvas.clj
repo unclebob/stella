@@ -655,10 +655,47 @@
   [kind]
   (into (cloud-shape) (cloud-direction-arrow kind)))
 
+(defn- cloud-selection-highlight-circle
+  [center-x center-y radius]
+  {:fx/type :circle
+   :center-x center-x
+   :center-y center-y
+   :radius (+ radius 2)
+   :fill "transparent"
+   :stroke "#2f80ed"
+   :stroke-width 4
+   :opacity 0.35
+   :mouse-transparent true})
+
+(defn- cloud-selection-highlight-line
+  [{:keys [start-x start-y end-x end-y]}]
+  {:fx/type :line
+   :start-x start-x
+   :start-y start-y
+   :end-x end-x
+   :end-y end-y
+   :stroke "#2f80ed"
+   :stroke-width 4
+   :opacity 0.35
+   :mouse-transparent true})
+
+(defn- cloud-selection-highlight
+  [kind]
+  (into [(cloud-selection-highlight-circle 27 29 18)
+         (cloud-selection-highlight-circle 43 20 21)
+         (cloud-selection-highlight-circle 59 30 16)]
+        (map cloud-selection-highlight-line (cloud-direction-arrow kind))))
+
+(defn- with-cloud-selection-highlight
+  [diagram kind name children]
+  (if (model/selected? diagram kind name)
+    (into (cloud-selection-highlight kind) children)
+    children))
+
 (defn- cloud-desc
   [diagram kind {:keys [name x y]}]
-  (let [body (with-ellipse-selection-outline
-              diagram kind name 40 25 40 25
+  (let [body (with-cloud-selection-highlight
+              diagram kind name
               (directed-cloud-shape kind))]
     (cond-> {:fx/type :group
              :fx/key (str (clojure.core/name kind) "-" name)

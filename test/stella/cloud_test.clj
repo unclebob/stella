@@ -8,23 +8,25 @@
                     (model/place-source 50 150))]
     (is (model/source-exists? diagram "Source1"))
     (is (= [50 150] (model/source-position diagram "Source1")))
-    (is (= :source (:placement-mode diagram)))))
+    (is (model/source-placement-disarmed? diagram))))
 
-(deftest place-multiple-sources-without-rearming-test
+(deftest place-multiple-sources-requires-rearming-test
   (let [diagram (-> (model/default-diagram)
                     (model/arm-source-placement)
                     (model/place-source 50 150)
+                    (model/arm-source-placement)
                     (model/place-source 120 180))]
     (is (model/source-exists? diagram "Source1"))
     (is (model/source-exists? diagram "Source2"))
-    (is (= :source (:placement-mode diagram)))))
+    (is (model/source-placement-disarmed? diagram))))
 
 (deftest place-sink-test
   (let [diagram (-> (model/default-diagram)
                     (model/arm-sink-placement)
                     (model/place-sink 400 150))]
     (is (model/sink-exists? diagram "Sink1"))
-    (is (= [400 150] (model/sink-position diagram "Sink1")))))
+    (is (= [400 150] (model/sink-position diagram "Sink1")))
+    (is (model/sink-placement-disarmed? diagram))))
 
 (deftest move-source-test
   (let [diagram (-> (model/default-diagram)

@@ -93,6 +93,11 @@
           (when-not (= :source (:placement-mode (support/diagram-from world)))
             (support/fail! "expected source placement tool armed"))
           world)}
+   {:pattern #"^the sink placement tool should be disarmed$"
+    :fn (fn [world _ _]
+          (when-not (model/sink-placement-disarmed? (support/diagram-from world))
+            (support/fail! "expected sink placement tool disarmed"))
+          world)}
    {:pattern #"^source ([A-Za-z0-9]+) at (\d+) (\d+)$"
     :fn (fn [world [_ name x-str y-str] _]
           (let [diagram (support/diagram-from world)]
