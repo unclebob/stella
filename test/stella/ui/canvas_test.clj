@@ -115,7 +115,7 @@
         stock (first stocks)]
     (is (= 1 (count stocks)))
     (is (= "stock-Stock1" (:id stock)))
-    (is (= {:name "Stock1" :min "0" :max nil}
+    (is (= {:name "Stock1" :min "0" :max nil :value "0"}
            (canvas/stock-canvas-labels (:diagram shell) "Stock1")))))
 
 (deftest canvas-renders-armed-object-preview-test

@@ -429,6 +429,12 @@
 (def ^:private thermometer-track-x 4)
 (def ^:private thermometer-track-y 22)
 (def ^:private stock-name-y 4)
+(def ^:private stock-bound-row-y 36)
+(def ^:private stock-bound-side-width 24)
+(def ^:private stock-bound-center-width 32)
+(def ^:private stock-bound-side-x 4)
+(def ^:private stock-bound-center-x 24)
+(def ^:private stock-bound-max-x 52)
 (def ^:private thermometer-fill-color "light blue")
 (def ^:private thermometer-fill-style "-fx-fill: #add8e6;")
 (def ^:private thermometer-track-style "-fx-fill: white; -fx-stroke: #ccc; -fx-stroke-width: 1;")
@@ -479,17 +485,18 @@
               :style thermometer-fill-style}]))))
 
 (defn stock-icon-labels
-  [{:keys [name min-value max-value]}]
+  [diagram {:keys [name min-value max-value]}]
   {:name name
    :min (or min-value "0")
-   :max max-value})
+   :max max-value
+   :value (simulation/stock-value diagram name)})
 
 (defn stock-canvas-labels
   [diagram stock-name]
   (some->> (model/stocks diagram)
            (filter #(= stock-name (:name %)))
            first
-           stock-icon-labels))
+           (stock-icon-labels diagram)))
 
 (defn stock-canvas-position
   [diagram stock-name]
@@ -513,9 +520,36 @@
   [diagram flow-name]
   (some-> (flow-on-canvas diagram flow-name) flow-icon-labels))
 
+(defn- stock-bound-row-labels
+  [{:keys [min max value]}]
+  (into [{:fx/type :label
+          :layout-x stock-bound-side-x
+          :layout-y stock-bound-row-y
+          :pref-width stock-bound-side-width
+          :alignment :center-left
+          :text min
+          :style bound-label-style}
+         {:fx/type :label
+          :layout-x stock-bound-center-x
+          :layout-y stock-bound-row-y
+          :pref-width stock-bound-center-width
+          :alignment :center
+          :text-alignment :center
+          :text value
+          :style bound-label-style}]
+        (when max
+          [{:fx/type :label
+            :layout-x stock-bound-max-x
+            :layout-y stock-bound-row-y
+            :pref-width stock-bound-side-width
+            :alignment :center-right
+            :text max
+            :style bound-label-style}])))
+
 (defn- stock-desc
   [diagram {:keys [name x y] :as stock}]
-  (let [{:keys [name min max]} (stock-icon-labels stock)
+  (let [labels (stock-icon-labels diagram stock)
+        {:keys [name min max value]} labels
         body (into [{:fx/type :rectangle
                      :width 80
                      :height 50
@@ -525,17 +559,7 @@
                      :layout-y stock-name-y
                      :text name}]
                    (concat (thermometer-nodes diagram name)
-                           [{:fx/type :label
-                             :layout-x 4
-                             :layout-y 36
-                             :text min
-                             :style bound-label-style}]
-                           (when max
-                             [{:fx/type :label
-                               :layout-x 52
-                               :layout-y 36
-                               :text max
-                               :style bound-label-style}])))
+                           (stock-bound-row-labels labels)))
         children (with-rect-selection-outline diagram :stock name 80 50 body)]
     (cond-> {:fx/type :group
              :fx/key (str "stock-" name)
