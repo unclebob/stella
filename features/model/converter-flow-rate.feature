@@ -67,6 +67,24 @@ Scenario Outline: Parentheses group operations in formula
     | 80     | 20     | (Stock1 - Stock2) / 2    | 30 |
 
 # converter-flow-rate-06
+Scenario Outline: Exponent and standard functions in formula
+  Given connector Connector2 runs from stock Stock1 to converter Converter1
+  When I set stock Stock1 initial value to <stock1>
+  And I set converter Converter1 formula to <formula>
+  Then converter Converter1 value should be <value>
+  And flow Flow1 rate should be <value>
+
+  Examples:
+    | stock1 | formula      | value |
+    | 3      | Stock1 ^ 2   | 9     |
+    | 4      | sqrt(Stock1) | 2     |
+    | 0      | sin(Stock1)  | 0     |
+    | 0      | cos(Stock1)  | 1     |
+    | 0      | tan(Stock1)  | 0     |
+    | 1      | ln(Stock1)   | 0     |
+    | 0      | exp(Stock1)  | 1     |
+
+# converter-flow-rate-07
 Scenario Outline: Fractional formula uses rational literal
   Given connector Connector2 runs from stock Stock1 to converter Converter1
   When I set stock Stock1 initial value to 1
@@ -79,7 +97,7 @@ Scenario Outline: Fractional formula uses rational literal
     | value |
     | 0.5   |
 
-# converter-flow-rate-07
+# converter-flow-rate-08
 Scenario Outline: Simulation transfers at computed constant rate
   When I set stock Stock1 initial value to 100
   And I set stock Stock2 initial value to 0
@@ -93,7 +111,7 @@ Scenario Outline: Simulation transfers at computed constant rate
     | 1     | 99     | 1      |
     | 5     | 95     | 5      |
 
-# converter-flow-rate-08
+# converter-flow-rate-09
 Scenario Outline: Computed rate tracks changing stock during simulation
   Given connector Connector2 runs from stock Stock1 to converter Converter1
   When I set stock Stock1 initial value to 100
@@ -107,24 +125,25 @@ Scenario Outline: Computed rate tracks changing stock during simulation
     | value |
     | 9.9   |
 
-# converter-flow-rate-09
+# converter-flow-rate-10
 Scenario Outline: Reject invalid converter formula
   When I set converter Converter1 formula to <formula>
   Then the converter edit should be rejected
   And connector Connector1 should have no formula
 
   Examples:
-    | formula      |
-    | Stock1 & 0.1 |
-    | Missing * 2  |
+    | formula        |
+    | Stock1 & 0.1   |
+    | Missing * 2    |
+    | foo(1)         |
 
-# converter-flow-rate-10
+# converter-flow-rate-11
 Scenario: Reject stock name without stock to converter link
   When I set converter Converter1 formula to Stock1 * 0.1
   Then the converter edit should be rejected
   And connector Connector1 should have no formula
 
-# converter-flow-rate-11
+# converter-flow-rate-12
 Scenario: Converter without flow link shows zero value
   Given converter Converter2 at 300 250
   Then converter Converter2 value should be 0

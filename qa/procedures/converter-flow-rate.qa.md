@@ -41,11 +41,22 @@ Verify stock-to-converter connectors supply named values for converter formulas,
 27. Assert element `:converter "Converter1"` shows `54.5` centered on the icon (Stock1 is 99 after step 18).
 28. Right-click element `:converter "Converter1"`.
 29. Wait until dialog titled `Edit Converter` is visible (timeout 2 seconds).
-30. Type `Missing * 2` into dialog field `Formula`.
+30. Type `sqrt(Stock1)` into dialog field `Formula`.
 31. Click `OK` on the `Edit Converter` dialog.
-32. Assert dialog titled `Edit Converter` is still visible (name not available).
-33. Click `Cancel` on the `Edit Converter` dialog.
-34. Quit the application using `File` → `Quit`.
+32. Assert element `:converter "Converter1"` shows `9.9` centered on the icon (`sqrt(99)`).
+33. Right-click element `:converter "Converter1"`.
+34. Wait until dialog titled `Edit Converter` is visible (timeout 2 seconds).
+35. Double-click element `:stock "Stock1"`, set `Initial value` to `3`, confirm the edit dialog.
+36. Type `Stock1 ^ 2` into dialog field `Formula`.
+37. Click `OK` on the `Edit Converter` dialog.
+38. Assert element `:converter "Converter1"` shows `9` centered on the icon.
+39. Right-click element `:converter "Converter1"`.
+40. Wait until dialog titled `Edit Converter` is visible (timeout 2 seconds).
+41. Type `foo(1)` into dialog field `Formula`.
+42. Click `OK` on the `Edit Converter` dialog.
+43. Assert dialog titled `Edit Converter` is still visible (unknown function rejected).
+44. Click `Cancel` on the `Edit Converter` dialog.
+45. Quit the application using `File` → `Quit`.
 
 ## Pass criteria
 
@@ -53,7 +64,7 @@ Verify stock-to-converter connectors supply named values for converter formulas,
 - Converter center shows computed numeric value; name remains on the label below the circle.
 - Connected flow rate label matches the converter computed value.
 - Converter-to-flow connector arrow still shows the formula text.
-- Formulas support `+`, `-`, `*`, `/`, and parentheses.
+- Formulas support `+`, `-`, `*`, `/`, `^`, parentheses, and functions `sqrt`, `exp`, `ln`, `sin`, `cos`, and `tan`.
 - Simulation transfers stock using the computed rate, and the displayed rate updates as stock values change.
-- Unbound names, unknown names, and malformed operators are rejected in the Edit Converter dialog.
+- Unbound names, unknown names, unknown functions, and malformed operators are rejected in the Edit Converter dialog.
 - No project API used.

@@ -244,6 +244,80 @@
       ]
     },
     {
+      "name": "Exponent and standard functions in formula",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "connector Connector2 runs from stock Stock1 to converter Converter1"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "formula": "Stock1 ^ 2",
+          "stock1": "3",
+          "value": "9"
+        },
+        {
+          "formula": "sqrt(Stock1)",
+          "stock1": "4",
+          "value": "2"
+        },
+        {
+          "formula": "sin(Stock1)",
+          "stock1": "0",
+          "value": "0"
+        },
+        {
+          "formula": "cos(Stock1)",
+          "stock1": "0",
+          "value": "1"
+        },
+        {
+          "formula": "tan(Stock1)",
+          "stock1": "0",
+          "value": "0"
+        },
+        {
+          "formula": "ln(Stock1)",
+          "stock1": "1",
+          "value": "0"
+        },
+        {
+          "formula": "exp(Stock1)",
+          "stock1": "0",
+          "value": "1"
+        }
+      ]
+    },
+    {
       "name": "Fractional formula uses rational literal",
       "steps": [
         {
@@ -405,6 +479,9 @@
         },
         {
           "formula": "Missing * 2"
+        },
+        {
+          "formula": "foo(1)"
         }
       ]
     },
