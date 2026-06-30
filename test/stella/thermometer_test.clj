@@ -41,6 +41,13 @@
     (is (:name-at-top therm))
     (is (:thermometer-below-name therm))))
 
+(deftest stock-canvas-labels-test
+  (let [diagram (-> (bounded-diagram-with-stock)
+                    (cmd/set-stock-initial-value! "Stock1" "25"))]
+    (is (= {:name "Stock1" :min "0" :max "100" :value "25"}
+           (thermometer/stock-canvas-labels diagram "Stock1")))
+    (is (nil? (thermometer/stock-canvas-labels diagram "Missing")))))
+
 (deftest thermometer-fill-after-simulation-test
   (let [diagram (-> (cmd/fixture-stock! (cmd/default-diagram! nil) "Stock1" 100 100)
                     (cmd/fixture-source! "Source1" 50 100)

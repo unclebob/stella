@@ -8,7 +8,11 @@
     (is (= "Stella" (:window-title shell)))
     (is (false? (:about-visible shell)))
     (is (model/diagram-empty? shell))
-    (is (= ["File" "Edit" "View" "Help"] (model/top-level-menus shell)))))
+    (is (= ["File" "Edit" "View" "Help"] (model/top-level-menus shell)))
+    (is (model/speed-slider-visible? shell))
+    (is (= "1" (model/simulation-tick-delay-display shell)))
+    (is (= "Run" (model/run-button-label shell)))
+    (is (not (model/simulation-running? shell)))))
 
 (deftest menu-item-queries-test
   (let [shell (model/default-shell)]

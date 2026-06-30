@@ -489,6 +489,24 @@
   [diagram steps]
   (simulation/run-steps diagram steps))
 
+(defn set-simulation-tick-delay-on-shell!
+  [shell delay]
+  (model/set-simulation-tick-delay shell delay))
+
+(defn start-simulation-run-on-shell!
+  [shell]
+  (model/start-simulation-run shell))
+
+(defn stop-simulation-run-on-shell!
+  [shell]
+  (model/stop-simulation-run shell))
+
+(defn simulation-run-tick-on-shell!
+  [shell]
+  (if (model/simulation-running? shell)
+    (update shell :diagram step-simulation!)
+    shell))
+
 (defn click-in-control-panel-on-shell!
   [shell]
   shell)

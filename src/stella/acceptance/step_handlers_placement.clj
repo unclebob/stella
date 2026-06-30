@@ -475,6 +475,14 @@
             (when-not (= rate actual)
               (support/fail! (str "flow " flow " rate " actual " expected " rate)))
             world))}
+   {:pattern #"^flow ([A-Za-z0-9]+) rate should be at least <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ flow value-param] example]
+          (support/assert-flow-rate-at-least
+           world flow (support/require-value example value-param)))}
+   {:pattern #"^flow ([A-Za-z0-9]+) rate should be less than <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ flow value-param] example]
+          (support/assert-flow-rate-less-than
+           world flow (support/require-value example value-param)))}
    {:pattern #"^flow ([A-Za-z0-9]+) rate should be 0$"
     :fn (fn [world [_ flow] _]
           (let [actual (model/flow-rate (support/diagram-from world) flow)]

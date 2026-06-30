@@ -63,6 +63,8 @@
    :window-title "Stella"
    :about-visible false
    :about-text ""
+   :simulation-running? false
+   :simulation-tick-delay "1"
    :menu-bar [(file-menu)
               (edit-menu)
               (view-menu)
@@ -114,6 +116,34 @@
 (defn step-button-visible?
   [_shell]
   true)
+
+(defn speed-slider-visible?
+  [_shell]
+  true)
+
+(defn simulation-tick-delay-display
+  [shell]
+  (str (:simulation-tick-delay shell "1")))
+
+(defn set-simulation-tick-delay
+  [shell delay]
+  (assoc shell :simulation-tick-delay (str delay)))
+
+(defn simulation-running?
+  [shell]
+  (true? (:simulation-running? shell)))
+
+(defn run-button-label
+  [shell]
+  (if (simulation-running? shell) "Stop" "Run"))
+
+(defn start-simulation-run
+  [shell]
+  (assoc shell :simulation-running? true))
+
+(defn stop-simulation-run
+  [shell]
+  (assoc shell :simulation-running? false))
 
 (def ^:private palette-tool-modes
   {"Stock" :stock

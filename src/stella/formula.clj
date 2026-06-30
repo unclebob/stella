@@ -4,11 +4,31 @@
 
 (declare ^:private parse-expr)
 
-(def ^:private function-names
-  #{"sqrt" "sin" "cos" "tan" "ln" "exp"})
+(def ^:private function-arities
+  {"sqrt" 1
+   "sin" 1
+   "cos" 1
+   "tan" 1
+   "ln" 1
+   "exp" 1
+   "abs" 1
+   "floor" 1
+   "ceil" 1
+   "round" 1
+   "log" 1
+   "asin" 1
+   "acos" 1
+   "atan" 1
+   "sign" 1
+   "min" 2
+   "max" 2
+   "mod" 2
+   "hypot" 2
+   "atan2" 2
+   "clamp" 3})
 
 (def ^:private token-pattern
-  #"sqrt|sin|cos|tan|ln|exp|[A-Za-z][A-Za-z0-9]*|-?\d+(?:\.\d+)?(?:\s*/\s*\d+)?|[-+^*/()]")
+  #"sqrt|sin|cos|tan|ln|exp|abs|floor|ceil|round|log|asin|acos|atan2|atan|sign|min|max|mod|hypot|clamp|pi|e|\?|[A-Za-z][A-Za-z0-9]*|\d+(?:\.\d+)?(?:\s*/\s*\d+)?|[-+^*/%(),]")
 
 (defn- tokenize
   [formula]
@@ -23,12 +43,13 @@
 
 (defn- function-token?
   [token]
-  (contains? function-names token))
+  (contains? function-arities token))
 
 (defn- stock-token?
   [token]
   (and (re-matches #"[A-Za-z][A-Za-z0-9]*" token)
-       (not (function-token? token))))
+       (not (function-token? token))
+       (not (#{"pi" "e"} token))))
 
 (def ^:private function-implementations
   {"sqrt" Math/sqrt
@@ -36,11 +57,26 @@
    "cos" Math/cos
    "tan" Math/tan
    "ln" Math/log
-   "exp" Math/exp})
+   "exp" Math/exp
+   "abs" #(Math/abs (double %))
+   "floor" Math/floor
+   "ceil" Math/ceil
+   "round" #(double (Math/round (double %)))
+   "log" #(Math/log10 (double %))
+   "asin" Math/asin
+   "acos" Math/acos
+   "atan" Math/atan
+   "sign" #(double (cond (neg? %) -1 (pos? %) 1 :else 0))
+   "min" #(Math/min (double %1) (double %2))
+   "max" #(Math/max (double %1) (double %2))
+   "mod" #(mod %1 %2)
+   "hypot" #(Math/hypot (double %1) (double %2))
+   "atan2" #(Math/atan2 (double %1) (double %2))
+   "clamp" #(min (max %1 %2) %3)})
 
 (defn- apply-function
-  [name value]
-  ((function-implementations name) value))
+  [name values]
+  (apply (function-implementations name) values))
 
 (defn- parse-parenthesized
   [tokens stock-value]
@@ -50,6 +86,18 @@
     (when-not (= ")" (first remaining))
       (throw (ex-info "missing closing parenthesis" {})))
     [value (rest remaining)]))
+
+(defn- parse-argument-list
+  [tokens stock-value]
+  (when-not (= "(" (first tokens))
+    (throw (ex-info "expected opening parenthesis" {})))
+  (loop [tokens (rest tokens)
+         values []]
+    (let [[value remaining] (parse-expr tokens stock-value)]
+      (case (first remaining)
+        "," (recur (rest remaining) (conj values value))
+        ")" [(conj values value) (rest remaining)]
+        (throw (ex-info "expected comma or closing parenthesis" {}))))))
 
 (defn- parse-factor
   [tokens stock-value]
@@ -63,8 +111,26 @@
       (parse-parenthesized tokens stock-value)
 
       (function-token? token)
-      (let [[value remaining] (parse-parenthesized rest-tokens stock-value)]
-        [(apply-function token value) remaining])
+      (let [[values remaining] (parse-argument-list rest-tokens stock-value)
+            arity (function-arities token)]
+        (when-not (= arity (count values))
+          (throw (ex-info "wrong function arity" {:function token
+                                                  :expected arity
+                                                  :actual (count values)})))
+        [(apply-function token values) remaining])
+
+      (= "-" token)
+      (let [[value remaining] (parse-factor rest-tokens stock-value)]
+        [(- value) remaining])
+
+      (= "pi" token)
+      [Math/PI rest-tokens]
+
+      (= "e" token)
+      [Math/E rest-tokens]
+
+      (= "?" token)
+      [(* 0.9 (rand)) rest-tokens]
 
       (stock-token? token)
       [(or (stock-value token)
@@ -93,6 +159,10 @@
             (when (zero? factor)
               (throw (ex-info "division by zero" {})))
             (recur tokens'' [(/ value factor) tokens'']))
+      "%" (let [[factor tokens''] (parse-power (rest tokens') stock-value)]
+            (when (zero? factor)
+              (throw (ex-info "modulo by zero" {})))
+            (recur tokens'' [(mod value factor) tokens'']))
       [value tokens'])))
 
 (defn- parse-expr
@@ -100,7 +170,7 @@
   (loop [tokens tokens
          [value tokens'] (parse-term tokens stock-value)]
     (cond
-      (= ")" (first tokens'))
+      (#{")" ","} (first tokens'))
       [value tokens']
 
       (= "+" (first tokens'))
@@ -139,7 +209,7 @@
        (let [stocks (set (formula-stocks formula))]
          (and (every? bound-stocks stocks)
               (try
-                (evaluate formula (constantly 0.0))
+                (evaluate formula (constantly 1.0))
                 true
                 (catch Exception _ false))))))
 

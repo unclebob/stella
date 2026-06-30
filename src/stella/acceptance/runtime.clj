@@ -16,23 +16,24 @@
     [{}]))
 
 (defn scenario-execution
-  [background scenario idx example]
+  [feature-name background scenario idx example]
   {:name (:name scenario)
+   :feature-name feature-name
    :index idx
    :steps (into (vec background) (:steps scenario))
    :example (or example {})})
 
 (defn plan-scenario-executions
-  [{:keys [background scenarios]}]
+  [{:keys [name background scenarios]}]
   (for [scenario scenarios
         [idx example] (map-indexed vector (scenario-rows scenario))]
-    (scenario-execution background scenario idx example)))
+    (scenario-execution name background scenario idx example)))
 
 (defn run-feature
   [ir]
-  (mapv (fn [{:keys [name index steps example]}]
+  (mapv (fn [{:keys [name feature-name index steps example]}]
           (try
-            (let [world (run-steps {} steps example)]
+            (let [world (run-steps {:feature-name feature-name} steps example)]
               {:name name :index index :pass true :world world})
             (catch Exception e
               {:name name

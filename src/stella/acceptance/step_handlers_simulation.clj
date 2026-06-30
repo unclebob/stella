@@ -29,6 +29,16 @@
   [world clicks]
   (reduce (fn [w _] (step-world w)) world (repeat clicks nil)))
 
+(defn- run-ticks
+  [world ticks]
+  (reduce (fn [w _]
+            (if (:shell w)
+              (let [shell (cmd/simulation-run-tick-on-shell! (:shell w))]
+                (assoc w :shell shell :diagram (:diagram shell)))
+              w))
+          world
+          (repeat ticks nil)))
+
 (defn- assert-stock-value
   [world name expected]
   (let [actual (simulation/stock-value (support/diagram-from world) name)]
@@ -90,6 +100,32 @@
           (when-not (model/step-button-visible? (:shell world))
             (support/fail! "expected Step button visible"))
           world)}
+   {:pattern #"^the speed slider should be visible$"
+    :fn (fn [world _ _]
+          (when-not (model/speed-slider-visible? (:shell world))
+            (support/fail! "expected speed slider visible"))
+          world)}
+   {:pattern #"^the simulation tick delay display should show <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ delay-param] example]
+          (let [expected (support/require-value example delay-param)
+                actual (model/simulation-tick-delay-display (:shell world))]
+            (when-not (= (str expected) actual)
+              (support/fail! (str "simulation tick delay display " actual
+                                  " expected " expected)))
+            world))}
+   {:pattern #"^the simulation tick delay display should show ([0-9.]+)$"
+    :fn (fn [world [_ expected] _]
+          (let [actual (model/simulation-tick-delay-display (:shell world))]
+            (when-not (= expected actual)
+              (support/fail! (str "simulation tick delay display " actual
+                                  " expected " expected)))
+            world))}
+   {:pattern #"^the Run button should show (Run|Stop)$"
+    :fn (fn [world [_ expected] _]
+          (let [actual (model/run-button-label (:shell world))]
+            (when-not (= expected actual)
+              (support/fail! (str "Run button " actual " expected " expected)))
+            world))}
    {:pattern #"^the simulation time display should show <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ time-param] example]
           (assert-simulation-time-display world (support/require-value example time-param)))}
@@ -113,7 +149,47 @@
                                                "clicks")))}
    {:pattern #"^I click Step (\d+) times$"
     :fn (fn [world [_ clicks-str] _]
-          (click-step-times world (support/parse-int clicks-str "clicks")))}])
+          (click-step-times world (support/parse-int clicks-str "clicks")))}
+   {:pattern #"^I set simulation tick delay to <([A-Za-z0-9_]+)>$"
+    :fn (fn [world [_ delay-param] example]
+          (if (:shell world)
+            (update world :shell #(cmd/set-simulation-tick-delay-on-shell!
+                                   %
+                                   (support/require-value example delay-param)))
+            world))}
+   {:pattern #"^I set simulation tick delay to ([0-9.]+)$"
+    :fn (fn [world [_ delay] _]
+          (if (:shell world)
+            (update world :shell #(cmd/set-simulation-tick-delay-on-shell! % delay))
+            world))}
+   {:pattern #"^I click Run$"
+    :fn (fn [world _ _]
+          (if (:shell world)
+            (update world :shell cmd/start-simulation-run-on-shell!)
+            world))}
+   {:pattern #"^I click Stop$"
+    :fn (fn [world _ _]
+          (if (:shell world)
+            (update world :shell cmd/stop-simulation-run-on-shell!)
+            world))}
+   {:pattern #"^simulation run should be active$"
+    :fn (fn [world _ _]
+          (when-not (model/simulation-running? (:shell world))
+            (support/fail! "expected simulation run active"))
+          world)}
+   {:pattern #"^simulation run should be stopped$"
+    :fn (fn [world _ _]
+          (when (model/simulation-running? (:shell world))
+            (support/fail! "expected simulation run stopped"))
+          world)}
+   {:pattern #"^<([A-Za-z0-9_]+)> simulation run ticks elapse$"
+    :fn (fn [world [_ ticks-param] example]
+          (run-ticks world
+                     (support/parse-int (support/require-value example ticks-param)
+                                        "ticks")))}
+   {:pattern #"^(\d+) simulation run ticks elapse$"
+    :fn (fn [world [_ ticks-str] _]
+          (run-ticks world (support/parse-int ticks-str "ticks")))}])
 
 ;; clj-mutate-manifest-begin
 ;; {:version 1, :tested-at "2026-06-30T08:34:43.58468-05:00", :module-hash "551925947", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-823618584"} {:id "defn-/sync-shell-diagram", :kind "defn-", :line 7, :end-line 11, :hash "408181774"} {:id "defn-/update-world-diagram", :kind "defn-", :line 13, :end-line 17, :hash "-1107158169"} {:id "defn-/step-world", :kind "defn-", :line 19, :end-line 21, :hash "448535140"} {:id "defn-/run-simulation-world", :kind "defn-", :line 23, :end-line 26, :hash "-1310644101"} {:id "defn-/click-step-times", :kind "defn-", :line 28, :end-line 30, :hash "-1706903199"} {:id "defn-/assert-stock-value", :kind "defn-", :line 32, :end-line 37, :hash "-1833212178"} {:id "defn-/assert-simulation-time", :kind "defn-", :line 39, :end-line 45, :hash "482476428"} {:id "defn-/assert-simulation-time-display", :kind "defn-", :line 47, :end-line 52, :hash "-1662108345"} {:id "def/simulation-handlers", :kind "def", :line 54, :end-line 116, :hash "-2095281290"}]}
