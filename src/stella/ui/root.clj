@@ -34,3 +34,7 @@
                            :managed false
                            :visible false
                            :text (canvas/diagram-overlay-text (:diagram shell))}}}})
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-30T08:34:58.605248-05:00", :module-hash "1026949042", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 6, :hash "1855058899"} {:id "defn-/qa-dimension", :kind "defn-", :line 8, :end-line 12, :hash "1169114183"} {:id "defn/root-desc", :kind "defn", :line 14, :end-line 36, :hash "-431194019"}]}
+;; clj-mutate-manifest-end

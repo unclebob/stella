@@ -114,3 +114,7 @@
    {:pattern #"^I click Step (\d+) times$"
     :fn (fn [world [_ clicks-str] _]
           (click-step-times world (support/parse-int clicks-str "clicks")))}])
+
+;; clj-mutate-manifest-begin
+;; {:version 1, :tested-at "2026-06-30T08:34:43.58468-05:00", :module-hash "551925947", :forms [{:id "form/0/ns", :kind "ns", :line 1, :end-line 5, :hash "-823618584"} {:id "defn-/sync-shell-diagram", :kind "defn-", :line 7, :end-line 11, :hash "408181774"} {:id "defn-/update-world-diagram", :kind "defn-", :line 13, :end-line 17, :hash "-1107158169"} {:id "defn-/step-world", :kind "defn-", :line 19, :end-line 21, :hash "448535140"} {:id "defn-/run-simulation-world", :kind "defn-", :line 23, :end-line 26, :hash "-1310644101"} {:id "defn-/click-step-times", :kind "defn-", :line 28, :end-line 30, :hash "-1706903199"} {:id "defn-/assert-stock-value", :kind "defn-", :line 32, :end-line 37, :hash "-1833212178"} {:id "defn-/assert-simulation-time", :kind "defn-", :line 39, :end-line 45, :hash "482476428"} {:id "defn-/assert-simulation-time-display", :kind "defn-", :line 47, :end-line 52, :hash "-1662108345"} {:id "def/simulation-handlers", :kind "def", :line 54, :end-line 116, :hash "-2095281290"}]}
+;; clj-mutate-manifest-end
