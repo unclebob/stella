@@ -1,4 +1,5 @@
 (ns stella.qa.ui-driver
+  "Drives the live CljFX app through synthesized UI events only (no OS Robot)."
   (:require [cljfx.api :as fx]
             [clojure.string :as str]
             [stella.app :as app]
@@ -13,7 +14,6 @@
            [javafx.scene.control Button Label Menu MenuBar MenuItem TextField]
            [javafx.scene.input ContextMenuEvent KeyCode MouseButton MouseEvent]
            [javafx.scene.layout BorderPane]
-           [javafx.scene.robot Robot]
            [javafx.scene.shape Rectangle]
            [javafx.stage Stage Window]))
 
@@ -180,28 +180,57 @@
    node
    #(and (instance? Button %) (= text (.getText ^Button %)))))
 
-(defn- robot-click!
-  [screen-x screen-y & [button]]
-  (let [^Robot robot (Robot.)
-        buttons (into-array MouseButton [(or button MouseButton/PRIMARY)])]
-    (.mouseMove robot screen-x screen-y)
-    (Thread/sleep 50)
-    (.mousePress robot buttons)
-    (.mouseRelease robot buttons)
-    (Thread/sleep 100)))
+(def ^:private palette-arm-events
+  {"Stock" events/arm-stock
+   "Flow" events/arm-flow
+   "Source" events/arm-source
+   "Sink" events/arm-sink
+   "Converter" events/arm-converter
+   "Connector" events/arm-connector})
 
-(defn- robot-drag!
-  [start-x start-y end-x end-y]
-  (let [^Robot robot (Robot.)
-        buttons (into-array MouseButton [MouseButton/PRIMARY])]
-    (.mouseMove robot start-x start-y)
-    (Thread/sleep 50)
-    (.mousePress robot buttons)
-    (Thread/sleep 50)
-    (.mouseMove robot end-x end-y)
-    (Thread/sleep 50)
-    (.mouseRelease robot buttons)
-    (Thread/sleep 200)))
+(defn- mouse-event
+  [^Node node event-type lx ly screen-x screen-y button click-count shift-down?]
+  (MouseEvent. node node
+               event-type
+               lx ly screen-x screen-y
+               button click-count
+               shift-down? false false true false false false false false false
+               nil))
+
+(defn- fire-mouse-click!
+  ([^Node node screen-x screen-y]
+   (fire-mouse-click! node screen-x screen-y false))
+  ([^Node node screen-x screen-y shift-down?]
+   (let [local (.screenToLocal node screen-x screen-y)
+         event (mouse-event node
+                            MouseEvent/MOUSE_CLICKED
+                            (.getX local) (.getY local)
+                            screen-x screen-y
+                            MouseButton/PRIMARY
+                            1
+                            shift-down?)]
+     (.fireEvent node event))))
+
+(defn- fire-mouse-drag!
+  [^Node node start-screen-x start-screen-y end-screen-x end-screen-y]
+  (let [start-local (.screenToLocal node start-screen-x start-screen-y)
+        end-local (.screenToLocal node end-screen-x end-screen-y)
+        sx0 (.getX start-local)
+        sy0 (.getY start-local)
+        sx1 (.getX end-local)
+        sy1 (.getY end-local)
+        pressed (mouse-event node MouseEvent/MOUSE_PRESSED
+                             sx0 sy0 start-screen-x start-screen-y
+                             MouseButton/PRIMARY 1 false)
+        dragged (mouse-event node MouseEvent/MOUSE_DRAGGED
+                             sx1 sy1 end-screen-x end-screen-y
+                             MouseButton/PRIMARY 1 false)
+        released (mouse-event node MouseEvent/MOUSE_RELEASED
+                              sx1 sy1 end-screen-x end-screen-y
+                              MouseButton/PRIMARY 1 false)]
+    (.fireEvent node pressed)
+    (.fireEvent node dragged)
+    (.fireEvent node released)))
 
 (defn- fire-context-menu!
   [^Node node screen-x screen-y]
@@ -227,23 +256,6 @@
       {:x (+ (:x center) dx) :y (+ (:y center) dy)})
     :else center))
 
-(defn- synthesize-mouse-click!
-  ([^Node node screen-x screen-y]
-   (synthesize-mouse-click! node screen-x screen-y false))
-  ([^Node node screen-x screen-y shift-down?]
-   (let [local (.screenToLocal node screen-x screen-y)
-         lx (.getX local)
-         ly (.getY local)
-         ^MouseEvent event (MouseEvent. node node
-                                       MouseEvent/MOUSE_CLICKED
-                                       lx ly screen-x screen-y
-                                       MouseButton/PRIMARY 1
-                                       shift-down? false false true false false false false false false
-                                       nil)
-         ^EventHandler handler (.getOnMouseClicked node)]
-     (when handler
-       (.handle handler event)))))
-
 (defn- palette-tool-target
   [tool-node]
   (or (fx-nodes/find-child tool-node #(instance? Rectangle %))
@@ -252,19 +264,22 @@
 (defn click-palette!
   [^Stage stage label]
   (when-let [palette (palette-pane stage)]
-    (if-let [tool (fx-nodes/find-by-id-in-windows (str "palette-" label))]
-      (let [^Node target (palette-tool-target tool)
+    (cond
+      (some? (fx-nodes/find-by-id-in-windows (str "palette-" label)))
+      (let [tool (fx-nodes/find-by-id-in-windows (str "palette-" label))
+            ^Node target (palette-tool-target tool)
             {:keys [x y]} (hit-test/node-screen-center target)]
-        (if-let [handler (.getOnMouseClicked target)]
-          (synthesize-mouse-click! target x y)
-          (robot-click! x y))
+        (fire-mouse-click! target x y)
         (Thread/sleep 250))
-      (when-let [^Button button (find-button-by-text palette label)]
-        (if-let [handler (.getOnAction button)]
-          (.handle ^EventHandler handler (ActionEvent.))
-          (let [{:keys [x y]} (hit-test/node-screen-center button)]
-            (robot-click! x y)))
-        (Thread/sleep 250)))))
+
+      (some? (find-button-by-text palette label))
+      (let [^Button button (find-button-by-text palette label)]
+        (.fire button)
+        (Thread/sleep 250))
+
+      (get palette-arm-events label)
+      (do (app/dispatch-map-event! {:event (get palette-arm-events label)})
+          (Thread/sleep 250)))))
 
 (defn- screen-to-canvas-local
   [^Node canvas screen-x screen-y]
@@ -335,7 +350,9 @@
           (case kind
             :stock (synthesize-stock-drag! stage element-name start-x start-y x y)
             :converter (synthesize-converter-drag! stage element-name start-x start-y x y)
-            (robot-drag! start-x start-y x y)))))))
+            (when-let [^Node target (or (hit-test/element-node stage kind element-name)
+                                         (hit-test/region-node stage :canvas))]
+              (fire-mouse-drag! target start-x start-y x y))))))))
 
 (defn click-in-region!
   [^Stage stage region & [position]]
@@ -348,9 +365,7 @@
                                       :coordinates [cx cy]})
             (Thread/sleep 200)))
         (when-let [^Node node (hit-test/region-node stage region)]
-          (if-let [handler (.getOnMouseClicked node)]
-            (synthesize-mouse-click! node x y)
-            (robot-click! x y))
+          (fire-mouse-click! node x y)
           (Thread/sleep 200))))))
 
 (defn drag-in-region!
@@ -358,7 +373,8 @@
   (when-let [center (hit-test/region-center stage region)]
     (let [start (resolve-position start-position center)
           end (resolve-position end-position center)]
-      (robot-drag! (:x start) (:y start) (:x end) (:y end))
+      (when-let [^Node node (hit-test/region-node stage region)]
+        (fire-mouse-drag! node (:x start) (:y start) (:x end) (:y end)))
       (Thread/sleep 200))))
 
 (defn click-step-button!
@@ -418,9 +434,7 @@
                 cy (+ y (/ height 2.0))
                 ^Node target (or (hit-test/element-node stage kind name)
                                  (hit-test/region-node stage :canvas))]
-            (if-let [handler (when target (.getOnMouseClicked target))]
-              (synthesize-mouse-click! target cx cy)
-              (robot-click! cx cy))
+            (fire-mouse-click! target cx cy)
             (Thread/sleep 100)))))))
 
 (defn shift-click-element!
@@ -453,14 +467,7 @@
       (synthesize-marquee-select! stage (:x start) (:y start) (:x end) (:y end)))))
 
 (defn- press-key!
-  [^Stage stage key-code]
-  (when-let [center (hit-test/region-center stage :canvas)]
-    (robot-click! (:x center) (:y center))
-    (Thread/sleep 50))
-  (let [^Robot robot (Robot.)]
-    (.keyPress robot key-code)
-    (.keyRelease robot key-code)
-    (Thread/sleep 100))
+  [_stage key-code]
   (app/dispatch-map-event! {:event events/scene-key-pressed
                             :key-code (keyword (.getName key-code))})
   (Thread/sleep 100))
