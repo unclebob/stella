@@ -903,10 +903,6 @@
   (fn [stock-name]
     (stock-numeric-value diagram stock-name)))
 
-(defn- format-computed-value
-  [value]
-  (format-display-number value))
-
 (defn- refresh-converter
   [diagram converter-name]
   (if-let [connector-id (converter-to-flow-connector-id diagram converter-name)]
@@ -915,7 +911,7 @@
           flow-name (:id (:to (get-in diagram [:connectors connector-id])))
           [flow-id _] (flow-entry-by-name diagram flow-name)
           computed (if (seq formula-text)
-                     (format-computed-value
+                     (format-display-number
                       (formula/evaluate formula-text (formula-stock-value diagram)))
                      "0")]
       (-> diagram

@@ -197,25 +197,16 @@
             world))}
    {:pattern #"^converter <([A-Za-z0-9_]+)> value should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param value-param] example]
-          (let [name (support/require-value example name-param)
-                value (support/require-value example value-param)
-                actual (model/converter-value (support/diagram-from world) name)]
-            (when-not (= value actual)
-              (support/fail! (str "converter " name " value " actual " expected " value)))
-            world))}
+          (support/assert-converter-value world
+                                          (support/require-value example name-param)
+                                          (support/require-value example value-param)))}
    {:pattern #"^converter ([A-Za-z0-9]+) value should be ([0-9.]+)$"
     :fn (fn [world [_ name value] _]
-          (let [actual (model/converter-value (support/diagram-from world) name)]
-            (when-not (= value actual)
-              (support/fail! (str "converter " name " value " actual " expected " value)))
-            world))}
+          (support/assert-converter-value world name value))}
    {:pattern #"^converter ([A-Za-z0-9]+) value should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name value-param] example]
-          (let [value (support/require-value example value-param)
-                actual (model/converter-value (support/diagram-from world) name)]
-            (when-not (= value actual)
-              (support/fail! (str "converter " name " value " actual " expected " value)))
-            world))}
+          (support/assert-converter-value world name
+                                          (support/require-value example value-param)))}
    {:pattern #"^converter <([A-Za-z0-9_]+)> canvas value should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param value-param] example]
           (let [name (support/require-value example name-param)
@@ -242,16 +233,16 @@
           (support/apply-diagram-edit world #(cmd/set-converter-name! % name new-name)))}
    {:pattern #"^I set converter <([A-Za-z0-9_]+)> formula to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param formula-param] example]
-          (let [name (support/require-value example name-param)
-                formula (support/require-value example formula-param)]
-            (support/apply-diagram-edit world #(cmd/set-converter-formula! % name formula))))}
+          (support/apply-converter-formula-edit world
+                                                (support/require-value example name-param)
+                                                (support/require-value example formula-param)))}
    {:pattern #"^I set converter ([A-Za-z0-9]+) formula to <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name formula-param] example]
-          (let [formula (support/require-value example formula-param)]
-            (support/apply-diagram-edit world #(cmd/set-converter-formula! % name formula))))}
+          (support/apply-converter-formula-edit world name
+                                                (support/require-value example formula-param)))}
    {:pattern #"^I set converter ([A-Za-z0-9]+) formula to (.+)$"
     :fn (fn [world [_ name formula] _]
-          (support/apply-diagram-edit world #(cmd/set-converter-formula! % name formula)))}
+          (support/apply-converter-formula-edit world name formula))}
    {:pattern #"^converter <([A-Za-z0-9_]+)> canvas name should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ name-param text-param] example]
           (let [name (support/require-value example name-param)
@@ -375,30 +366,19 @@
             (assoc world :diagram (cmd/fixture-stock-connector! diagram connector from to))))}
    {:pattern #"^connector <([A-Za-z0-9_]+)> formula should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ connector-param formula-param] example]
-          (let [connector (support/require-value example connector-param)
-                formula (support/require-value example formula-param)
-                actual (model/connector-formula (support/diagram-from world) connector)]
-            (when-not (= formula actual)
-              (support/fail! (str "connector " connector " formula " actual " expected " formula)))
-            world))}
+          (support/assert-connector-formula world
+                                            (support/require-value example connector-param)
+                                            (support/require-value example formula-param)))}
    {:pattern #"^connector ([A-Za-z0-9]+) formula should be (.+)$"
     :fn (fn [world [_ connector formula] _]
-          (let [actual (model/connector-formula (support/diagram-from world) connector)]
-            (when-not (= formula actual)
-              (support/fail! (str "connector " connector " formula " actual " expected " formula)))
-            world))}
+          (support/assert-connector-formula world connector formula))}
    {:pattern #"^connector <([A-Za-z0-9_]+)> should have no formula$"
     :fn (fn [world [_ connector-param] example]
-          (let [connector (support/require-value example connector-param)
-                actual (model/connector-formula (support/diagram-from world) connector)]
-            (when (seq actual)
-              (support/fail! (str "connector " connector " formula " actual " expected none")))
-            world))}
+          (support/assert-connector-has-no-formula world
+                                                   (support/require-value example connector-param)))}
    {:pattern #"^connector ([A-Za-z0-9]+) should have no formula$"
     :fn (fn [world [_ connector] _]
-          (when (seq (model/connector-formula (support/diagram-from world) connector))
-            (support/fail! (str "connector " connector " formula expected none")))
-          world)}
+          (support/assert-connector-has-no-formula world connector))}
    {:pattern #"^connector <([A-Za-z0-9_]+)> canvas formula should be <([A-Za-z0-9_]+)>$"
     :fn (fn [world [_ connector-param formula-param] example]
           (let [connector (support/require-value example connector-param)
