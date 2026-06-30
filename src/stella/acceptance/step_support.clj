@@ -2,6 +2,7 @@
   (:require [clojure.string :as str]
             [stella.commands :as cmd]
             [stella.model :as model]
+            [stella.thermometer :as thermometer]
             [stella.ui.canvas :as canvas]))
 
 (defn fail!
@@ -91,7 +92,7 @@
 
 (defn assert-stock-canvas-thermometer
   [world stock-name field expected]
-  (let [therm (canvas/stock-canvas-thermometer (diagram-from world) stock-name)]
+  (let [therm (thermometer/stock-thermometer (diagram-from world) stock-name)]
     (when-not therm
       (fail! (str "stock " stock-name " not on canvas")))
     (let [actual (get therm field)]

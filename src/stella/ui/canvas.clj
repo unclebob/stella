@@ -2,8 +2,8 @@
   (:require [clojure.string :as str]
             [stella.events :as events]
             [stella.model :as model]
-            [stella.numbers :as numbers]
-            [stella.simulation :as simulation]))
+            [stella.simulation :as simulation]
+            [stella.thermometer :as thermometer]))
 
 (defn- endpoint-click
   [kind name]
@@ -425,10 +425,6 @@
 (def ^:private converter-label-height 18)
 
 (def ^:private bound-label-style "-fx-font-size: 9px;")
-(def ^:private thermometer-track-width 72)
-(def ^:private thermometer-track-height 8)
-(def ^:private thermometer-track-x 4)
-(def ^:private thermometer-track-y 22)
 (def ^:private stock-name-y 4)
 (def ^:private stock-bound-row-y 36)
 (def ^:private stock-bound-side-width 24)
@@ -436,55 +432,34 @@
 (def ^:private stock-bound-side-x 4)
 (def ^:private stock-bound-center-x 24)
 (def ^:private stock-bound-max-x 52)
-(def ^:private thermometer-fill-color "light blue")
 (def ^:private thermometer-fill-style "-fx-fill: #add8e6;")
 (def ^:private thermometer-track-style "-fx-fill: white; -fx-stroke: #ccc; -fx-stroke-width: 1;")
-(def ^:private unbounded-thermometer-scale 100.0)
-
-(defn- thermometer-fill-width
-  [diagram stock-name]
-  (let [value (numbers/parse-number (simulation/stock-value diagram stock-name))
-        min-value (numbers/parse-number (or (model/stock-min-value diagram stock-name) "0"))
-        max-value (if-let [max-v (model/stock-max-value diagram stock-name)]
-                    (numbers/parse-number max-v)
-                    unbounded-thermometer-scale)
-        scale-range (- max-value min-value)]
-    (if (or (<= scale-range 0.0) (<= value min-value))
-      0
-      (int (Math/round (* (/ (- value min-value) scale-range) thermometer-track-width))))))
 
 (defn stock-canvas-thermometer
   [diagram stock-name]
-  (when (model/stock-exists? diagram stock-name)
-    {:fill-width (thermometer-fill-width diagram stock-name)
-     :fill-color thermometer-fill-color
-     :track-width thermometer-track-width
-     :track-height thermometer-track-height
-     :name-at-top true
-     :thermometer-below-name true
-     :name-y stock-name-y
-     :thermometer-y thermometer-track-y}))
+  (thermometer/stock-thermometer diagram stock-name))
 
 (defn- thermometer-rectangle
-  [width style & {:keys [id mouse-transparent?]}]
+  [therm width style & {:keys [id mouse-transparent?]}]
   (cond-> {:fx/type :rectangle
            :width width
-           :height thermometer-track-height
-           :layout-x thermometer-track-x
-           :layout-y thermometer-track-y
+           :height (:track-height therm)
+           :layout-x (:track-x therm)
+           :layout-y (:thermometer-y therm)
            :style style}
     id (assoc :fx/key id :id id)
     mouse-transparent? (assoc :mouse-transparent true)))
 
 (defn- thermometer-nodes
   [diagram stock-name]
-  (let [fill-width (thermometer-fill-width diagram stock-name)
-        fill-id (str "stock-thermometer-fill-" stock-name)]
-    (into [(thermometer-rectangle thermometer-track-width thermometer-track-style)]
-          (when (pos? fill-width)
-            [(thermometer-rectangle fill-width thermometer-fill-style
-                                   :id fill-id
-                                   :mouse-transparent? true)]))))
+  (when-let [therm (thermometer/stock-thermometer diagram stock-name)]
+    (let [fill-width (:fill-width therm)
+          fill-id (str "stock-thermometer-fill-" stock-name)]
+      (into [(thermometer-rectangle therm (:track-width therm) thermometer-track-style)]
+            (when (pos? fill-width)
+              [(thermometer-rectangle therm fill-width thermometer-fill-style
+                                     :id fill-id
+                                     :mouse-transparent? true)])))))
 
 (defn stock-icon-labels
   [diagram {:keys [name min-value max-value]}]
@@ -558,7 +533,7 @@
                      :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
                     {:fx/type :label
                      :layout-x 20
-                     :layout-y stock-name-y
+                     :layout-y thermometer/stock-name-y
                      :text name}]
                    (concat (thermometer-nodes diagram name)
                            (stock-bound-row-labels labels)))

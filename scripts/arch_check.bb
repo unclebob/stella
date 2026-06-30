@@ -4,13 +4,28 @@
 
 (def src-root "src")
 
+(defn- balanced-form [content start]
+  (loop [i (inc start) depth 1]
+    (if (>= i (count content))
+      nil
+      (let [c (nth content i)]
+        (cond
+          (= c \() (recur (inc i) (inc depth))
+          (and (= c \)) (= depth 1)) (subs content start (inc i))
+          (= c \)) (recur (inc i) (dec depth))
+          :else (recur (inc i) depth))))))
+
+(defn- require-block [content]
+  (when-let [start (str/index-of content "(:require")]
+    (balanced-form content start)))
+
 (defn- read-ns-and-requires [path]
   (let [content (slurp path)
         ns-m (re-find #"\(ns\s+([\w.-]+)" content)
-        req-block (re-find #"\(:require\s+([^)]*)\)" content)]
+        req-block (require-block content)]
     {:ns (some-> ns-m second symbol)
      :requires (when req-block
-                 (->> (str/split (second req-block) #"\s+")
+                 (->> (str/split req-block #"\s+")
                       (map str/trim)
                       (remove str/blank?)
                       (map #(re-find #"^:?([\w.-]+)" %))
@@ -45,6 +60,9 @@
     :forbidden #"^stella\.(ui|app|fx|actions|dispatch|cljfx)"}
    {:label "Simulation must depend only on the domain model"
     :ns-pattern #"^stella\.simulation$"
+    :forbidden #"^stella\.(ui|app|fx|actions|dispatch|commands|cljfx)"}
+   {:label "Thermometer must depend only on the domain model and simulation"
+    :ns-pattern #"^stella\.thermometer$"
     :forbidden #"^stella\.(ui|app|fx|actions|dispatch|commands|cljfx)"}
    {:label "UI modules must not depend on simulation"
     :ns-pattern #"^stella\.ui"
