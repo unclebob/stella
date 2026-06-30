@@ -560,11 +560,14 @@
       ]
     },
     {
-      "name": "Reject ampersand in converter formula",
+      "name": "Reject invalid converter formula",
       "steps": [
         {
           "keyword": "When",
-          "text": "I set converter Converter1 formula to Stock1 \u0026 0.1"
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
         },
         {
           "keyword": "Then",
@@ -575,43 +578,17 @@
           "text": "connector Connector1 should have no formula"
         }
       ],
-      "examples": []
-    },
-    {
-      "name": "Reject missing stock reference in formula",
-      "steps": [
+      "examples": [
         {
-          "keyword": "When",
-          "text": "I set converter Converter1 formula to Missing * 2"
+          "formula": "Stock1 \u0026 0.1"
         },
         {
-          "keyword": "Then",
-          "text": "the converter edit should be rejected"
+          "formula": "Missing * 2"
         },
         {
-          "keyword": "And",
-          "text": "connector Connector1 should have no formula"
+          "formula": "foo(1)"
         }
-      ],
-      "examples": []
-    },
-    {
-      "name": "Reject unknown function in converter formula",
-      "steps": [
-        {
-          "keyword": "When",
-          "text": "I set converter Converter1 formula to foo(1)"
-        },
-        {
-          "keyword": "Then",
-          "text": "the converter edit should be rejected"
-        },
-        {
-          "keyword": "And",
-          "text": "connector Connector1 should have no formula"
-        }
-      ],
-      "examples": []
+      ]
     },
     {
       "name": "Reject stock name without stock to converter link",
