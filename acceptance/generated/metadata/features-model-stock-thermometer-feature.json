@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-stock/thermometer.feature",
+  "ir_path": "build/acceptance/ir/model-stock-thermometer.json",
+  "implementation_hash": "sha256:20041683a3cb0e823fe0303b0413b18fa6c0299bf7392aed034c4b2f8e18fda9",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_stock_thermometer_feature_test.clj"]
+}
