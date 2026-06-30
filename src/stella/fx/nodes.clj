@@ -1,5 +1,9 @@
 (ns stella.fx.nodes
-  (:import [javafx.scene Node Parent]
+  (:require [clojure.string :as str]
+            [stella.thermometer :as thermometer])
+  (:import [javafx.scene Group Node Parent]
+           [javafx.scene.control Label]
+           [javafx.scene.shape Rectangle]
            [javafx.stage Stage Window]))
 
 (defn find-by-id
@@ -24,3 +28,48 @@
           (when (instance? Stage w)
             (some-> w .getScene .getRoot (find-by-id id))))
         (Window/getWindows)))
+
+(defn- layout-coords-match?
+  [^Node node x y]
+  (and (= (double x) (.getLayoutX node))
+       (= (double y) (.getLayoutY node))))
+
+(defn- light-blue-fill-rectangle?
+  [^Node node]
+  (and (instance? Rectangle node)
+       (let [style (str/lower-case (or (.getStyle ^Rectangle node) ""))]
+         (or (str/includes? style "#add8e6")
+             (str/includes? style "lightblue")
+             (str/includes? style "light blue")))))
+
+(defn- stock-name-label?
+  [^Node node stock-name]
+  (and (instance? Label node) (= stock-name (.getText ^Label node))))
+
+(defn find-stock-group-on-canvas
+  ([^Parent canvas stock-x stock-y]
+   (find-child canvas #(and (instance? Group %) (layout-coords-match? % stock-x stock-y))))
+  ([^Parent canvas stock-name stock-x stock-y]
+   (or (find-stock-group-on-canvas canvas stock-x stock-y)
+       (find-child canvas
+                   #(and (instance? Group %)
+                         (boolean (find-child % (fn [n] (stock-name-label? n stock-name)))))))))
+
+(defn find-stock-thermometer-fill-by-name
+  [stock-name]
+  (find-by-id-in-windows (str "stock-thermometer-fill-" stock-name)))
+
+(defn find-stock-thermometer-fill
+  ([^Parent canvas stock-x stock-y]
+   (some-> canvas
+           (find-stock-group-on-canvas stock-x stock-y)
+           (find-child light-blue-fill-rectangle?)))
+  ([^Parent canvas stock-name stock-x stock-y]
+   (or (find-stock-thermometer-fill-by-name stock-name)
+       (some-> canvas
+               (find-stock-group-on-canvas stock-name stock-x stock-y)
+               (find-child light-blue-fill-rectangle?))
+       (find-child canvas
+                   #(and (light-blue-fill-rectangle? %)
+                         (= (+ stock-x thermometer/track-x) (.getLayoutX %))
+                         (= (+ stock-y thermometer/track-y) (.getLayoutY %)))))))

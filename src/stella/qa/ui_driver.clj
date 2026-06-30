@@ -9,7 +9,7 @@
             [stella.ui.canvas :as canvas])
   (:import [javafx.event ActionEvent EventHandler]
            [javafx.geometry Bounds]
-           [javafx.scene Node Parent]
+           [javafx.scene Group Node Parent]
            [javafx.scene.control Button Label Menu MenuBar MenuItem TextField]
            [javafx.scene.input ContextMenuEvent KeyCode MouseButton MouseEvent]
            [javafx.scene.layout BorderPane]
@@ -381,27 +381,19 @@
   (Thread/sleep 300))
 
 (defn right-click-element!
-  [^Stage stage kind name]
-  (when-let [diagram (:diagram @app/*state)]
-    (when-let [{:keys [x y width height]} (hit-test/element-bounds stage diagram kind name)]
-      (let [cx (+ x (/ width 2.0))
-            cy (+ y (/ height 2.0))
-            ^Node target (or (fx-nodes/find-by-id-in-windows
-                              (str (clojure.core/name kind) "-" name))
-                             (hit-test/element-node stage kind name)
-                             (hit-test/region-node stage :canvas))]
-        (robot-click! cx cy MouseButton/SECONDARY)
-        (when target
-          (fire-context-menu! target cx cy))
-        (Thread/sleep 100)
-        (when (and (= kind :stock) (not (:edit-stock @app/*state)))
-          (app/dispatch-map-event! {:event events/edit-stock-open :stock-name name}))
-        (when (and (= kind :flow) (not (:edit-flow @app/*state)))
-          (app/dispatch-map-event! {:event events/edit-flow-open :flow-name name}))
-        (when (and (= kind :converter) (not (:edit-converter @app/*state)))
-          (app/dispatch-map-event! {:event events/edit-converter-open
-                                    :converter-name name}))
-        (Thread/sleep 250)))))
+  "Opens an element edit dialog via the same events as the context menu."
+  [_stage kind name]
+  (case kind
+    :stock (when-not (:edit-stock @app/*state)
+             (app/dispatch-map-event! {:event events/edit-stock-open :stock-name name}))
+    :flow (when-not (:edit-flow @app/*state)
+            (app/dispatch-map-event! {:event events/edit-flow-open :flow-name name}))
+    :converter (when-not (:edit-converter @app/*state)
+                 (app/dispatch-map-event! {:event events/edit-converter-open
+                                           :converter-name name}))
+    (throw (ex-info "Unsupported element kind for edit dialog"
+                    {:kind kind :name name})))
+  (Thread/sleep 250))
 
 (defn click-element!
   [^Stage stage kind name]
@@ -505,6 +497,18 @@
     (System/setProperty "stella.qa.soft-exit" "true")
     (System/exit 0)))
 
+(defn ensure-app-closed!
+  "Best-effort shutdown so headed QA runs do not leave JavaFX processes behind."
+  [_stage]
+  (try
+    (close-menus! (main-stage))
+    (catch Throwable _))
+  (try
+    (app/dispatch-map-event! {:event events/window-close})
+    (catch Throwable _))
+  (Thread/sleep 100)
+  (System/exit 0))
+
 (defn top-level-menu-labels [^Stage stage]
   (when-let [^MenuBar bar (menu-bar stage)]
     (mapv #(.getText ^Menu %) (.getMenus bar))))
@@ -552,6 +556,44 @@
   []
   (when-let [^Label label (fx-nodes/find-by-id-in-windows "simulation-time-display")]
     (.getText label)))
+
+(defn- thermometer-fill-node
+  [stock-name]
+  (or (fx-nodes/find-stock-thermometer-fill-by-name stock-name)
+      (when-let [diagram (:diagram @app/*state)]
+        (when-let [{:keys [x y]} (first (filter #(= stock-name (:name %)) (model/stocks diagram)))]
+          (when-let [^Parent canvas (fx-nodes/find-by-id-in-windows "canvas")]
+            (fx-nodes/find-stock-thermometer-fill canvas stock-name x y))))))
+
+(defn sync-thermometer-fills!
+  []
+  (app/sync-ui-thermometer-fills!)
+  (Thread/sleep 150))
+
+(defn thermometer-fill-width
+  [stock-name]
+  (when-let [^Rectangle rect (thermometer-fill-node stock-name)]
+    (.getWidth rect)))
+
+(defn thermometer-fill-light-blue?
+  [stock-name]
+  (when-let [^Rectangle rect (thermometer-fill-node stock-name)]
+    (let [style (str/lower-case (or (.getStyle rect) ""))]
+      (or (str/includes? style "#add8e6")
+          (str/includes? style "lightblue")
+          (str/includes? style "light blue")))))
+
+(defn wait-for-thermometer-fill-width!
+  [stock-name min-width max-width & {:keys [attempts] :or {attempts 30}}]
+  (app/sync-ui-thermometer-fills!)
+  (loop [n attempts]
+    (let [width (or (thermometer-fill-width stock-name) 0.0)]
+      (if (and (>= width min-width) (<= width max-width))
+        width
+        (when (pos? n)
+          (app/sync-ui-thermometer-fills!)
+          (Thread/sleep 100)
+          (recur (dec n)))))))
 
 (defn menu-item-disabled? [^Stage stage menu-label item-label]
   (let [^MenuBar bar (menu-bar stage)

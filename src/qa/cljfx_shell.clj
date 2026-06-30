@@ -29,7 +29,11 @@
       (try
         (ui/launch-app! :width width :height height :hard-exit? hard-exit?)
         (if-let [^Stage stage (ui/wait-for-stage 50)]
-          (do (f stage) (deliver done :ok))
+          (try
+            (f stage)
+            (deliver done :ok)
+            (finally
+              (ui/ensure-app-closed! stage)))
           (do (fail! "Timed out waiting for Stella window")
               (deliver done :error)))
         (catch Throwable t
@@ -715,6 +719,67 @@
       (ui/quit-app! stage)
       (pass! "run-simulation" "Quit requested"))))
 
+(defn- run-stock-thermometer! []
+  (with-app! {}
+    (fn [^Stage stage]
+      (ui/click-palette! stage "Stock")
+      (ui/click-in-region! stage :canvas :center)
+      (when-not (ui/wait-for-element! stage :stock "Stock1" :attempts 20)
+        (fail! "Stock1 did not appear"))
+      (ui/right-click-element! stage :stock "Stock1")
+      (when-not (ui/wait-for-dialog! "Edit Stock" :attempts 50)
+        (fail! "Edit Stock dialog did not appear"))
+      (ui/type-into-dialog-field! "Minimum" "0")
+      (ui/type-into-dialog-field! "Maximum" "100")
+      (ui/type-into-dialog-field! "Initial value" "0")
+      (ui/click-ok-on-dialog! "Edit Stock")
+      (ui/sync-thermometer-fills!)
+      (when-not (ui/element-shows? stage :stock "Stock1" "Stock1")
+        (fail! "Stock1 name not visible at top"))
+      (when-not (ui/element-shows? stage :stock "Stock1" "0")
+        (fail! "Stock1 minimum not visible"))
+      (when-not (ui/element-shows? stage :stock "Stock1" "100")
+        (fail! "Stock1 maximum not visible"))
+      (pass! "stock-thermometer" "Stock1 name and bounds visible")
+      (let [zero-fill (or (ui/thermometer-fill-width "Stock1") 0.0)]
+        (when (> zero-fill 2.0)
+          (fail! (str "Thermometer fill should be near empty at 0; width=" zero-fill))))
+      (pass! "stock-thermometer" "Thermometer fill near empty at initial value 0")
+      (ui/right-click-element! stage :stock "Stock1")
+      (when-not (ui/wait-for-dialog! "Edit Stock")
+        (fail! "Edit Stock dialog did not reappear"))
+      (ui/type-into-dialog-field! "Initial value" "50")
+      (ui/click-ok-on-dialog! "Edit Stock")
+      (ui/sync-thermometer-fills!)
+      (when-not (ui/wait-for-thermometer-fill-width! "Stock1" 30 42)
+        (fail! "Thermometer fill not about half width at value 50"))
+      (when-not (ui/thermometer-fill-light-blue? "Stock1")
+        (fail! "Thermometer fill not light blue at value 50"))
+      (let [half-width (ui/thermometer-fill-width "Stock1")]
+        (pass! "stock-thermometer" "Thermometer fill about half width at value 50")
+        (ui/click-palette! stage "Source")
+        (ui/click-in-region! stage :canvas [-150 0])
+        (when-not (ui/wait-for-element! stage :source "Source1")
+          (fail! "Source1 did not appear"))
+        (ui/click-palette! stage "Flow")
+        (ui/click-element! stage :source "Source1")
+        (ui/click-element! stage :stock "Stock1")
+        (when-not (ui/wait-for-element! stage :flow "Flow1")
+          (fail! "Flow1 did not appear"))
+        (ui/press-escape! stage)
+        (ui/right-click-element! stage :flow "Flow1")
+        (when-not (ui/wait-for-dialog! "Edit Flow" :attempts 50)
+          (fail! "Edit Flow dialog did not appear"))
+        (ui/type-into-dialog-field! "Rate" "10")
+        (ui/click-ok-on-dialog! "Edit Flow")
+        (ui/click-step-button! stage)
+        (when-not (ui/wait-for-thermometer-fill-width! "Stock1" (inc half-width) 72)
+          (fail! (str "Thermometer fill did not grow after Step; half=" half-width
+                      " now=" (ui/thermometer-fill-width "Stock1"))))
+        (pass! "stock-thermometer" "Thermometer fill grew after simulation Step"))
+      (ui/quit-app! stage)
+      (pass! "stock-thermometer" "Quit requested"))))
+
 (defn- run-drag-converter! []
   (with-app! {}
     (fn [^Stage stage]
@@ -787,7 +852,8 @@
    "select-objects" run-select-objects!
    "delete-selection" run-delete-selection!
    "control-panel" run-control-panel!
-   "run-simulation" run-run-simulation!})
+   "run-simulation" run-run-simulation!
+   "stock-thermometer" run-stock-thermometer!})
 
 (defn -main [& args]
   (let [{:keys [qa-seconds args]} (qa-args/parse-qa-flag args)

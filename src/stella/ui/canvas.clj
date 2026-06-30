@@ -455,11 +455,10 @@
   (when-let [therm (thermometer/stock-thermometer diagram stock-name)]
     (let [fill-width (:fill-width therm)
           fill-id (str "stock-thermometer-fill-" stock-name)]
-      (into [(thermometer-rectangle therm (:track-width therm) thermometer-track-style)]
-            (when (pos? fill-width)
-              [(thermometer-rectangle therm fill-width thermometer-fill-style
-                                     :id fill-id
-                                     :mouse-transparent? true)])))))
+      [(thermometer-rectangle therm (:track-width therm) thermometer-track-style)
+       (thermometer-rectangle therm (max 0 fill-width) thermometer-fill-style
+                              :id fill-id
+                              :mouse-transparent? true)])))
 
 (defn stock-icon-labels
   [diagram {:keys [name min-value max-value]}]
@@ -842,6 +841,7 @@
 
 (defn- canvas-background []
   {:fx/type :rectangle
+   :fx/key "canvas-bg"
    :id "canvas-bg"
    :width 4000
    :height 4000
@@ -856,6 +856,7 @@
           width (Math/abs (- current-x start-x))
           height (Math/abs (- current-y start-y))]
       {:fx/type :rectangle
+       :fx/key "marquee-selection"
        :id "marquee-selection"
        :x x
        :y y

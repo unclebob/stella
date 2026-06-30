@@ -12,9 +12,12 @@
             [stella.fx.overlay :as fx-overlay]
             [stella.model :as model]
             [stella.qa.auto-close :as qa-auto-close]
+            [stella.thermometer :as thermometer]
             [stella.ui.root :as root])
   (:import [javafx.application Platform]
-           [javafx.scene.control Label]))
+           [javafx.scene Parent]
+           [javafx.scene.control Label]
+           [javafx.scene.shape Rectangle]))
 
 (defonce *state
   (atom (cmd/default-shell! nil)))
@@ -38,13 +41,51 @@
    #(when-let [^Label label (fx-nodes/find-by-id-in-windows "simulation-time-display")]
       (.setText label (model/simulation-time-display shell)))))
 
+(defn- upsert-stock-thermometer-fill!
+  [^Parent canvas diagram name x y]
+  (let [width (max 0 (get (thermometer/stock-thermometer diagram name) :fill-width 0))]
+    (if-let [^Rectangle fill (fx-nodes/find-stock-thermometer-fill canvas name x y)]
+      (do (.setWidth fill (double width))
+          (.setVisible fill true)
+          fill)
+      (let [fill-id (str "stock-thermometer-fill-" name)
+            ^Rectangle fill (Rectangle. (double width) (double thermometer/track-height))]
+        (.setId fill fill-id)
+        (.setLayoutX fill (+ x thermometer/track-x))
+        (.setLayoutY fill (+ y thermometer/track-y))
+        (.setStyle fill "-fx-fill: #add8e6;")
+        (.setMouseTransparent fill true)
+        (.setVisible fill true)
+        (.add (.getChildren canvas) fill)
+        fill))))
+
+(defn- apply-stock-thermometer-fills!
+  [shell]
+  (when-let [^Parent canvas (fx-nodes/find-by-id-in-windows "canvas")]
+    (let [diagram (:diagram shell)]
+      (doseq [{:keys [name x y]} (model/stocks diagram)]
+        (upsert-stock-thermometer-fill! canvas diagram name x y)))))
+
+(defn- sync-stock-thermometer-fills!
+  [shell]
+  (on-fx-thread! #(apply-stock-thermometer-fills! shell)))
+
+(defn sync-ui-thermometer-fills!
+  "Refreshes stock thermometer fill rectangles on the live canvas."
+  []
+  (on-fx-thread! #(apply-stock-thermometer-fills! @*state)))
+
 (defn- sync-diagram-after-event!
   [etype shell]
   (when (or (dispatch/diagram-event? etype)
             (contains? diagram-sync-events etype))
     (fx-overlay/sync-diagram-overlay! (:diagram shell)))
   (when (= events/simulation-step etype)
-    (sync-simulation-time-display! shell)))
+    (sync-simulation-time-display! shell))
+  (when (or (= events/simulation-step etype)
+            (contains? diagram-sync-events etype)
+            (dispatch/diagram-event? etype))
+    (sync-stock-thermometer-fills! shell)))
 
 (defn- show-edit-dialog!
   [state-atom dialog-state show!]

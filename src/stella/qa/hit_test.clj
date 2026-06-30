@@ -66,10 +66,22 @@
   [^Node node]
   (bounds-screen-center (.localToScreen node (.getBoundsInLocal node))))
 
+(defn- stage-content-center-screen
+  "Screen center of the stage content area, biased right of the left palette."
+  [^Stage stage]
+  (let [x (.getX stage)
+        y (.getY stage)
+        w (.getWidth stage)
+        h (.getHeight stage)]
+    {:x (+ x (* 0.55 w))
+     :y (+ y (/ h 2.0))}))
+
 (defn region-center
   [^Stage stage region]
-  (when-let [^Node node (region-node stage region)]
-    (node-screen-center node)))
+  (case region
+    :canvas (stage-content-center-screen stage)
+    (when-let [^Node node (region-node stage region)]
+      (node-screen-center node))))
 
 (defn label-texts
   [^Node node]
