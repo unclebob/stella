@@ -1,7 +1,8 @@
 (ns stella.ui.canvas
   (:require [clojure.string :as str]
             [stella.events :as events]
-            [stella.model :as model]))
+            [stella.model :as model]
+            [stella.simulation :as simulation]))
 
 (defn- endpoint-click
   [kind name]
@@ -423,6 +424,59 @@
 (def ^:private converter-label-height 18)
 
 (def ^:private bound-label-style "-fx-font-size: 9px;")
+(def ^:private thermometer-track-width 72)
+(def ^:private thermometer-track-height 8)
+(def ^:private thermometer-track-x 4)
+(def ^:private thermometer-track-y 22)
+(def ^:private stock-name-y 4)
+(def ^:private thermometer-fill-color "light blue")
+(def ^:private thermometer-fill-style "-fx-fill: #add8e6;")
+(def ^:private thermometer-track-style "-fx-fill: white; -fx-stroke: #ccc; -fx-stroke-width: 1;")
+(def ^:private unbounded-thermometer-scale 100.0)
+
+(defn- thermometer-fill-width
+  [diagram stock-name]
+  (let [value (Double/parseDouble (simulation/stock-value diagram stock-name))
+        min-value (Double/parseDouble (str (or (model/stock-min-value diagram stock-name) "0")))
+        max-value (if-let [max-v (model/stock-max-value diagram stock-name)]
+                    (Double/parseDouble (str max-v))
+                    unbounded-thermometer-scale)
+        scale-range (- max-value min-value)]
+    (if (or (<= scale-range 0.0) (<= value min-value))
+      0
+      (int (Math/round (* (/ (- value min-value) scale-range) thermometer-track-width))))))
+
+(defn stock-canvas-thermometer
+  [diagram stock-name]
+  (when (model/stock-exists? diagram stock-name)
+    {:fill-width (thermometer-fill-width diagram stock-name)
+     :fill-color thermometer-fill-color
+     :track-width thermometer-track-width
+     :track-height thermometer-track-height
+     :name-at-top true
+     :thermometer-below-name true
+     :name-y stock-name-y
+     :thermometer-y thermometer-track-y}))
+
+(defn- thermometer-nodes
+  [diagram stock-name]
+  (let [fill-width (thermometer-fill-width diagram stock-name)]
+    (into [{:fx/type :rectangle
+            :width thermometer-track-width
+            :height thermometer-track-height
+            :layout-x thermometer-track-x
+            :layout-y thermometer-track-y
+            :style thermometer-track-style}]
+          (when (pos? fill-width)
+            [{:fx/type :rectangle
+              :fx/key (str "stock-thermometer-fill-" stock-name)
+              :id (str "stock-thermometer-fill-" stock-name)
+              :width fill-width
+              :height thermometer-track-height
+              :layout-x thermometer-track-x
+              :layout-y thermometer-track-y
+              :mouse-transparent true
+              :style thermometer-fill-style}]))))
 
 (defn stock-icon-labels
   [{:keys [name min-value max-value]}]
@@ -468,19 +522,20 @@
                      :style "-fx-fill: white; -fx-stroke: #333; -fx-stroke-width: 1;"}
                     {:fx/type :label
                      :layout-x 20
-                     :layout-y 14
-                     :text name}
-                    {:fx/type :label
-                     :layout-x 4
-                     :layout-y 36
-                     :text min
-                     :style bound-label-style}]
-                   (when max
-                     [{:fx/type :label
-                       :layout-x 52
-                       :layout-y 36
-                       :text max
-                       :style bound-label-style}]))
+                     :layout-y stock-name-y
+                     :text name}]
+                   (concat (thermometer-nodes diagram name)
+                           [{:fx/type :label
+                             :layout-x 4
+                             :layout-y 36
+                             :text min
+                             :style bound-label-style}]
+                           (when max
+                             [{:fx/type :label
+                               :layout-x 52
+                               :layout-y 36
+                               :text max
+                               :style bound-label-style}])))
         children (with-rect-selection-outline diagram :stock name 80 50 body)]
     (cond-> {:fx/type :group
              :fx/key (str "stock-" name)

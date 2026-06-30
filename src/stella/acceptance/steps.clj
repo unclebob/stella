@@ -3,13 +3,15 @@
             [stella.acceptance.step-handlers-placement :as placement-handlers]
             [stella.acceptance.step-handlers-selection :as selection-handlers]
             [stella.acceptance.step-handlers-simulation :as simulation-handlers]
+            [stella.acceptance.step-handlers-thermometer :as thermometer-handlers]
             [stella.acceptance.step-support :as support]))
 
 (def step-handlers
   (into placement-handlers/placement-handlers
         (into connect-handlers/connect-handlers
               (into selection-handlers/selection-handlers
-                    simulation-handlers/simulation-handlers))))
+                    (into simulation-handlers/simulation-handlers
+                          thermometer-handlers/thermometer-handlers)))))
 
 (defn dispatch-step
   [world step example]
