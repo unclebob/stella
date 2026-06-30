@@ -19,3 +19,11 @@
   (is (qa-args/parse-debug-flag ["--qa" "5" "--debug" "foo"]))
   (is (not (qa-args/parse-debug-flag ["shell-launch"])))
   (is (not (qa-args/parse-debug-flag ["--qa" "10" "bar"]))))
+
+(deftest qa-mode-test
+  (System/setProperty "stella.qa.auto-close-seconds" "90")
+  (try
+    (is (qa-args/qa-mode?))
+    (finally
+      (System/clearProperty "stella.qa.auto-close-seconds")
+      (is (not (qa-args/qa-mode?))))))

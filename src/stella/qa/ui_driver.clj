@@ -499,7 +499,11 @@
   (.setHeight stage target-height))
 
 (defn quit-app! [^Stage stage]
-  (menu-choose! stage "File" "Quit"))
+  (menu-choose! stage "File" "Quit")
+  (Thread/sleep 250)
+  (when (some #(instance? Stage %) (Window/getWindows))
+    (System/setProperty "stella.qa.soft-exit" "true")
+    (System/exit 0)))
 
 (defn top-level-menu-labels [^Stage stage]
   (when-let [^MenuBar bar (menu-bar stage)]

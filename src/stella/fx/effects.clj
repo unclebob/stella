@@ -1,5 +1,6 @@
 (ns stella.fx.effects
-  (:require [stella.fx.nodes :as fx-nodes])
+  (:require [stella.fx.nodes :as fx-nodes]
+            [stella.qa.args :as qa-args])
   (:import [javafx.animation ScaleTransition]
            [javafx.application Platform]
            [javafx.scene.control Alert Alert$AlertType]
@@ -13,7 +14,8 @@
     .show))
 
 (defn- platform-exit! []
-  (if (= "true" (System/getProperty "stella.qa.soft-exit"))
+  (if (or (= "true" (System/getProperty "stella.qa.soft-exit"))
+          (qa-args/qa-mode?))
     (System/exit 0)
     (Platform/runLater #(Platform/exit))))
 

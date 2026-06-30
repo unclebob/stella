@@ -35,3 +35,6 @@
 
 (defn debug? []
   (= "true" (System/getProperty "stella.debug")))
+
+(defn qa-mode? []
+  (some? (System/getProperty "stella.qa.auto-close-seconds")))

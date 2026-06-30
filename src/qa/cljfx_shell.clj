@@ -3,6 +3,7 @@
   Drives the live JavaFX app through stella.qa.ui-driver only."
   (:require [cljfx.api :as fx]
             [stella.qa.args :as qa-args]
+            [stella.qa.auto-close :as qa-auto-close]
             [stella.qa.ui-driver :as ui])
   (:import [javafx.stage Stage Window]))
 
@@ -797,6 +798,9 @@
       (System/setProperty "stella.debug" "true"))
     (when-not suite
       (fail! "Usage: clojure -M:qa [--qa <seconds>] [--debug] <suite-name>"))
-    (if-let [run (get suites suite)]
-      (run-suite! suite (fn [] (run)))
-      (fail! (str "Unknown suite: " suite)))))
+    (try
+      (if-let [run (get suites suite)]
+        (run-suite! suite (fn [] (run)))
+        (fail! (str "Unknown suite: " suite)))
+      (finally
+        (qa-auto-close/force-exit!)))))
