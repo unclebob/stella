@@ -19,7 +19,8 @@ Scenario Outline: Thermometer fill reflects initial value on bounded scale
 
 # stock-thermometer-02
 Scenario Outline: Thermometer fill reflects initial value on unbounded scale
-  When I set stock Stock1 initial value to <value>
+  When I clear stock Stock1 maximum
+  And I set stock Stock1 initial value to <value>
   Then stock Stock1 canvas thermometer fill width should be <fill_width>
   And stock Stock1 canvas thermometer fill color should be light blue
 

@@ -9,7 +9,7 @@
 (deftest new-stock-has-default-bounds-test
   (let [diagram (diagram-with-stock)]
     (is (= "0" (model/stock-min-value diagram "Stock1")))
-    (is (nil? (model/stock-max-value diagram "Stock1")))))
+    (is (= "100" (model/stock-max-value diagram "Stock1")))))
 
 (deftest rename-stock-test
   (let [diagram (-> (diagram-with-stock)
@@ -107,7 +107,7 @@
                  :max-value "5"})]
     (is (= "0" (model/stock-initial-value edited "Stock1")))
     (is (= "10" (model/stock-min-value edited "Stock1")))
-    (is (nil? (model/stock-max-value edited "Stock1")))))
+    (is (= "100" (model/stock-max-value edited "Stock1")))))
 
 (deftest apply-stock-edit-clears-blank-maximum-test
   (let [diagram (-> (diagram-with-stock)

@@ -22,7 +22,9 @@
                   :fill-width)))))
 
 (deftest unbounded-thermometer-fill-width-test
-  (let [diagram (cmd/set-stock-initial-value! (diagram-with-stock) "Stock1" "25")]
+  (let [diagram (-> (diagram-with-stock)
+                    (cmd/clear-stock-max! "Stock1")
+                    (cmd/set-stock-initial-value! "Stock1" "25"))]
     (is (= 18 (get (canvas/stock-canvas-thermometer diagram "Stock1") :fill-width)))))
 
 (deftest thermometer-track-dimensions-test

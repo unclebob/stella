@@ -342,7 +342,7 @@
     (let [num (:next-stock-num diagram)
           name (str "Stock" num)
           id (keyword (str "stock-" num))
-          stock {:name name :initial-value "0" :min-value "0" :max-value nil :x x :y y}]
+          stock {:name name :initial-value "0" :min-value "0" :max-value "100" :x x :y y}]
       (-> diagram
           (assoc-in [:stocks id] stock)
           (update :next-stock-num inc)))
@@ -367,7 +367,7 @@
 (defn fixture-stock
   [diagram name x y]
   (fixture-item diagram :stocks :next-stock-num "stock-" "Stock" name x y
-                {:initial-value "0" :min-value "0" :max-value nil}))
+                {:initial-value "0" :min-value "0" :max-value "100"}))
 
 (defn- endpoint-ref
   [kind id]

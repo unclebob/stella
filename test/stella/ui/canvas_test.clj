@@ -115,7 +115,7 @@
         stock (first stocks)]
     (is (= 1 (count stocks)))
     (is (= "stock-Stock1" (:id stock)))
-    (is (= {:name "Stock1" :min "0" :max nil :value "0"}
+    (is (= {:name "Stock1" :min "0" :max "100" :value "0"}
            (canvas/stock-canvas-labels (:diagram shell) "Stock1")))))
 
 (deftest canvas-renders-armed-object-preview-test
@@ -379,7 +379,7 @@
                     (cmd/arm-connector-placement!)
                     (cmd/select-connector-origin! :converter "Converter1")
                     (cmd/connect-connector! :flow "Flow1"))]
-    (is (= "Stock1 0 || Flow1 0 || Converter1 || Connector1"
+    (is (= "Stock1 0 100 || Flow1 0 || Converter1 || Connector1"
            (canvas/diagram-overlay-text diagram)))))
 
 (deftest canvas-desc-has-no-nil-mouse-handlers-test

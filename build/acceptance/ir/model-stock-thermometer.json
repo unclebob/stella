@@ -1,0 +1,206 @@
+{
+  "name": "Stock thermometer",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "a diagram model with stock Stock1 at 200 150"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Thermometer fill reflects initial value on bounded scale",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 minimum to 0"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock1 maximum to 100"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock1 initial value to \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 canvas thermometer fill width should be \u003cfill_width\u003e",
+          "parameters": [
+            "fill_width"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 canvas thermometer fill color should be light blue"
+        }
+      ],
+      "examples": [
+        {
+          "fill_width": "0",
+          "value": "0"
+        },
+        {
+          "fill_width": "36",
+          "value": "50"
+        },
+        {
+          "fill_width": "72",
+          "value": "100"
+        }
+      ]
+    },
+    {
+      "name": "Thermometer fill reflects initial value on unbounded scale",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I clear stock Stock1 maximum"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock1 initial value to \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 canvas thermometer fill width should be \u003cfill_width\u003e",
+          "parameters": [
+            "fill_width"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 canvas thermometer fill color should be light blue"
+        }
+      ],
+      "examples": [
+        {
+          "fill_width": "0",
+          "value": "0"
+        },
+        {
+          "fill_width": "18",
+          "value": "25"
+        }
+      ]
+    },
+    {
+      "name": "Stock icon layout places name above thermometer",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 minimum to 0"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock1 maximum to 100"
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 canvas name should be at top"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 canvas thermometer should be below name"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 canvas minimum should be 0"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 canvas maximum should be 100"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Thermometer track is a horizontal rectangle",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 minimum to 0"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock1 maximum to 100"
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 canvas thermometer track width should be 72"
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 canvas thermometer track height should be 8"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Thermometer fill updates after simulation",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "a diagram model with stock Stock1 at 100 100"
+        },
+        {
+          "keyword": "And",
+          "text": "source Source1 at 50 100"
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 runs from source Source1 to stock Stock1"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 minimum to 0"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock1 maximum to 100"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock1 initial value to 0"
+        },
+        {
+          "keyword": "And",
+          "text": "I set flow Flow1 rate to 10"
+        },
+        {
+          "keyword": "And",
+          "text": "I run the simulation for \u003csteps\u003e steps",
+          "parameters": [
+            "steps"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 canvas thermometer fill width should be \u003cfill_width\u003e",
+          "parameters": [
+            "fill_width"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock1 canvas thermometer fill color should be light blue"
+        }
+      ],
+      "examples": [
+        {
+          "fill_width": "1",
+          "steps": "1"
+        },
+        {
+          "fill_width": "4",
+          "steps": "5"
+        }
+      ]
+    }
+  ]
+}
