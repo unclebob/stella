@@ -79,15 +79,15 @@
 (defn- sync-stock-value-labels!
   [shell]
   (on-fx-thread!
-   (when-let [^Parent canvas (fx-nodes/find-by-id-in-windows "canvas")]
-     (let [diagram (:diagram shell)]
-       (doseq [{:keys [name x y]} (model/stocks diagram)]
-         (when-let [labels (thermometer/stock-canvas-labels diagram name)]
-           (when-let [group (fx-nodes/find-stock-group-on-canvas canvas name x y)]
-             (doseq [^Label label (.getChildrenUnmodifiable group)]
-               (when (and (instance? Label label)
-                          (= stock-value-label-x (.getLayoutX label)))
-                 (.setText label (:value labels)))))))))))
+   #(when-let [^Parent canvas (fx-nodes/find-by-id-in-windows "canvas")]
+      (let [diagram (:diagram shell)]
+        (doseq [{:keys [name x y]} (model/stocks diagram)]
+          (when-let [labels (thermometer/stock-canvas-labels diagram name)]
+            (when-let [group (fx-nodes/find-stock-group-on-canvas canvas name x y)]
+              (doseq [^Label label (.getChildrenUnmodifiable group)]
+                (when (and (instance? Label label)
+                           (= stock-value-label-x (.getLayoutX label)))
+                  (.setText label (:value labels)))))))))))
 
 (defn- upsert-converter-value-label!
   [^Parent canvas diagram name x y]
@@ -130,16 +130,16 @@
 (defn- sync-flow-rate-labels!
   [shell]
   (on-fx-thread!
-   (when-let [^Parent canvas (fx-nodes/find-by-id-in-windows "canvas")]
-     (let [diagram (:diagram shell)]
-       (doseq [{:keys [name]} (model/flows diagram)]
-         (when-let [labels (canvas/flow-canvas-labels diagram name)]
-           (when-let [group (fx-nodes/find-by-id canvas (str "flow-" name))]
-             (let [rate (str (:rate labels))]
-               (doseq [^Label label (.getChildrenUnmodifiable group)]
-                 (when (and (instance? Label label)
-                            (not= (.getText label) name))
-                   (.setText label rate)))))))))))
+   #(when-let [^Parent canvas (fx-nodes/find-by-id-in-windows "canvas")]
+      (let [diagram (:diagram shell)]
+        (doseq [{:keys [name]} (model/flows diagram)]
+          (when-let [labels (canvas/flow-canvas-labels diagram name)]
+            (when-let [group (fx-nodes/find-by-id canvas (str "flow-" name))]
+              (let [rate (str (:rate labels))]
+                (doseq [^Label label (.getChildrenUnmodifiable group)]
+                  (when (and (instance? Label label)
+                             (not= (.getText label) name))
+                    (.setText label rate)))))))))))
 
 (defn sync-ui-thermometer-fills!
   "Refreshes stock thermometer fill rectangles on the live canvas."
