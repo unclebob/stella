@@ -1,6 +1,5 @@
 (ns stella.commands
   (:require [clojure.string :as str]
-            [stella.formula :as formula]
             [stella.model :as model]
             [stella.simulation :as simulation]))
 
@@ -590,11 +589,10 @@
 (defn- converter-formula-edit-rejected?
   [diagram converter-name {:keys [formula]}]
   (let [prior-formula (or (model/converter-connector-formula diagram converter-name) "")
-        formula-text (str/trim (str formula))
-        stock-names (set (map :name (model/stocks diagram)))]
+        formula-text (str/trim (str formula))]
     (and (seq formula-text)
          (not= formula-text prior-formula)
-         (not (formula/valid-for-stocks? formula-text stock-names)))))
+         (= diagram (model/set-converter-formula diagram converter-name formula)))))
 
 (defn apply-edit-converter-on-shell!
   [shell draft]
