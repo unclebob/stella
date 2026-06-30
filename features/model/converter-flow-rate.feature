@@ -25,7 +25,8 @@ Scenario Outline: Constant formula sets converter value and flow rate
     | 5       | 5     |
 
 # converter-flow-rate-03
-Scenario Outline: Stock reference formula scales with stock value
+Scenario Outline: Connected stock named value scales in formula
+  Given connector Connector2 runs from stock Stock1 to converter Converter1
   When I set stock Stock1 initial value to <stock1>
   And I set converter Converter1 formula to <formula>
   Then converter Converter1 value should be <value>
@@ -37,7 +38,9 @@ Scenario Outline: Stock reference formula scales with stock value
     | 50     | Stock1 * 0.1 | 5     |
 
 # converter-flow-rate-04
-Scenario Outline: Two-stock formula sums stock values
+Scenario Outline: Two connected stocks sum in formula
+  Given connector Connector2 runs from stock Stock1 to converter Converter1
+  And connector Connector3 runs from stock Stock2 to converter Converter1
   When I set stock Stock1 initial value to <stock1>
   And I set stock Stock2 initial value to <stock2>
   And I set converter Converter1 formula to Stock1 + Stock2
@@ -49,7 +52,23 @@ Scenario Outline: Two-stock formula sums stock values
     | 30     | 20     | 50    |
 
 # converter-flow-rate-05
+Scenario Outline: Parentheses group operations in formula
+  Given connector Connector2 runs from stock Stock1 to converter Converter1
+  And connector Connector3 runs from stock Stock2 to converter Converter1
+  When I set stock Stock1 initial value to <stock1>
+  And I set stock Stock2 initial value to <stock2>
+  And I set converter Converter1 formula to <formula>
+  Then converter Converter1 value should be <value>
+  And flow Flow1 rate should be <value>
+
+  Examples:
+    | stock1 | stock2 | formula              | value |
+    | 100    | 50     | (Stock1 + Stock2) * 0.1 | 15 |
+    | 80     | 20     | (Stock1 - Stock2) / 2    | 30 |
+
+# converter-flow-rate-06
 Scenario Outline: Fractional formula uses rational literal
+  Given connector Connector2 runs from stock Stock1 to converter Converter1
   When I set stock Stock1 initial value to 1
   And I set converter Converter1 formula to Stock1 * 1/2
   Then converter Converter1 value should be <value>
@@ -60,7 +79,7 @@ Scenario Outline: Fractional formula uses rational literal
     | value |
     | 0.5   |
 
-# converter-flow-rate-06
+# converter-flow-rate-07
 Scenario Outline: Simulation transfers at computed constant rate
   When I set stock Stock1 initial value to 100
   And I set stock Stock2 initial value to 0
@@ -74,8 +93,9 @@ Scenario Outline: Simulation transfers at computed constant rate
     | 1     | 99     | 1      |
     | 5     | 95     | 5      |
 
-# converter-flow-rate-07
+# converter-flow-rate-08
 Scenario Outline: Computed rate tracks changing stock during simulation
+  Given connector Connector2 runs from stock Stock1 to converter Converter1
   When I set stock Stock1 initial value to 100
   And I set stock Stock2 initial value to 0
   And I set converter Converter1 formula to Stock1 * 0.1
@@ -87,18 +107,24 @@ Scenario Outline: Computed rate tracks changing stock during simulation
     | value |
     | 9.9   |
 
-# converter-flow-rate-08
+# converter-flow-rate-09
 Scenario Outline: Reject invalid converter formula
   When I set converter Converter1 formula to <formula>
   Then the converter edit should be rejected
   And connector Connector1 should have no formula
 
   Examples:
-    | formula        |
-    | Stock1 & 0.1   |
-    | Missing * 2    |
+    | formula      |
+    | Stock1 & 0.1 |
+    | Missing * 2  |
 
-# converter-flow-rate-09
+# converter-flow-rate-10
+Scenario: Reject stock name without stock to converter link
+  When I set converter Converter1 formula to Stock1 * 0.1
+  Then the converter edit should be rejected
+  And connector Connector1 should have no formula
+
+# converter-flow-rate-11
 Scenario: Converter without flow link shows zero value
   Given converter Converter2 at 300 250
   Then converter Converter2 value should be 0

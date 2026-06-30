@@ -81,8 +81,12 @@
       ]
     },
     {
-      "name": "Stock reference formula scales with stock value",
+      "name": "Connected stock named value scales in formula",
       "steps": [
+        {
+          "keyword": "Given",
+          "text": "connector Connector2 runs from stock Stock1 to converter Converter1"
+        },
         {
           "keyword": "When",
           "text": "I set stock Stock1 initial value to \u003cstock1\u003e",
@@ -126,8 +130,16 @@
       ]
     },
     {
-      "name": "Two-stock formula sums stock values",
+      "name": "Two connected stocks sum in formula",
       "steps": [
+        {
+          "keyword": "Given",
+          "text": "connector Connector2 runs from stock Stock1 to converter Converter1"
+        },
+        {
+          "keyword": "And",
+          "text": "connector Connector3 runs from stock Stock2 to converter Converter1"
+        },
         {
           "keyword": "When",
           "text": "I set stock Stock1 initial value to \u003cstock1\u003e",
@@ -170,8 +182,74 @@
       ]
     },
     {
+      "name": "Parentheses group operations in formula",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "connector Connector2 runs from stock Stock1 to converter Converter1"
+        },
+        {
+          "keyword": "And",
+          "text": "connector Connector3 runs from stock Stock2 to converter Converter1"
+        },
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock2 initial value to \u003cstock2\u003e",
+          "parameters": [
+            "stock2"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "formula": "(Stock1 + Stock2) * 0.1",
+          "stock1": "100",
+          "stock2": "50",
+          "value": "15"
+        },
+        {
+          "formula": "(Stock1 - Stock2) / 2",
+          "stock1": "80",
+          "stock2": "20",
+          "value": "30"
+        }
+      ]
+    },
+    {
       "name": "Fractional formula uses rational literal",
       "steps": [
+        {
+          "keyword": "Given",
+          "text": "connector Connector2 runs from stock Stock1 to converter Converter1"
+        },
         {
           "keyword": "When",
           "text": "I set stock Stock1 initial value to 1"
@@ -262,6 +340,10 @@
       "name": "Computed rate tracks changing stock during simulation",
       "steps": [
         {
+          "keyword": "Given",
+          "text": "connector Connector2 runs from stock Stock1 to converter Converter1"
+        },
+        {
           "keyword": "When",
           "text": "I set stock Stock1 initial value to 100"
         },
@@ -325,6 +407,24 @@
           "formula": "Missing * 2"
         }
       ]
+    },
+    {
+      "name": "Reject stock name without stock to converter link",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set converter Converter1 formula to Stock1 * 0.1"
+        },
+        {
+          "keyword": "Then",
+          "text": "the converter edit should be rejected"
+        },
+        {
+          "keyword": "And",
+          "text": "connector Connector1 should have no formula"
+        }
+      ],
+      "examples": []
     },
     {
       "name": "Converter without flow link shows zero value",
