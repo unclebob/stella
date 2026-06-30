@@ -114,3 +114,26 @@
 (deftest palette-desc-creates-with-converter-armed-test
   (let [shell (cmd/arm-converter-placement-on-shell! (cmd/default-shell! nil))]
     (is (some? (fx/create-component (palette/palette-desc shell))))))
+
+(deftest palette-highlights-source-tool-test
+  (let [shell (update (cmd/default-shell! nil)
+                      :diagram cmd/arm-source-placement!)
+        desc (palette/palette-desc shell)
+        tools (mapv background (:children desc))]
+    (is (palette/palette-tool-active? shell "Source"))
+    (is (not (palette/palette-tool-active? shell "Sink")))
+    (is (= 1 (count (filter #(re-find #"#2f80ed" (:style %)) tools))))))
+
+(deftest palette-inactive-after-placing-source-test
+  (let [shell (-> (cmd/default-shell! nil)
+                  (cmd/arm-source-placement-on-shell!)
+                  (cmd/place-source-on-shell! 50 150))
+        desc (palette/palette-desc shell)]
+    (is (palette/no-palette-tool-active? shell))
+    (is (not (re-find #"#2f80ed" (:style (background (first (:children desc)))))))))
+
+(deftest palette-inactive-after-placing-sink-test
+  (let [shell (-> (cmd/default-shell! nil)
+                  (cmd/arm-sink-placement-on-shell!)
+                  (cmd/place-sink-on-shell! 400 150))]
+    (is (palette/no-palette-tool-active? shell))))

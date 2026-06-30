@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/shell-cloud/palette.feature",
+  "ir_path": "build/acceptance/ir/shell-cloud-palette.json",
+  "implementation_hash": "sha256:1db3bd14a9ecfd95c11b984216e4f032b8e09b5f13bbb7b81108851d6ae5902c",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_shell_cloud_palette_feature_test.clj"]
+}
