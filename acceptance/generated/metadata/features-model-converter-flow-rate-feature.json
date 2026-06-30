@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "feature_path": "features/model-converter-flow/rate.feature",
+  "ir_path": "build/acceptance/ir/model-converter-flow-rate.json",
+  "implementation_hash": "sha256:02c15a82e7057d104a3cbbc08140cc07e1f411e0b6c704bf4b4ca614834e94e1",
+  "hash_scope": "generated_files",
+  "generated_files": ["acceptance/generated/features_model_converter_flow_rate_feature_test.clj"]
+}

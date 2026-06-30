@@ -1,0 +1,348 @@
+{
+  "name": "Converter flow rate",
+  "background": [
+    {
+      "keyword": "Given",
+      "text": "a diagram model with stock Stock1 at 100 100"
+    },
+    {
+      "keyword": "And",
+      "text": "stock Stock2 at 300 200"
+    },
+    {
+      "keyword": "And",
+      "text": "flow Flow1 runs from stock Stock1 to stock Stock2"
+    },
+    {
+      "keyword": "And",
+      "text": "converter Converter1 at 100 250"
+    },
+    {
+      "keyword": "And",
+      "text": "connector Connector1 runs from converter Converter1 to flow Flow1"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Connected converter without formula shows zero",
+      "steps": [
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be 0"
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be 0"
+        },
+        {
+          "keyword": "And",
+          "text": "converter Converter1 canvas value should be 0"
+        }
+      ],
+      "examples": []
+    },
+    {
+      "name": "Constant formula sets converter value and flow rate",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "converter Converter1 canvas value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "formula": "5",
+          "value": "5"
+        }
+      ]
+    },
+    {
+      "name": "Stock reference formula scales with stock value",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "formula": "Stock1 * 0.1",
+          "stock1": "100",
+          "value": "10"
+        },
+        {
+          "formula": "Stock1 * 0.1",
+          "stock1": "50",
+          "value": "5"
+        }
+      ]
+    },
+    {
+      "name": "Two-stock formula sums stock values",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock2 initial value to \u003cstock2\u003e",
+          "parameters": [
+            "stock2"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "I set converter Converter1 formula to Stock1 + Stock2"
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "stock1": "30",
+          "stock2": "20",
+          "value": "50"
+        }
+      ]
+    },
+    {
+      "name": "Fractional formula uses rational literal",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to 1"
+        },
+        {
+          "keyword": "And",
+          "text": "I set converter Converter1 formula to Stock1 * 1/2"
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "converter Converter1 canvas value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "value": "0.5"
+        }
+      ]
+    },
+    {
+      "name": "Simulation transfers at computed constant rate",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to 100"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock2 initial value to 0"
+        },
+        {
+          "keyword": "And",
+          "text": "I set converter Converter1 formula to 10"
+        },
+        {
+          "keyword": "And",
+          "text": "I run the simulation for \u003csteps\u003e steps",
+          "parameters": [
+            "steps"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "stock Stock1 value should be \u003cstock1\u003e",
+          "parameters": [
+            "stock1"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "stock Stock2 value should be \u003cstock2\u003e",
+          "parameters": [
+            "stock2"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "steps": "1",
+          "stock1": "99",
+          "stock2": "1"
+        },
+        {
+          "steps": "5",
+          "stock1": "95",
+          "stock2": "5"
+        }
+      ]
+    },
+    {
+      "name": "Computed rate tracks changing stock during simulation",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set stock Stock1 initial value to 100"
+        },
+        {
+          "keyword": "And",
+          "text": "I set stock Stock2 initial value to 0"
+        },
+        {
+          "keyword": "And",
+          "text": "I set converter Converter1 formula to Stock1 * 0.1"
+        },
+        {
+          "keyword": "And",
+          "text": "I run the simulation for 1 steps"
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter1 value should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        },
+        {
+          "keyword": "And",
+          "text": "flow Flow1 rate should be \u003cvalue\u003e",
+          "parameters": [
+            "value"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "value": "9.9"
+        }
+      ]
+    },
+    {
+      "name": "Reject invalid converter formula",
+      "steps": [
+        {
+          "keyword": "When",
+          "text": "I set converter Converter1 formula to \u003cformula\u003e",
+          "parameters": [
+            "formula"
+          ]
+        },
+        {
+          "keyword": "Then",
+          "text": "the converter edit should be rejected"
+        },
+        {
+          "keyword": "And",
+          "text": "connector Connector1 should have no formula"
+        }
+      ],
+      "examples": [
+        {
+          "formula": "Stock1 \u0026 0.1"
+        },
+        {
+          "formula": "Missing * 2"
+        }
+      ]
+    },
+    {
+      "name": "Converter without flow link shows zero value",
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "converter Converter2 at 300 250"
+        },
+        {
+          "keyword": "Then",
+          "text": "converter Converter2 value should be 0"
+        },
+        {
+          "keyword": "And",
+          "text": "converter Converter2 canvas value should be 0"
+        }
+      ],
+      "examples": []
+    }
+  ]
+}
