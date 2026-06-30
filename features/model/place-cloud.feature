@@ -71,3 +71,18 @@ Scenario Outline: Second source requires re-arming the placement tool
   Examples:
     | x1 | y1  | x2  | y2  |
     | 50 | 150 | 450 | 150 |
+
+# place-cloud-07
+Scenario Outline: Second sink requires re-arming the placement tool
+  When I arm the sink placement tool
+  And I place a sink at <x1> <y1>
+  And I arm the sink placement tool
+  And I place a sink at <x2> <y2>
+  Then the diagram should contain sink Sink1
+  And sink Sink1 should be at position 400 150
+  And the diagram should contain sink Sink2
+  And sink Sink2 should be at position 550 150
+
+  Examples:
+    | x1  | y1  | x2  | y2  |
+    | 400 | 150 | 550 | 150 |
